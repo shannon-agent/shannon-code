@@ -5,5 +5,8 @@
     clippy::derivable_impls
 )]
 
+pub mod config;
+pub mod events;
+
 #[cfg(feature = "tauri")]
 pub mod commands;

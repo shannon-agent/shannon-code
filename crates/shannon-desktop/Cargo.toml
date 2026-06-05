@@ -8,7 +8,7 @@ license.workspace = true
 
 [features]
 default = []
-tauri = ["dep:tauri", "dep:tauri-build"]
+tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell"]
 
 [dependencies]
 shannon-core = { path = "../shannon-core" }
@@ -16,10 +16,15 @@ shannon-types = { path = "../shannon-types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }
+tokio-util = { workspace = true }
 anyhow = { workspace = true }
 tracing = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
 
 tauri = { version = "2", optional = true }
+tauri-plugin-shell = { version = "2", optional = true }
 
 [build-dependencies]
 tauri-build = { version = "2", optional = true }

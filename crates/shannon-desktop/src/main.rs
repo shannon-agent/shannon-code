@@ -19,9 +19,10 @@ fn main() {
             commands::cancel_query,
             commands::list_tools,
             commands::configure,
+            commands::switch_provider,
+            commands::get_config,
         ])
         .setup(|app| {
-            // Initialize the query engine state
             let state = commands::AppState::new();
             app.manage(state);
             Ok(())

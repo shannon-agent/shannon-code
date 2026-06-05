@@ -182,3 +182,17 @@ bench:
 # 编译 release binary
 build:
     cargo build --release -p shannon-cli
+
+# ── Desktop ──────────────────────────────────────────────────────────────
+
+# Desktop app (dev build, needs Tauri system deps)
+desktop:
+    cargo build -p shannon-desktop --features tauri
+
+# Desktop app (release build)
+desktop-release:
+    cargo build --release -p shannon-desktop --features tauri
+
+# Desktop crate tests (no system deps needed)
+desktop-test:
+    cargo test -p shannon-desktop

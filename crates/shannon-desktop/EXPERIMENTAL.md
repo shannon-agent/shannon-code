@@ -1,26 +1,32 @@
-# Shannon Desktop (Experimental)
+# Shannon Desktop
 
-**Status: Experimental — maintenance only, no active feature development.**
+**Status: MVP in development — streaming LLM chat with tool display working.**
 
-This Tauri-based desktop app is preserved for future evaluation but is not
-under active development. The team is focused on the VS Code extension
-(`editors/vscode/`) as the primary IDE integration path.
+Tauri v2 desktop app wrapping Shannon's core query engine for a native desktop
+chat experience.
 
-## Why Experimental
+## Current Features (MVP)
 
-- All major competitors (Claude Code, Codex CLI, OpenCode) use Electron
-- The VS Code extension provides a better IDE integration experience with
-  less engineering effort
-- Tauri requires significant additional work to reach feature parity
+- Multi-provider LLM support (Anthropic, OpenAI, DeepSeek, Ollama)
+- Streaming responses via Tauri event system
+- Markdown rendering (marked.js + highlight.js)
+- Tool call display with collapsible input/output
+- Provider/model switching at runtime
+- Config persistence (`~/.shannon/desktop.json`)
 
-## Decision
+## Building
 
-- **Maintain**: Keep existing code compiling, fix regressions
-- **No new features**: All feature work targets the VS Code extension
-- **Revisit**: After VS Code extension is stable and has user adoption data
+Requires Tauri system deps (GTK3, webkit2gtk on Linux). Then:
 
-## When to Reconsider
+```bash
+just desktop            # dev build
+just desktop-release    # release build
+```
 
-- VS Code extension reaches stable release with positive adoption metrics
-- User demand for standalone desktop app is validated
-- Cross-platform native packaging becomes a differentiator
+## What's Not Yet Done
+
+- File edit/read tools integration (tool execution pipeline)
+- Conversation persistence across sessions
+- React frontend (Phase 2 — currently vanilla JS)
+- Auto-updater, system tray, window state persistence
+- Proper permission prompts for tool execution
