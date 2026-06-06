@@ -1,6 +1,6 @@
-// Settings panel for API key, base URL, theme, and other configurations
+// Settings panel for API key, base URL, theme, shortcuts, and other configurations
 import { useState, useEffect } from 'react'
-import { Eye, EyeOff, Save, Palette } from 'lucide-react'
+import { Eye, EyeOff, Save, Palette, Keyboard } from 'lucide-react'
 import { configure, getConfig } from '../lib/tauri-api'
 import { useTheme } from '../context/ThemeContext'
 
@@ -139,6 +139,46 @@ export function SettingsPanel() {
             {saveStatus === 'success' ? '✓ Saved successfully' : '✗ Failed to save'}
           </div>
         )}
+
+        {/* Global Shortcuts Section */}
+        <div className="pt-4 border-t border-[#414868]">
+          <h3 className="text-sm font-semibold text-[#c0caf5] mb-3 flex items-center gap-2">
+            <Keyboard className="w-4 h-4" />
+            Global Shortcuts
+          </h3>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+              <div className="text-sm text-[#a9b1d6]">
+                <span className="font-medium">Show/Hide Window</span>
+                <p className="text-xs text-[#565f89]">Toggle Shannon visibility</p>
+              </div>
+              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+                Ctrl+Shift+S
+              </kbd>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+              <div className="text-sm text-[#a9b1d6]">
+                <span className="font-medium">New Session</span>
+                <p className="text-xs text-[#565f89]">Create a new conversation</p>
+              </div>
+              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+                Ctrl+Shift+N
+              </kbd>
+            </div>
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+              <div className="text-sm text-[#a9b1d6]">
+                <span className="font-medium">Focus Input</span>
+                <p className="text-xs text-[#565f89]">Focus message input field</p>
+              </div>
+              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+                Ctrl+Shift+K
+              </kbd>
+            </div>
+          </div>
+          <p className="text-xs text-[#565f89] mt-2">
+            Shortcuts work even when Shannon is minimized to tray
+          </p>
+        </div>
 
         {/* About Section */}
         <div className="pt-4 border-t border-[#414868]">

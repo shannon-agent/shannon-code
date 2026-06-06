@@ -71,6 +71,13 @@ export interface ChatMessage {
   role: string
   content: string
   timestamp: number
+  file_attachments?: FileAttachment[]
+}
+
+export interface FileAttachment {
+  name: string
+  path: string
+  size: number
 }
 
 export interface StatusResponse {
@@ -117,6 +124,31 @@ export interface SendMessageResponse {
   query_id: string
 }
 
+// Diff review types
+export interface DiffFileInfo {
+  path: string
+  status: 'modified' | 'added' | 'deleted'
+  hunks: DiffHunk[]
+}
+
+export interface DiffHunk {
+  oldStart: number
+  oldLines: number
+  newStart: number
+  newLines: number
+  content: string
+}
+
+export interface HunkAction {
+  line_start: number
+  line_end: number
+  action: 'accept' | 'reject'
+}
+
+export interface DiffReviewRequest {
+  files: DiffFileInfo[]
+}
+
 // Tauri event names (must match Rust event_names module)
 export const EVENT_NAMES = {
   QUERY_TEXT: 'query:text',
@@ -130,4 +162,25 @@ export const EVENT_NAMES = {
   PERMISSION_REQUEST: 'permission-request',
   SESSIONS_UPDATED: 'sessions-updated',
   SESSION_LOADED: 'session-loaded',
+  DIFF_REVIEW_AVAILABLE: 'diff-review-available',
+  BACKGROUND_TASK_UPDATE: 'background-task-update',
+  BACKGROUND_TASKS_UPDATED: 'background-tasks-updated',
 } as const
+
+export interface BackgroundTaskUpdate {
+  task_id: string
+  status: string
+  prompt: string
+  output: string
+  started_at: number
+  completed_at: number | null
+}
+
+export interface BackgroundTaskInfo {
+  task_id: string
+  prompt: string
+  status: string
+  started_at: number
+  completed_at: number | null
+  output: string
+}

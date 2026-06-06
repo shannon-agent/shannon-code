@@ -15,6 +15,17 @@ pub struct DesktopConfig {
     pub model: Option<String>,
     pub working_dir: Option<String>,
     pub theme: Option<String>,
+    pub mcp_servers: Vec<McpServerConfig>,
+}
+
+/// MCP server configuration.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpServerConfig {
+    pub name: String,
+    pub command: String,
+    pub args: Vec<String>,
+    pub env: std::collections::HashMap<String, String>,
+    pub enabled: bool,
 }
 
 impl Default for DesktopConfig {
@@ -26,6 +37,7 @@ impl Default for DesktopConfig {
             model: Some("claude-sonnet-4-6".into()),
             working_dir: None,
             theme: None,
+            mcp_servers: Vec::new(),
         }
     }
 }
@@ -34,6 +46,14 @@ impl Default for DesktopConfig {
 fn config_path() -> PathBuf {
     let home = dirs_home().unwrap_or_else(|| PathBuf::from("."));
     home.join(".shannon").join("desktop").join("config.json")
+}
+
+/// Resolve the MCP servers config file path: `~/.shannon/desktop/mcp-servers.json`
+fn mcp_servers_path() -> PathBuf {
+    let home = dirs_home().unwrap_or_else(|| PathBuf::from("."));
+    home.join(".shannon")
+        .join("desktop")
+        .join("mcp-servers.json")
 }
 
 fn dirs_home() -> Option<PathBuf> {
@@ -62,6 +82,25 @@ pub fn save_config(config: &DesktopConfig) -> Result<(), String> {
     std::fs::write(&path, content).map_err(|e| e.to_string())
 }
 
+/// Load MCP server configs from disk.
+pub fn load_mcp_servers() -> Vec<McpServerConfig> {
+    let path = mcp_servers_path();
+    match std::fs::read_to_string(&path) {
+        Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+        Err(_) => Vec::new(),
+    }
+}
+
+/// Save MCP server configs to disk.
+pub fn save_mcp_servers(servers: &[McpServerConfig]) -> Result<(), String> {
+    let path = mcp_servers_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let content = serde_json::to_string_pretty(servers).map_err(|e| e.to_string())?;
+    std::fs::write(&path, content).map_err(|e| e.to_string())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,6 +124,7 @@ mod tests {
             model: Some("gpt-4.1".into()),
             working_dir: None,
             theme: None,
+            mcp_servers: vec![],
         };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();

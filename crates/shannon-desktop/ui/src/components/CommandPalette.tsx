@@ -1,6 +1,16 @@
 // Command palette with fuzzy search
 import { useState, useEffect, useRef } from 'react'
-import { Search, X, Plus, Settings, Layers, Sun, Sidebar } from 'lucide-react'
+import { Search, X, Plus, Settings, Layers, Sun, Sidebar, MessageSquare, Terminal, Zap } from 'lucide-react'
+import { searchSessions } from '../lib/tauri-api'
+import type { SessionInfo } from '../types/tauri-events'
+
+interface SkillInfo {
+  name: string
+  description: string
+  trigger: string
+  source: string
+  category?: string
+}
 
 interface Action {
   id: string
@@ -8,6 +18,9 @@ interface Action {
   icon: React.ComponentType<{ className?: string }>
   shortcut: string
   execute: () => void
+  type?: 'action' | 'session' | 'skill'
+  sessionId?: string
+  skillTrigger?: string
 }
 
 interface CommandPaletteProps {
@@ -18,6 +31,8 @@ interface CommandPaletteProps {
   onSwitchModel: () => void
   onToggleSidebar: () => void
   onToggleTheme: () => void
+  onSessionSelect?: (sessionId: string) => void
+  onInsertSkillTrigger?: (trigger: string) => void
 }
 
 /**
@@ -35,10 +50,16 @@ export function CommandPalette({
   onOpenSettings,
   onSwitchModel,
   onToggleSidebar,
-  onToggleTheme
+  onToggleTheme,
+  onSessionSelect,
+  onInsertSkillTrigger
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [sessionResults, setSessionResults] = useState<SessionInfo[]>([])
+  const [searchingSessions, setSearchingSessions] = useState(false)
+  const [skills, setSkills] = useState<SkillInfo[]>([])
+  const [loadingSkills, setLoadingSkills] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const actions: Action[] = [
@@ -49,7 +70,76 @@ export function CommandPalette({
     { id: 'theme', label: 'Toggle Theme', icon: Sun, shortcut: 'Ctrl+T', execute: onToggleTheme }
   ]
 
-  const filteredActions = actions.filter(action =>
+  // Load skills when palette opens
+  useEffect(() => {
+    if (isOpen && skills.length === 0) {
+      loadSkills()
+    }
+  }, [isOpen])
+
+  // Load skills from backend
+  const loadSkills = async () => {
+    setLoadingSkills(true)
+    try {
+      if (window.__TAURI__) {
+        const result = await window.__TAURI__.invoke('list_skills')
+        setSkills(result)
+      } else {
+        // Fallback mock skills
+        setSkills([
+          { name: 'commit', description: 'Create git commits', trigger: '/commit', source: 'claude' },
+          { name: 'help', description: 'Show help', trigger: '/help', source: 'shannon' },
+          { name: 'search', description: 'Search files', trigger: '/search', source: 'shannon' }
+        ])
+      }
+    } catch (err) {
+      console.error('Failed to load skills:', err)
+    } finally {
+      setLoadingSkills(false)
+    }
+  }
+
+  // Load sessions when query changes
+  useEffect(() => {
+    if (query && onSessionSelect) {
+      setSearchingSessions(true)
+      searchSessions(query).then(results => {
+        setSessionResults(results)
+        setSearchingSessions(false)
+      }).catch(() => {
+        setSessionResults([])
+        setSearchingSessions(false)
+      })
+    } else {
+      setSessionResults([])
+    }
+  }, [query, onSessionSelect])
+
+  // Combine actions with session results
+  const sessionActions: Action[] = sessionResults.map(session => ({
+    id: `session-${session.id}`,
+    label: session.title || 'New Conversation',
+    icon: MessageSquare,
+    shortcut: '',
+    execute: () => onSessionSelect?.(session.id),
+    type: 'session',
+    sessionId: session.id
+  }))
+
+  // Create skill actions
+  const skillActions: Action[] = skills.map(skill => ({
+    id: `skill-${skill.name}`,
+    label: skill.name,
+    icon: Terminal,
+    shortcut: skill.trigger,
+    execute: () => onInsertSkillTrigger?.(skill.trigger),
+    type: 'skill',
+    skillTrigger: skill.trigger
+  }))
+
+  const allItems = [...actions, ...sessionActions, ...skillActions]
+
+  const filteredActions = allItems.filter(action =>
     action.label.toLowerCase().includes(query.toLowerCase())
   )
 
@@ -152,12 +242,13 @@ export function CommandPalette({
         <div className="max-h-80 overflow-y-auto py-2">
           {filteredActions.length === 0 ? (
             <div className="px-4 py-8 text-center text-[#565f89]">
-              No actions found
+              {searchingSessions ? 'Searching...' : 'No results found'}
             </div>
           ) : (
             filteredActions.map((action, index) => {
               const Icon = action.icon
               const isSelected = index === selectedIndex
+              const isSession = action.type === 'session'
 
               return (
                 <button
@@ -183,9 +274,19 @@ export function CommandPalette({
                       </span>
                     ))}
                   </span>
-                  <span className="text-xs text-[#565f89]">
-                    {action.shortcut}
-                  </span>
+                  {!isSession && action.type !== 'skill' && (
+                    <span className="text-xs text-[#565f89]">
+                      {action.shortcut}
+                    </span>
+                  )}
+                  {action.type === 'skill' && (
+                    <span className="text-xs px-2 py-1 bg-[#1a1b26] text-[#7aa2f7] rounded">
+                      {action.shortcut}
+                    </span>
+                  )}
+                  {isSession && (
+                    <span className="text-xs text-[#565f89]">Session</span>
+                  )}
                 </button>
               )
             })

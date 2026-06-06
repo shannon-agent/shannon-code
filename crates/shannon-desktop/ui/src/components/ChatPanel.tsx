@@ -5,14 +5,19 @@ import { MessageInput } from './MessageInput'
 import { StatusBar } from './StatusBar'
 import { ToolCallDisplay } from './ToolCallDisplay'
 import { DiffViewer } from './DiffViewer'
+import { DiffReviewPanel } from './DiffReviewPanel'
 import { ModeToggle } from './ModeToggle'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
+import { listen } from '@tauri-apps/api/event'
+import { useState, useCallback, useEffect } from 'react'
+import type { DiffFileInfo, HunkAction } from '../types/tauri-events'
+import { applyDiff } from '../lib/tauri-api'
 
 interface ChatPanelProps {
-  sendMessage: (text: string) => Promise<void>
+  sendMessage: (text: string, filePaths?: string[]) => Promise<void>
   isStreaming: boolean
   error: string | null
   clearError: () => void
@@ -20,6 +25,39 @@ interface ChatPanelProps {
 
 export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatPanelProps) {
   const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode } = useAppState()
+  const [diffReviewAvailable, setDiffReviewAvailable] = useState(false)
+  const [diffFiles, setDiffFiles] = useState<DiffFileInfo[]>([])
+  const [showDiffReview, setShowDiffReview] = useState(false)
+
+  // Listen for diff review events
+  useEffect(() => {
+    const unlisten = listen<DiffFileInfo[]>('diff-review-available', (event) => {
+      setDiffFiles(event.payload)
+      setDiffReviewAvailable(true)
+    })
+
+    return () => {
+      unlisten.then(fn => fn())
+    }
+  }, [])
+
+  const handleApplyDiff = useCallback(async (filePath: string, hunks: HunkAction[]) => {
+    try {
+      await applyDiff(filePath, hunks)
+    } catch (error) {
+      console.error('Failed to apply diff:', error)
+    }
+  }, [])
+
+  const handleOpenDiffReview = useCallback(() => {
+    setShowDiffReview(true)
+  }, [])
+
+  const handleCloseDiffReview = useCallback(() => {
+    setShowDiffReview(false)
+    setDiffReviewAvailable(false)
+    setDiffFiles([])
+  }, [])
 
   const renderMessageContent = (message: { role: string; content: string; timestamp: number }, index: number) => {
     const content = message.content
@@ -68,6 +106,17 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
     )
   }
 
+  // Show diff review panel when active
+  if (showDiffReview) {
+    return (
+      <DiffReviewPanel
+        files={diffFiles}
+        onClose={handleCloseDiffReview}
+        onApplyDiff={handleApplyDiff}
+      />
+    )
+  }
+
   return (
     <div className="flex flex-col h-full bg-[var(--bg-primary)]">
       {error && (
@@ -101,6 +150,21 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 Deny
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Changes button */}
+      {diffReviewAvailable && (
+        <div className="bg-[var(--accent)]/10 border-l-4 border-[var(--accent)] p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-[var(--accent)]">File changes ready for review</span>
+              <Badge variant="secondary">{diffFiles.length} files</Badge>
+            </div>
+            <Button variant="default" size="sm" onClick={handleOpenDiffReview} className="h-7">
+              Review Changes
+            </Button>
           </div>
         </div>
       )}

@@ -8,14 +8,16 @@ import type {
   ConfigUpdate,
   ProviderSwitchRequest,
   DesktopConfig,
-  SendMessageResponse
+  SendMessageResponse,
+  HunkAction,
+  SessionInfo
 } from '../types/tauri-events'
 
 /**
  * Send a message to the query engine
  */
-export async function sendMessage(message: string): Promise<SendMessageResponse> {
-  return await invoke('send_message', { message })
+export async function sendMessage(message: string, filePaths?: string[]): Promise<SendMessageResponse> {
+  return await invoke('send_message', { message, filePaths: filePaths ? filePaths : null })
 }
 
 /**
@@ -82,6 +84,27 @@ export async function listSessions(): Promise<SessionInfo[]> {
 }
 
 /**
+ * Search sessions by title substring
+ */
+export async function searchSessions(query: string): Promise<SessionInfo[]> {
+  return await invoke('search_sessions', { query })
+}
+
+/**
+ * Rename a session
+ */
+export async function renameSession(id: string, title: string): Promise<boolean> {
+  return await invoke('rename_session', { id, title })
+}
+
+/**
+ * Duplicate a session
+ */
+export async function duplicateSession(id: string): Promise<SessionInfo> {
+  return await invoke('duplicate_session', { id })
+}
+
+/**
  * Load a session by ID
  */
 export async function loadSession(id: string): Promise<ChatMessage[]> {
@@ -123,6 +146,13 @@ export async function getFileDiff(path: string): Promise<FileDiff> {
   return await invoke('get_file_diff', { path })
 }
 
+/**
+ * Apply diff with hunk actions
+ */
+export async function applyDiff(filePath: string, hunks: HunkAction[]): Promise<void> {
+  return await invoke('apply_diff', { filePath, hunks })
+}
+
 // File diff response type
 export interface FileDiff {
   old_content: string
@@ -131,5 +161,23 @@ export interface FileDiff {
   language: string
 }
 
-// Import SessionInfo from types
-import type { SessionInfo } from '../types/tauri-events'
+/**
+ * Start a new background task
+ */
+export async function startBackgroundTask(prompt: string): Promise<string> {
+  return await invoke('start_background_task', { prompt })
+}
+
+/**
+ * Get all background tasks
+ */
+export async function getBackgroundTasks(): Promise<import('../types/tauri-events').BackgroundTaskInfo[]> {
+  return await invoke('get_background_tasks')
+}
+
+/**
+ * Cancel a background task
+ */
+export async function cancelBackgroundTask(id: string): Promise<boolean> {
+  return await invoke('cancel_background_task', { id })
+}

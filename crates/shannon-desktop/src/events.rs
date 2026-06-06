@@ -48,6 +48,28 @@ pub struct ThinkingPayload {
     pub content: String,
 }
 
+/// Background task status and update.
+#[derive(Debug, Clone, Serialize)]
+pub struct BackgroundTaskUpdate {
+    pub task_id: String,
+    pub status: String, // "running", "completed", "failed"
+    pub prompt: String,
+    pub output: String,
+    pub started_at: i64,
+    pub completed_at: Option<i64>,
+}
+
+/// Background task info for listing.
+#[derive(Debug, Clone, Serialize)]
+pub struct BackgroundTaskInfo {
+    pub task_id: String,
+    pub prompt: String,
+    pub status: String,
+    pub started_at: i64,
+    pub completed_at: Option<i64>,
+    pub output: String,
+}
+
 /// Token usage and cost update.
 #[derive(Debug, Clone, Serialize)]
 pub struct UsagePayload {
@@ -115,6 +137,32 @@ pub struct ConfigUpdatedPayload {
     pub value: String,
 }
 
+/// Hunk action for applying diffs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HunkAction {
+    pub line_start: u32,
+    pub line_end: u32,
+    pub action: String, // "accept" or "reject"
+}
+
+/// Diff file info for review panel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiffFileInfo {
+    pub path: String,
+    pub status: String, // "modified", "added", "deleted"
+    pub hunks: Vec<DiffHunk>,
+}
+
+/// Diff hunk containing changed lines.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiffHunk {
+    pub old_start: u32,
+    pub old_lines: u32,
+    pub new_start: u32,
+    pub new_lines: u32,
+    pub content: String,
+}
+
 /// Tauri event names used in emit/listen.
 pub mod event_names {
     pub const QUERY_TEXT: &str = "query:text";
@@ -130,6 +178,9 @@ pub mod event_names {
     pub const SESSIONS_UPDATED: &str = "sessions-updated";
     pub const SESSION_LOADED: &str = "session-loaded";
     pub const CONFIG_UPDATED: &str = "config-updated";
+    pub const DIFF_REVIEW_AVAILABLE: &str = "diff-review-available";
+    pub const BACKGROUND_TASK_UPDATE: &str = "background-task-update";
+    pub const BACKGROUND_TASKS_UPDATED: &str = "background-tasks-updated";
 }
 
 #[cfg(test)]

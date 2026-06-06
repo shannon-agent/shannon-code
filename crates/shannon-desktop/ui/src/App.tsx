@@ -4,6 +4,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { useTheme } from './context/ThemeContext'
 import { useStreaming } from './hooks/useStreaming'
 import { useKeyboardShortcuts, DEFAULT_SHORTCUTS } from './hooks/useKeyboardShortcuts'
+import { listen } from '@tauri-apps/api/event'
 import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ChatPanel } from './components/ChatPanel'
@@ -16,6 +17,8 @@ import { TerminalPane } from './components/TerminalPane'
 import { AgentDashboard } from './components/AgentDashboard'
 import { TaskBoard } from './components/TaskBoard'
 import { McpBrowser } from './components/McpBrowser'
+import { ToastProvider } from './components/ToastProvider'
+import { BackgroundAgentBadge } from './components/BackgroundAgentBadge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
 import {
   newSession,
@@ -32,20 +35,37 @@ function AppContent() {
   const [sessions, setSessions] = useState<SessionInfo[]>([])
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [sidebarVisible, setSidebarVisible] = useState(true)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [settingsVisible, setSettingsVisible] = useState(true)
   const [rightPanelTab, setRightPanelTab] = useState<string>('settings')
 
   // Register default keyboard shortcuts (dispatches DOM custom events)
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
 
+  const handleNewSession = useCallback(async () => {
+    try {
+      const newId = await newSession()
+      setCurrentSessionId(newId)
+      const updated = await listSessions()
+      setSessions(updated)
+    } catch (error) {
+      console.error('Failed to create session:', error)
+    }
+  }, [])
+
   // Listen for DOM custom events dispatched by shortcuts
   useEffect(() => {
     const handlers: Record<string, EventListener> = {
       'shannon:command-palette': () => setCommandPaletteOpen(prev => !prev),
       'shannon:new-session': () => handleNewSession(),
-      'shannon:toggle-sidebar': () => setSidebarVisible(prev => !prev),
+      'shannon:toggle-sidebar': () => setSidebarCollapsed(prev => !prev),
       'shannon:toggle-settings': () => setSettingsVisible(prev => !prev),
       'shannon:close-dialogs': () => setCommandPaletteOpen(false),
+      'global:new-session': () => handleNewSession(),
+      'global:focus-input': () => {
+        // Dispatch focus input event for MessageInput component
+        window.dispatchEvent(new CustomEvent('shannon:focus-input'))
+      },
     }
 
     for (const [event, handler] of Object.entries(handlers)) {
@@ -58,22 +78,30 @@ function AppContent() {
     }
   }, [])
 
+  // Listen for Tauri global shortcut events
+  useEffect(() => {
+    const unlisteners = [
+      listen('new-session', () => {
+        handleNewSession()
+      }),
+      listen('focus-input', () => {
+        // Dispatch focus input event for MessageInput component
+        window.dispatchEvent(new CustomEvent('shannon:focus-input'))
+      }),
+    ]
+
+    Promise.all(unlisteners).then((cleanups) => {
+      return () => {
+        cleanups.forEach(fn => fn())
+      }
+    })
+  }, [handleNewSession])
+
   // Load sessions on mount
   useEffect(() => {
     listSessions()
       .then(setSessions)
       .catch(console.error)
-  }, [])
-
-  const handleNewSession = useCallback(async () => {
-    try {
-      const newId = await newSession()
-      setCurrentSessionId(newId)
-      const updated = await listSessions()
-      setSessions(updated)
-    } catch (error) {
-      console.error('Failed to create session:', error)
-    }
   }, [])
 
   const handleSessionSelect = useCallback(async (sessionId: string) => {
@@ -114,6 +142,8 @@ function AppContent() {
             onNewSession={handleNewSession}
           />
         ) : undefined}
+        sidebarCollapsed={sidebarCollapsed}
+        onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
         panel={settingsVisible ? (
           <Tabs value={rightPanelTab} onValueChange={setRightPanelTab} className="flex flex-col h-full">
             <TabsList className="w-full justify-start rounded-none border-b border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-1 h-auto gap-0.5">
@@ -154,7 +184,9 @@ function AppContent() {
         onSwitchModel={() => {}}
         onToggleSidebar={() => setSidebarVisible(prev => !prev)}
         onToggleTheme={cycleTheme}
+        onSessionSelect={handleSessionSelect}
       />
+      <BackgroundAgentBadge />
     </>
   )
 }
@@ -163,9 +195,11 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <AppStateProvider>
-          <AppContent />
-        </AppStateProvider>
+        <ToastProvider>
+          <AppStateProvider>
+            <AppContent />
+          </AppStateProvider>
+        </ToastProvider>
       </ThemeProvider>
     </ErrorBoundary>
   )

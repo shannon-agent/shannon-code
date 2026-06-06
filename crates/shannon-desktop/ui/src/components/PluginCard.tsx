@@ -1,5 +1,5 @@
 // Plugin card component for MCP server display
-import { Check, X, ChevronDown, ChevronUp, Package } from 'lucide-react'
+import { Check, X, ChevronDown, ChevronUp, Package, PlayCircle, RefreshCw, AlertCircle } from 'lucide-react'
 import { useState } from 'react'
 
 interface Plugin {
@@ -8,23 +8,31 @@ interface Plugin {
   enabled: boolean
   connected: boolean
   toolCount: number
-  tools?: string[]
+  tools?: { name: string; description: string }[]
+  lastConnected?: number
 }
 
 interface PluginCardProps {
   plugin: Plugin
   onToggle?: (name: string) => void
   onRemove?: (name: string) => void
+  onTestConnection?: () => void
+  onRestart?: () => void
+  testingConnection?: boolean
+  testResult?: boolean
 }
 
 /**
  * MCP server plugin card with Tokyo Night styling
- * - Server name, status badge, tool count
- * - Expandable tools list
- * - Enable/disable toggle
+ * - Server name, status badge, tool count, last connected timestamp
+ * - Expandable tools list showing name + description for each tool
+ * - Server health indicator (green/red/yellow dot)
+ * - Enable/disable toggle switch
+ * - Test Connection button
+ * - Restart server button
  * - Remove button with confirmation
  */
-export function PluginCard({ plugin, onToggle, onRemove }: PluginCardProps) {
+export function PluginCard({ plugin, onToggle, onRemove, onTestConnection, onRestart, testingConnection, testResult }: PluginCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -45,6 +53,37 @@ export function PluginCard({ plugin, onToggle, onRemove }: PluginCardProps) {
     setShowConfirm(false)
   }
 
+  const formatTimestamp = (timestamp: number) => {
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    const diffHours = Math.floor(diffMins / 60)
+    if (diffHours < 24) return `${diffHours}h ago`
+    const diffDays = Math.floor(diffHours / 24)
+    return `${diffDays}d ago`
+  }
+
+  const getHealthStatus = () => {
+    if (testingConnection) return 'testing'
+    if (testResult === true) return 'healthy'
+    if (testResult === false) return 'unhealthy'
+    if (plugin.connected) return 'healthy'
+    return 'unknown'
+  }
+
+  const healthStatus = getHealthStatus()
+
+  const healthColor = {
+    healthy: 'bg-[#41a6b5]',
+    unhealthy: 'bg-[#f7768e]',
+    testing: 'bg-[#e0af68]',
+    unknown: 'bg-[#565f89]'
+  }[healthStatus]
+
   return (
     <div className="bg-[#1f2335] border border-[#414868] rounded-lg overflow-hidden transition-all hover:border-[#565f89]">
       {/* Header */}
@@ -63,7 +102,11 @@ export function PluginCard({ plugin, onToggle, onRemove }: PluginCardProps) {
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="text-[#c0caf5] font-semibold truncate">{plugin.name}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-[#c0caf5] font-semibold truncate">{plugin.name}</h3>
+                {/* Server health indicator */}
+                <div className={`w-2 h-2 rounded-full ${healthColor}`} title={healthStatus} />
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className={`
                   px-2 py-0.5 rounded text-xs font-medium
@@ -77,12 +120,50 @@ export function PluginCard({ plugin, onToggle, onRemove }: PluginCardProps) {
                 <span className="text-[#565f89] text-xs">
                   {plugin.toolCount} tools
                 </span>
+                {/* Last connected timestamp */}
+                {plugin.lastConnected && (
+                  <span className="text-[#565f89] text-xs flex items-center gap-1">
+                    <Clock size={10} />
+                    {formatTimestamp(plugin.lastConnected)}
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           {/* Right: Actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Test Connection Button */}
+            {onTestConnection && (
+              <button
+                onClick={onTestConnection}
+                disabled={testingConnection}
+                className={`
+                  p-2 rounded-lg transition-colors
+                  ${testingConnection
+                    ? 'bg-[#e0af68]/20 text-[#e0af68] animate-pulse'
+                    : 'bg-[#24283b] text-[#565f89] hover:text-[#7aa2f7] hover:bg-[#24283b]/80'
+                  }
+                `}
+                aria-label={`Test connection to ${plugin.name}`}
+                title="Test connection"
+              >
+                <PlayCircle size={16} />
+              </button>
+            )}
+
+            {/* Restart Server Button */}
+            {onRestart && (
+              <button
+                onClick={onRestart}
+                className="p-2 rounded-lg bg-[#24283b] text-[#565f89] hover:text-[#41a6b5] hover:bg-[#24283b]/80 transition-colors"
+                aria-label={`Restart ${plugin.name}`}
+                title="Restart server"
+              >
+                <RefreshCw size={16} />
+              </button>
+            )}
+
             {/* Enable/Disable Toggle */}
             {onToggle && (
               <button
@@ -157,14 +238,15 @@ export function PluginCard({ plugin, onToggle, onRemove }: PluginCardProps) {
       {/* Expandable Tools List */}
       {isExpanded && plugin.tools && plugin.tools.length > 0 && (
         <div className="px-4 pb-4 border-t border-[#2a2f44] pt-3">
-          <h4 className="text-xs font-semibold text-[#565f89] mb-2">Tools</h4>
-          <div className="space-y-1">
+          <h4 className="text-xs font-semibold text-[#565f89] mb-2">Tools ({plugin.tools.length})</h4>
+          <div className="space-y-2">
             {plugin.tools.map((tool) => (
               <div
-                key={tool}
-                className="text-sm text-[#a9b1d6] py-1 px-2 rounded bg-[#1a1b26] hover:bg-[#24283b] transition-colors"
+                key={tool.name}
+                className="p-2 rounded bg-[#1a1b26] hover:bg-[#24283b] transition-colors"
               >
-                {tool}
+                <div className="text-sm text-[#c0caf5] font-medium">{tool.name}</div>
+                <div className="text-xs text-[#565f89] mt-1">{tool.description}</div>
               </div>
             ))}
           </div>

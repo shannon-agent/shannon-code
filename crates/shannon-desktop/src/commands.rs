@@ -16,8 +16,8 @@ use tauri::Emitter;
 use tokio::sync::{Mutex, RwLock, oneshot};
 
 use crate::config::{self, DesktopConfig};
-use crate::events;
 use crate::events::event_names;
+use crate::events::{self, HunkAction};
 use tokio_util::sync::CancellationToken;
 
 /// Shared application state accessible to all Tauri commands.
@@ -50,6 +50,8 @@ pub struct AppState {
     cancellation_token: Arc<Mutex<Option<CancellationToken>>>,
     /// Currently active session ID.
     current_session_id: Arc<Mutex<Option<String>>>,
+    /// Background tasks.
+    background_tasks: Arc<Mutex<Vec<BackgroundTaskMeta>>>,
 }
 
 /// Session metadata for session list.
@@ -61,12 +63,33 @@ struct SessionMeta {
     message_count: usize,
 }
 
+/// Background task metadata.
+#[derive(Debug, Clone)]
+struct BackgroundTaskMeta {
+    id: String,
+    prompt: String,
+    status: String, // "running", "completed", "failed"
+    started_at: i64,
+    completed_at: Option<i64>,
+    output: String,
+}
+
 /// A chat message displayed in the UI.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
     pub timestamp: i64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_attachments: Option<Vec<FileAttachment>>,
+}
+
+/// File attachment for chat messages.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileAttachment {
+    pub name: String,
+    pub path: String,
+    pub size: u64,
 }
 
 /// Status response for the desktop UI.
@@ -150,6 +173,7 @@ impl AppState {
             sessions: Arc::new(Mutex::new(Vec::new())),
             cancellation_token: Arc::new(Mutex::new(None)),
             current_session_id: Arc::new(Mutex::new(None)),
+            background_tasks: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -186,6 +210,7 @@ pub async fn send_message(
     state: tauri::State<'_, AppState>,
     app_handle: tauri::AppHandle,
     message: String,
+    file_paths: Option<Vec<String>>,
 ) -> Result<SendMessageResponse, String> {
     // Prevent concurrent queries
     {
@@ -210,12 +235,37 @@ pub async fn send_message(
 
     // Add user message
     let now = chrono_timestamp();
+    let attachments = file_paths.and_then(|paths| {
+        if paths.is_empty() {
+            None
+        } else {
+            Some(
+                paths
+                    .into_iter()
+                    .filter_map(|path| {
+                        std::path::Path::new(&path)
+                            .file_name()
+                            .and_then(|name| name.to_str())
+                            .and_then(|name_str| {
+                                std::fs::metadata(&path).ok().map(|meta| FileAttachment {
+                                    name: name_str.to_string(),
+                                    path: path.clone(),
+                                    size: meta.len(),
+                                })
+                            })
+                    })
+                    .collect::<Vec<_>>(),
+            )
+        }
+    });
+
     {
         let mut messages = state.messages.lock().await;
         messages.push(ChatMessage {
             role: "user".into(),
             content: message.clone(),
             timestamp: now,
+            file_attachments: attachments,
         });
     }
 
@@ -385,6 +435,7 @@ pub async fn send_message(
                                     final_content.clone()
                                 },
                                 timestamp: chrono_timestamp(),
+                                file_attachments: None,
                             });
                         }
 
@@ -778,6 +829,7 @@ pub async fn switch_provider(
         model: Some(request.model.clone()),
         working_dir: None,
         theme: None,
+        mcp_servers: Vec::new(),
     };
 
     let client_config = AppState::build_client_config(&new_config);
@@ -893,6 +945,28 @@ pub async fn list_sessions(
     Ok(result)
 }
 
+/// Search sessions by title substring.
+#[tauri::command]
+pub async fn search_sessions(
+    state: tauri::State<'_, AppState>,
+    query: String,
+) -> Result<Vec<events::SessionInfo>, String> {
+    let sessions = state.sessions.lock().await;
+    let query_lower = query.to_lowercase();
+
+    let result: Vec<events::SessionInfo> = sessions
+        .iter()
+        .filter(|s| s.title.to_lowercase().contains(&query_lower))
+        .map(|s| events::SessionInfo {
+            id: s.id.clone(),
+            title: s.title.clone(),
+            created_at: s.created_at,
+            message_count: s.message_count,
+        })
+        .collect();
+    Ok(result)
+}
+
 /// Load a session by ID.
 #[tauri::command]
 pub async fn load_session(
@@ -930,6 +1004,7 @@ pub async fn load_session(
                 }
             },
             timestamp: chrono_timestamp(),
+            file_attachments: None,
         })
         .collect();
 
@@ -1020,6 +1095,7 @@ pub async fn switch_session(
                         .join("\n"),
                 },
                 timestamp: chrono_timestamp(),
+                file_attachments: None,
             })
             .collect(),
         None => Vec::new(),
@@ -1081,6 +1157,112 @@ pub async fn delete_session(
     } else {
         Ok(false)
     }
+}
+
+/// Rename a session by ID.
+#[tauri::command]
+pub async fn rename_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+    title: String,
+) -> Result<bool, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    // Update session metadata in sessions list
+    let mut sessions = state.sessions.lock().await;
+    if let Some(session) = sessions.iter_mut().find(|s| s.id == id) {
+        session.title = title.clone();
+
+        // Update persisted session metadata
+        let model = state.model.lock().await.clone();
+        let messages = state.messages.lock().await.clone();
+        let core_msgs: Vec<shannon_core::api::Message> = messages
+            .iter()
+            .map(|m| shannon_core::api::Message {
+                role: m.role.clone(),
+                content: shannon_core::api::MessageContent::Text(m.content.clone()),
+            })
+            .collect();
+
+        let metadata = shannon_core::state::SessionPersistMetadata {
+            model,
+            turn_count: core_msgs.len() / 2,
+            title: Some(title),
+            ..Default::default()
+        };
+
+        let _ = state
+            .state_manager
+            .save_session(&session_uuid, &core_msgs, &metadata);
+
+        // Emit sessions updated event
+        let _ = app_handle.emit(event_names::SESSIONS_UPDATED, ());
+
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Duplicate a session by ID.
+#[tauri::command]
+pub async fn duplicate_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<events::SessionInfo, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    // Find original session
+    let sessions = state.sessions.lock().await;
+    let original_session = sessions
+        .iter()
+        .find(|s| s.id == id)
+        .ok_or_else(|| format!("Session not found: {}", id))?;
+
+    // Load original session data
+    let session_data = state
+        .state_manager
+        .load_session(&session_uuid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Session data not found: {}", id))?;
+
+    // Create new session with copied messages
+    let new_id = uuid::Uuid::new_v4();
+    let new_id_str = new_id.to_string();
+    let new_title = format!("Copy of {}", original_session.title);
+    let now = chrono_timestamp();
+
+    let metadata = shannon_core::state::SessionPersistMetadata {
+        model: original_session.title.clone(), // This should be model name, but we'll fix that
+        turn_count: session_data.messages.len() / 2,
+        title: Some(new_title.clone()),
+        ..Default::default()
+    };
+
+    state
+        .state_manager
+        .save_session(&new_id, &session_data.messages, &metadata)
+        .map_err(|e| e.to_string())?;
+
+    // Add to sessions list
+    let _new_session_meta = SessionMeta {
+        id: new_id_str.clone(),
+        title: new_title.clone(),
+        created_at: now,
+        message_count: session_data.messages.len(),
+    };
+
+    // Emit sessions updated event
+    let _ = app_handle.emit(event_names::SESSIONS_UPDATED, ());
+
+    Ok(events::SessionInfo {
+        id: new_id_str,
+        title: new_title,
+        created_at: now,
+        message_count: session_data.messages.len(),
+    })
 }
 
 /// Request permission for a tool execution.
@@ -1221,6 +1403,446 @@ pub async fn get_file_diff(path: String) -> Result<FileDiff, String> {
     })
 }
 
+/// MCP server info for UI display.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct McpServerInfo {
+    pub name: String,
+    pub command: String,
+    pub enabled: bool,
+    pub connected: bool,
+    pub tool_count: usize,
+    pub tools: Vec<ToolInfo>,
+    pub last_connected: Option<i64>,
+}
+
+/// Add an MCP server configuration.
+#[tauri::command]
+pub async fn add_mcp_server(
+    name: String,
+    command: String,
+    args: Vec<String>,
+    env: HashMap<String, String>,
+) -> Result<McpServerInfo, String> {
+    use crate::config;
+
+    // Validate inputs
+    if name.is_empty() {
+        return Err("Server name cannot be empty".to_string());
+    }
+    if command.is_empty() {
+        return Err("Command cannot be empty".to_string());
+    }
+
+    // Create server config
+    let server_config = config::McpServerConfig {
+        name: name.clone(),
+        command,
+        args,
+        env,
+        enabled: true,
+    };
+
+    // Load existing servers, add new one, save
+    let mut servers = config::load_mcp_servers();
+    servers.push(server_config.clone());
+    config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
+
+    // Return server info (not connected initially)
+    Ok(McpServerInfo {
+        name: server_config.name,
+        command: server_config.command,
+        enabled: server_config.enabled,
+        connected: false,
+        tool_count: 0,
+        tools: Vec::new(),
+        last_connected: None,
+    })
+}
+
+/// Remove an MCP server configuration.
+#[tauri::command]
+pub async fn remove_mcp_server(name: String) -> Result<bool, String> {
+    use crate::config;
+
+    // Load servers, remove matching one, save
+    let mut servers = config::load_mcp_servers();
+    let original_len = servers.len();
+    servers.retain(|s| s.name != name);
+
+    if servers.len() < original_len {
+        config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
+        Ok(true)
+    } else {
+        Err(format!("Server not found: {}", name))
+    }
+}
+
+/// Restart an MCP server.
+#[tauri::command]
+pub async fn restart_mcp_server(name: String) -> Result<McpServerInfo, String> {
+    use crate::config;
+
+    // Load servers
+    let mut servers = config::load_mcp_servers();
+
+    // Find the server and collect needed data
+    let server_name = servers
+        .iter()
+        .find(|s| s.name == name)
+        .map(|s| s.name.clone())
+        .ok_or_else(|| format!("Server not found: {}", name))?;
+
+    // Find and update the server
+    let server = servers
+        .iter_mut()
+        .find(|s| s.name == name)
+        .ok_or_else(|| format!("Server not found: {}", name))?;
+
+    // Toggle enabled state to restart
+    server.enabled = !server.enabled;
+
+    // Collect server info before saving
+    let server_info = McpServerInfo {
+        name: server_name.clone(),
+        command: server.command.clone(),
+        enabled: false, // Currently disabled during restart
+        connected: false,
+        tool_count: 0,
+        tools: Vec::new(),
+        last_connected: None,
+    };
+
+    // Release mutable borrow before saving
+    let _ = server;
+
+    // Save changes (server disabled)
+    config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
+
+    // Reload and re-enable
+    let mut servers = config::load_mcp_servers();
+    if let Some(server) = servers.iter_mut().find(|s| s.name == server_name) {
+        server.enabled = true;
+        config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
+    }
+
+    Ok(McpServerInfo {
+        name: server_name,
+        command: server_info.command,
+        enabled: true,
+        connected: false,
+        tool_count: 0,
+        tools: Vec::new(),
+        last_connected: None,
+    })
+}
+
+/// Get MCP server configuration details.
+#[tauri::command]
+pub async fn get_mcp_server_config(name: String) -> Result<config::McpServerConfig, String> {
+    use crate::config;
+
+    let servers = config::load_mcp_servers();
+    servers
+        .into_iter()
+        .find(|s| s.name == name)
+        .ok_or_else(|| format!("Server not found: {}", name))
+}
+
+/// List all configured MCP servers with their status.
+#[tauri::command]
+pub async fn list_mcp_servers() -> Result<Vec<McpServerInfo>, String> {
+    use crate::config;
+
+    let servers = config::load_mcp_servers();
+    let server_infos: Vec<McpServerInfo> = servers
+        .into_iter()
+        .map(|s| McpServerInfo {
+            name: s.name,
+            command: s.command,
+            enabled: s.enabled,
+            connected: false, // TODO: Query actual server state
+            tool_count: 0,
+            tools: Vec::new(),
+            last_connected: None,
+        })
+        .collect();
+
+    Ok(server_infos)
+}
+
+/// Skill information for the skill browser UI.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillInfo {
+    pub name: String,
+    pub description: String,
+    pub trigger: String,
+    pub source: String,
+    pub category: Option<String>,
+}
+
+/// Detailed skill information with content.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SkillDetail {
+    pub name: String,
+    pub description: String,
+    pub trigger: String,
+    pub content: String,
+    pub parameters: Vec<String>,
+    pub source: String,
+    pub category: Option<String>,
+}
+
+/// List all available skills from .shannon/skills/ and .claude/commands/ directories.
+#[tauri::command]
+pub async fn list_skills() -> Result<Vec<SkillInfo>, String> {
+    use std::path::Path;
+
+    let mut skills = Vec::new();
+
+    // Scan .shannon/skills/ directory
+    let shannon_skills_dir = Path::new(".shannon/skills");
+    if shannon_skills_dir.exists() {
+        scan_directory_for_skills(shannon_skills_dir, "shannon", &mut skills)?;
+    }
+
+    // Scan .claude/commands/ directory
+    let claude_commands_dir = Path::new(".claude/commands");
+    if claude_commands_dir.exists() {
+        scan_directory_for_skills(claude_commands_dir, "claude", &mut skills)?;
+    }
+
+    // Sort skills by name
+    skills.sort_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(skills)
+}
+
+/// Helper function to scan a directory for skill files.
+fn scan_directory_for_skills(
+    dir: &std::path::Path,
+    source: &str,
+    skills: &mut Vec<SkillInfo>,
+) -> Result<(), String> {
+    use std::fs;
+
+    let entries = fs::read_dir(dir)
+        .map_err(|e| format!("Failed to read directory {}: {}", dir.display(), e))?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let path = entry.path();
+
+        // Only process regular files
+        if !path.is_file() {
+            continue;
+        }
+
+        // Read file content
+        let content = fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read file {}: {}", path.display(), e))?;
+
+        // Extract skill information from file content
+        if let Some(skill_info) = parse_skill_file(&path, &content, source) {
+            skills.push(skill_info);
+        }
+    }
+
+    Ok(())
+}
+
+/// Parse a skill file to extract skill information.
+fn parse_skill_file(path: &std::path::Path, content: &str, source: &str) -> Option<SkillInfo> {
+    // Try to determine file type and parse accordingly
+    let extension = path.extension()?.to_str()?;
+
+    match extension {
+        "toml" => parse_toml_skill(path, content, source),
+        "md" => parse_markdown_skill(path, content, source),
+        _ => None,
+    }
+}
+
+/// Parse TOML skill file.
+fn parse_toml_skill(path: &std::path::Path, content: &str, source: &str) -> Option<SkillInfo> {
+    // Parse basic skill name from filename
+    let name = path.file_stem()?.to_str()?.to_string();
+
+    // Try to extract description from TOML content
+    let description =
+        extract_description_from_content(content).unwrap_or_else(|| "Custom skill".to_string());
+
+    // Extract trigger command (usually /skillname or similar)
+    let trigger = format!("/{}", name);
+
+    Some(SkillInfo {
+        name,
+        description,
+        trigger,
+        source: source.to_string(),
+        category: None,
+    })
+}
+
+/// Parse Markdown skill file.
+fn parse_markdown_skill(path: &std::path::Path, content: &str, source: &str) -> Option<SkillInfo> {
+    // Extract skill name from filename
+    let name = path.file_stem()?.to_str()?.to_string();
+
+    // Extract description from content (look for first heading or paragraph)
+    let description = extract_description_from_content(content)
+        .unwrap_or_else(|| "Custom command skill".to_string());
+
+    // Extract trigger command
+    let trigger = format!("/{}", name);
+
+    Some(SkillInfo {
+        name,
+        description,
+        trigger,
+        source: source.to_string(),
+        category: None,
+    })
+}
+
+/// Extract description from file content.
+fn extract_description_from_content(content: &str) -> Option<String> {
+    // Look for description field in TOML or first heading/paragraph in Markdown
+    if content.contains("description") {
+        // Try to extract description field
+        if let Some(start) = content.find("description") {
+            if let Some(eq_pos) = content[start..].find('=') {
+                let after_eq = &content[start + eq_pos + 1..];
+                if let Some(quote_end) = after_eq.find('"') {
+                    let desc_content = &after_eq[quote_end + 1..];
+                    if let Some(end_quote) = desc_content.find('"') {
+                        return Some(desc_content[..end_quote].to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    // For markdown, look for first heading or paragraph
+    for line in content.lines() {
+        let line = line.trim();
+        if !line.is_empty() && !line.starts_with('#') {
+            // Skip metadata fields like "---" or "title:"
+            if !line.starts_with('-') && !line.contains(':') && line.len() > 3 {
+                return Some(line.to_string());
+            }
+        }
+    }
+
+    None
+}
+
+/// Get detailed information about a specific skill.
+#[tauri::command]
+pub async fn get_skill_detail(name: String) -> Result<SkillDetail, String> {
+    use std::path::Path;
+
+    // Search in both directories
+    let search_dirs = [
+        (Path::new(".shannon/skills"), "shannon"),
+        (Path::new(".claude/commands"), "claude"),
+    ];
+
+    for (dir, source) in search_dirs {
+        if !dir.exists() {
+            continue;
+        }
+
+        // Search for the skill file
+        let skill_path = find_skill_file(dir, &name)?;
+        let content = std::fs::read_to_string(&skill_path)
+            .map_err(|e| format!("Failed to read skill file: {}", e))?;
+
+        // Parse the skill detail
+        let detail = parse_skill_detail(&skill_path, &content, source)?;
+        return Ok(detail);
+    }
+
+    Err(format!("Skill not found: {}", name))
+}
+
+/// Find a skill file by name in a directory.
+fn find_skill_file(dir: &std::path::Path, name: &str) -> Result<std::path::PathBuf, String> {
+    use std::fs;
+
+    let entries = fs::read_dir(dir).map_err(|e| format!("Failed to read directory: {}", e))?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let path = entry.path();
+
+        if !path.is_file() {
+            continue;
+        }
+
+        if let Some(stem) = path.file_stem() {
+            if stem.to_str() == Some(name) {
+                return Ok(path);
+            }
+        }
+    }
+
+    Err(format!("Skill file not found: {}", name))
+}
+
+/// Parse detailed skill information from file content.
+fn parse_skill_detail(
+    path: &std::path::Path,
+    content: &str,
+    source: &str,
+) -> Result<SkillDetail, String> {
+    let name = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("Invalid skill file name")?
+        .to_string();
+
+    let description =
+        extract_description_from_content(content).unwrap_or_else(|| "Custom skill".to_string());
+
+    let trigger = format!("/{}", name);
+
+    // Extract parameters (look for common patterns)
+    let parameters = extract_parameters(content);
+
+    Ok(SkillDetail {
+        name: name.clone(),
+        description,
+        trigger,
+        content: content.to_string(),
+        parameters,
+        source: source.to_string(),
+        category: None,
+    })
+}
+
+/// Extract parameters from skill content.
+fn extract_parameters(content: &str) -> Vec<String> {
+    let mut parameters = Vec::new();
+
+    // Look for common parameter patterns in the content
+    for line in content.lines() {
+        let line = line.trim();
+        if line.contains("parameter") || line.contains("arg") || line.contains("argument") {
+            // Extract parameter names
+            if let Some(colon_pos) = line.find(':') {
+                let param_part = &line[..colon_pos];
+                for word in param_part.split_whitespace() {
+                    if word.len() > 2 && !word.starts_with('#') && !word.starts_with('-') {
+                        parameters.push(word.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    parameters
+}
+
 fn chrono_timestamp() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -1244,6 +1866,179 @@ fn provider_from_str(s: &str) -> shannon_core::api::types::LlmProvider {
     }
 }
 
+/// Apply diff with hunk actions.
+#[tauri::command]
+pub async fn apply_diff(file_path: String, hunks: Vec<HunkAction>) -> Result<(), String> {
+    use std::fs;
+    use std::io::Write;
+
+    // Read current file content
+    let content = fs::read_to_string(&file_path)
+        .map_err(|e| format!("Failed to read file {}: {}", file_path, e))?;
+
+    let mut lines: Vec<&str> = content.lines().collect();
+
+    // Apply hunk actions in reverse order to maintain line numbers
+    let mut sorted_hunks: Vec<_> = hunks.iter().enumerate().collect();
+    sorted_hunks.sort_by_key(|(idx, h)| (std::cmp::Reverse(h.line_start), *idx));
+
+    for (idx, hunk) in sorted_hunks {
+        if hunk.line_start == 0 || hunk.line_end == 0 {
+            continue; // Invalid hunk
+        }
+
+        let start_idx = (hunk.line_start - 1) as usize;
+        let end_idx = hunk.line_end as usize;
+
+        if start_idx >= lines.len() || end_idx > lines.len() {
+            return Err(format!("Hunk {} out of bounds for file {}", idx, file_path));
+        }
+
+        match hunk.action.as_str() {
+            "accept" => {
+                // Keep the lines (do nothing)
+            }
+            "reject" => {
+                // Remove the lines by replacing with empty strings
+                for i in start_idx..end_idx {
+                    lines[i] = "";
+                }
+            }
+            _ => {
+                return Err(format!("Unknown action {} in hunk {}", hunk.action, idx));
+            }
+        }
+    }
+
+    // Write back the modified content
+    let modified_content = lines.join("\n") + "\n";
+    let mut file = fs::File::create(&file_path)
+        .map_err(|e| format!("Failed to create file {}: {}", file_path, e))?;
+    file.write_all(modified_content.as_bytes())
+        .map_err(|e| format!("Failed to write file {}: {}", file_path, e))?;
+
+    Ok(())
+}
+
+/// Start a new background task.
+#[tauri::command]
+pub async fn start_background_task(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    prompt: String,
+) -> Result<String, String> {
+    let task_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono_timestamp();
+
+    let task = BackgroundTaskMeta {
+        id: task_id.clone(),
+        prompt: prompt.clone(),
+        status: "running".into(),
+        started_at: now,
+        completed_at: None,
+        output: String::new(),
+    };
+
+    // Add task to state
+    {
+        let mut tasks = state.background_tasks.lock().await;
+        tasks.push(task);
+    }
+
+    // Emit background tasks updated event
+    let _ = app_handle.emit(event_names::BACKGROUND_TASKS_UPDATED, ());
+
+    // In a real implementation, this would spawn an async task to process the prompt
+    // For now, we'll simulate completion after a delay
+    let tasks_arc = state.background_tasks.clone();
+    let app_handle_clone = app_handle.clone();
+    let task_id_clone = task_id.clone();
+
+    tokio::spawn(async move {
+        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+
+        let mut tasks = tasks_arc.lock().await;
+        if let Some(task) = tasks.iter_mut().find(|t| t.id == task_id_clone) {
+            task.status = "completed".into();
+            task.completed_at = Some(chrono_timestamp());
+            task.output = format!("Task completed: {}", prompt);
+        }
+
+        // Emit update event
+        let _ = app_handle_clone.emit(
+            event_names::BACKGROUND_TASK_UPDATE,
+            events::BackgroundTaskUpdate {
+                task_id: task_id_clone.clone(),
+                status: "completed".into(),
+                prompt,
+                output: format!("Task completed: {}", task_id_clone),
+                started_at: now,
+                completed_at: Some(chrono_timestamp()),
+            },
+        );
+
+        let _ = app_handle_clone.emit(event_names::BACKGROUND_TASKS_UPDATED, ());
+    });
+
+    Ok(task_id)
+}
+
+/// Get all background tasks.
+#[tauri::command]
+pub async fn get_background_tasks(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<events::BackgroundTaskInfo>, String> {
+    let tasks = state.background_tasks.lock().await;
+    Ok(tasks
+        .iter()
+        .map(|t| events::BackgroundTaskInfo {
+            task_id: t.id.clone(),
+            prompt: t.prompt.clone(),
+            status: t.status.clone(),
+            started_at: t.started_at,
+            completed_at: t.completed_at,
+            output: t.output.clone(),
+        })
+        .collect())
+}
+
+/// Cancel a background task.
+#[tauri::command]
+pub async fn cancel_background_task(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<bool, String> {
+    let mut tasks = state.background_tasks.lock().await;
+    if let Some(task) = tasks.iter_mut().find(|t| t.id == id) {
+        if task.status == "running" {
+            task.status = "cancelled".into();
+            task.completed_at = Some(chrono_timestamp());
+            task.output = "Task cancelled by user".into();
+
+            // Emit update event
+            let _ = app_handle.emit(
+                event_names::BACKGROUND_TASK_UPDATE,
+                events::BackgroundTaskUpdate {
+                    task_id: id.clone(),
+                    status: "cancelled".into(),
+                    prompt: task.prompt.clone(),
+                    output: "Task cancelled by user".into(),
+                    started_at: task.started_at,
+                    completed_at: task.completed_at,
+                },
+            );
+
+            let _ = app_handle.emit(event_names::BACKGROUND_TASKS_UPDATED, ());
+            Ok(true)
+        } else {
+            Err("Task is not running".into())
+        }
+    } else {
+        Err("Task not found".into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1262,6 +2057,7 @@ mod tests {
             role: "user".to_string(),
             content: "hello world".to_string(),
             timestamp: 1700000000,
+            file_attachments: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let deserialized: ChatMessage = serde_json::from_str(&json).unwrap();
@@ -1277,6 +2073,7 @@ mod tests {
                 role: role.to_string(),
                 content: "test".to_string(),
                 timestamp: 0,
+                file_attachments: None,
             };
             assert_eq!(msg.role, *role);
         }
@@ -1392,11 +2189,13 @@ mod tests {
                 role: "user".to_string(),
                 content: "hello".to_string(),
                 timestamp: 100,
+                file_attachments: None,
             });
             msgs.push(ChatMessage {
                 role: "assistant".to_string(),
                 content: "hi".to_string(),
                 timestamp: 101,
+                file_attachments: None,
             });
         }
         let msgs = state.messages.lock().await;

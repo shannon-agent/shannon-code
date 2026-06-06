@@ -1,11 +1,26 @@
 // Integration test for App component
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
-import { AppStateProvider } from '../context/AppState'
+import { AppStateProvider, useAppState } from '../context/AppState'
 import { Layout } from '../components/Layout'
 import { ChatMessage } from '../components/ChatMessage'
 import { MessageInput } from '../components/MessageInput'
 import { StatusBar } from '../components/StatusBar'
+import { ToastProvider } from '../components/ToastProvider'
+import { ThemeProvider } from '../context/ThemeContext'
+
+// Wrapper that matches App.tsx provider order — catches provider ordering bugs
+function AllProviders({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <AppStateProvider>
+          {children}
+        </AppStateProvider>
+      </ToastProvider>
+    </ThemeProvider>
+  )
+}
 
 // Mock all Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -60,11 +75,11 @@ describe('App Integration', () => {
 
   it('renders app without crashing', async () => {
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <Layout>
           <div>Test Content</div>
         </Layout>
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -85,9 +100,9 @@ describe('App Integration', () => {
     }
 
     const { getByTestId } = render(
-      <AppStateProvider>
+      <AllProviders>
         <TestComponent />
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -99,7 +114,7 @@ describe('App Integration', () => {
 
   it('integrates ChatMessage with context', async () => {
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <ChatMessage
           message={{
             role: 'user',
@@ -107,7 +122,7 @@ describe('App Integration', () => {
             timestamp: Date.now()
           }}
         />
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -128,15 +143,15 @@ describe('App Integration', () => {
       fireEvent.change(input, { target: { value: 'Test' } })
       fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })
 
-      expect(handleSend).toHaveBeenCalledWith('Test')
+      expect(handleSend).toHaveBeenCalledWith('Test', undefined)
     }
   })
 
   it('integrates StatusBar with context', async () => {
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <StatusBar />
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -152,9 +167,9 @@ describe('App Integration', () => {
     }
 
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <LoadingComponent />
-      </AppStateProvider>
+      </AllProviders>
     )
 
     // Initially shows loading
@@ -168,14 +183,14 @@ describe('App Integration', () => {
 
   it('integrates Layout with sidebar and panel', async () => {
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <Layout
           sidebar={<div>Sidebar</div>}
           panel={<div>Panel</div>}
         >
           <div>Main Content</div>
         </Layout>
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -198,9 +213,9 @@ describe('App Integration', () => {
     }
 
     const { container } = render(
-      <AppStateProvider>
+      <AllProviders>
         <ContextChecker />
-      </AppStateProvider>
+      </AllProviders>
     )
 
     await waitFor(() => {
@@ -208,6 +223,3 @@ describe('App Integration', () => {
     })
   })
 })
-
-// Import useAppState for the test
-import { useAppState } from '../context/AppState'

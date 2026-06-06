@@ -7,6 +7,7 @@ import {
   getConversation,
   respondPermission as respondPermissionApi
 } from '../lib/tauri-api'
+import { useToast } from '../components/ToastProvider'
 import type {
   ChatMessage,
   QueryTextPayload,
@@ -15,7 +16,8 @@ import type {
   UsagePayload,
   QueryCompletedPayload,
   QueryFailedPayload,
-  PermissionRequest
+  PermissionRequest,
+  ThinkingPayload
 } from '../types/tauri-events'
 import type { AgentMode } from '../components/ModeToggle'
 import { EVENT_NAMES } from '../types/tauri-events'
@@ -38,6 +40,7 @@ interface AppStateContextType {
   config: DesktopConfig | null
   loading: boolean
   streamingText: string
+  thinkingText: string
   activeToolCalls: ToolCall[]
   usage: { inputTokens: number; outputTokens: number; costUsd: number } | null
   permissionRequest: PermissionRequest | null
@@ -60,10 +63,12 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
   const [config, setConfig] = useState<DesktopConfig | null>(null)
   const [loading, setLoading] = useState(true)
   const [streamingText, setStreamingText] = useState('')
+  const [thinkingText, setThinkingText] = useState('')
   const [activeToolCalls, setActiveToolCalls] = useState<ToolCall[]>([])
   const [usage, setUsage] = useState<{ inputTokens: number; outputTokens: number; costUsd: number } | null>(null)
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null)
   const [mode, setMode] = useState<AgentMode>('act')
+  const { addToast } = useToast()
 
   // Load initial state on mount
   useEffect(() => {
@@ -97,11 +102,12 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
       setPermissionRequest(null)
       try {
         await respondPermissionApi(requestId, allow)
+        addToast(`Permission ${allow ? 'approved' : 'denied'}`, 'info')
       } catch (error) {
         console.error('Failed to respond to permission:', error)
       }
     }
-  }, [permissionRequest])
+  }, [permissionRequest, addToast])
 
   // Subscribe to Tauri events
   useEffect(() => {
@@ -111,6 +117,13 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     unlisteners.push(
       listen<QueryTextPayload>(EVENT_NAMES.QUERY_TEXT, (event) => {
         setStreamingText(prev => prev + event.payload.content)
+      })
+    )
+
+    // Thinking content — accumulate during streaming
+    unlisteners.push(
+      listen<ThinkingPayload>(EVENT_NAMES.QUERY_THINKING, (event) => {
+        setThinkingText(prev => prev + event.payload.content)
       })
     )
 
@@ -163,7 +176,9 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
       listen<QueryCompletedPayload>(EVENT_NAMES.QUERY_COMPLETED, async () => {
         setQuerying(false)
         setStreamingText('')
+        setThinkingText('')
         setActiveToolCalls([])
+        addToast('Response received', 'success')
         try {
           const conversation = await getConversation()
           setMessages(conversation)
@@ -175,10 +190,12 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
 
     // Query failed
     unlisteners.push(
-      listen<QueryFailedPayload>(EVENT_NAMES.QUERY_FAILED, () => {
+      listen<QueryFailedPayload>(EVENT_NAMES.QUERY_FAILED, (event) => {
         setQuerying(false)
         setStreamingText('')
+        setThinkingText('')
         setActiveToolCalls([])
+        addToast(`Query failed: ${event.payload.error}`, 'error')
       })
     )
 
@@ -205,6 +222,7 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     config,
     loading,
     streamingText,
+    thinkingText,
     activeToolCalls,
     usage,
     permissionRequest,
