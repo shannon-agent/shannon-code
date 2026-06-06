@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tokyo Night theme CSS variables (default) */
+:root,
+[data-theme='tokyo-night'] {
+  --bg-primary: #1a1b26;
+  --bg-secondary: #24283b;
+  --bg-input: #1f2335;
+  --text-primary: #c0caf5;
+  --text-secondary: #a9b1d6;
+  --text-muted: #565f89;
+  --accent: #7aa2f7;
+  --accent-hover: #89b4fa;
+  --border: #3b4261;
+  --user-bg: #2a2f4a;
+  --assistant-bg: #24283b;
+  --tool-bg: #1f2335;
+  --tool-header-bg: #2a2f4a;
+  --success: #9ece6a;
+  --error: #f7768e;
+  --warning: #e0af68;
+  --running: #7aa2f7;
+  --cancelled: #e0af68;
+}
+
+/* Tokyo Night Light theme */
+[data-theme='tokyo-night-light'] {
+  --bg-primary: #e1e2e7;
+  --bg-secondary: #c6c8d1;
+  --bg-input: #d4d5e0;
+  --text-primary: #2a2f4a;
+  --text-secondary: #3b4261;
+  --text-muted: #7aa2f7;
+  --accent: #7aa2f7;
+  --accent-hover: #5d7fce;
+  --border: #a9b1d6;
+  --user-bg: #d4d5e0;
+  --assistant-bg: #c6c8d1;
+  --tool-bg: #e1e2e7;
+  --tool-header-bg: #d4d5e0;
+  --success: #5d7fce;
+  --error: #f7768e;
+  --warning: #e0af68;
+  --running: #7aa2f7;
+  --cancelled: #e0af68;
+}
+
+/* Catppuccin Mocha theme */
+[data-theme='catppuccin'] {
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #313244;
+  --bg-input: #45475a;
+  --text-primary: #cdd6f4;
+  --text-secondary: #bac2de;
+  --text-muted: #6c7086;
+  --accent: #cba6f7;
+  --accent-hover: #b4befe;
+  --border: #45475a;
+  --user-bg: #313244;
+  --assistant-bg: #1e1e2e;
+  --tool-bg: #181825;
+  --tool-header-bg: #313244;
+  --success: #a6e3a1;
+  --error: #f38ba8;
+  --warning: #fab387;
+  --running: #89b4fa;
+  --cancelled: #fab387;
+}
+
+/* Nord theme */
+[data-theme='nord'] {
+  --bg-primary: #2e3440;
+  --bg-secondary: #3b4252;
+  --bg-input: #434c5e;
+  --text-primary: #eceff4;
+  --text-secondary: #e5e9f0;
+  --text-muted: #4c566a;
+  --accent: #88c0d0;
+  --accent-hover: #81a1c1;
+  --border: #4c566a;
+  --user-bg: #3b4252;
+  --assistant-bg: #2e3440;
+  --tool-bg: #3b4252;
+  --tool-header-bg: #434c5e;
+  --success: #a3be8c;
+  --error: #bf616a;
+  --warning: #ebcb8b;
+  --running: #88c0d0;
+  --cancelled: #ebcb8b;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Syntax highlighting for code blocks (will be replaced by rehype-highlight in components) */
+.hljs {
+  background: var(--bg-input);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}

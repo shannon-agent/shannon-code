@@ -21,6 +21,12 @@ fn main() {
             commands::configure,
             commands::switch_provider,
             commands::get_config,
+            commands::new_session,
+            commands::list_sessions,
+            commands::load_session,
+            commands::delete_session,
+            commands::request_permission,
+            commands::respond_permission,
         ])
         .setup(|app| {
             let state = commands::AppState::new();

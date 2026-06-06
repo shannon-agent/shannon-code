@@ -9,27 +9,31 @@ use std::path::PathBuf;
 /// Desktop app configuration persisted across sessions.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DesktopConfig {
-    pub provider: String,
+    pub provider: Option<String>,
     pub api_key: Option<String>,
     pub base_url: Option<String>,
-    pub model: String,
+    pub model: Option<String>,
+    pub working_dir: Option<String>,
+    pub theme: Option<String>,
 }
 
 impl Default for DesktopConfig {
     fn default() -> Self {
         Self {
-            provider: "anthropic".into(),
+            provider: Some("anthropic".into()),
             api_key: None,
             base_url: None,
-            model: "claude-sonnet-4-6".into(),
+            model: Some("claude-sonnet-4-6".into()),
+            working_dir: None,
+            theme: None,
         }
     }
 }
 
-/// Resolve the config file path: `~/.shannon/desktop.json`
+/// Resolve the config file path: `~/.shannon/desktop/config.json`
 fn config_path() -> PathBuf {
     let home = dirs_home().unwrap_or_else(|| PathBuf::from("."));
-    home.join(".shannon").join("desktop.json")
+    home.join(".shannon").join("desktop").join("config.json")
 }
 
 fn dirs_home() -> Option<PathBuf> {
@@ -65,30 +69,35 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = DesktopConfig::default();
-        assert_eq!(config.provider, "anthropic");
+        assert_eq!(config.provider, Some("anthropic".into()));
         assert!(config.api_key.is_none());
-        assert_eq!(config.model, "claude-sonnet-4-6");
+        assert_eq!(config.model, Some("claude-sonnet-4-6".into()));
+        assert!(config.working_dir.is_none());
+        assert!(config.theme.is_none());
     }
 
     #[test]
     fn test_config_serialization_roundtrip() {
         let config = DesktopConfig {
-            provider: "openai".into(),
+            provider: Some("openai".into()),
             api_key: Some("sk-test".into()),
             base_url: Some("https://api.openai.com".into()),
-            model: "gpt-4.1".into(),
+            model: Some("gpt-4.1".into()),
+            working_dir: None,
+            theme: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed.provider, "openai");
+        assert_eq!(parsed.provider, Some("openai".into()));
         assert_eq!(parsed.api_key, Some("sk-test".into()));
-        assert_eq!(parsed.model, "gpt-4.1");
+        assert_eq!(parsed.model, Some("gpt-4.1".into()));
     }
 
     #[test]
     fn test_config_path_is_under_shannon_dir() {
         let path = config_path();
         assert!(path.to_string_lossy().contains(".shannon"));
-        assert!(path.to_string_lossy().contains("desktop.json"));
+        assert!(path.to_string_lossy().contains("desktop"));
+        assert!(path.to_string_lossy().contains("config.json"));
     }
 }

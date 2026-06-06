@@ -7,8 +7,22 @@
 //! The types and logic here mirror `src/commands.rs`. When the production code
 //! changes, these tests must be updated to match.
 
+use shannon_core::api::{Message, MessageContent};
+use shannon_core::state::StateManager;
+use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock, oneshot};
+use tokio_util::sync::CancellationToken;
+
+#[derive(Debug, Clone, Default)]
+struct TestDesktopConfig {
+    provider: Option<String>,
+    api_key: Option<String>,
+    base_url: Option<String>,
+    model: Option<String>,
+    working_dir: Option<String>,
+    theme: Option<String>,
+}
 
 // ── Replicated types (mirror of commands.rs) ──────────────────────
 
@@ -62,11 +76,25 @@ struct SendMessageResponse {
     query_id: String,
 }
 
+/// Session metadata for session list (mirrors commands.rs).
+#[derive(Debug, Clone)]
+struct SessionMeta {
+    id: String,
+    title: String,
+    created_at: i64,
+    _message_count: usize,
+}
+
 struct AppState {
     messages: Arc<Mutex<Vec<ChatMessage>>>,
     querying: Arc<Mutex<bool>>,
     model: Arc<Mutex<String>>,
     provider: Arc<Mutex<String>>,
+    pending_permissions: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
+    sessions: Arc<Mutex<Vec<SessionMeta>>>,
+    state_manager: Arc<StateManager>,
+    cancellation_token: Arc<Mutex<Option<CancellationToken>>>,
+    desktop_config: Arc<RwLock<TestDesktopConfig>>,
 }
 
 impl AppState {
@@ -76,6 +104,11 @@ impl AppState {
             querying: Arc::new(Mutex::new(false)),
             model: Arc::new(Mutex::new("claude-sonnet-4-6".into())),
             provider: Arc::new(Mutex::new("anthropic".into())),
+            pending_permissions: Arc::new(Mutex::new(HashMap::new())),
+            sessions: Arc::new(Mutex::new(Vec::new())),
+            state_manager: Arc::new(StateManager::new()),
+            cancellation_token: Arc::new(Mutex::new(None)),
+            desktop_config: Arc::new(RwLock::new(TestDesktopConfig::default())),
         }
     }
 }
@@ -227,15 +260,57 @@ async fn get_status(state: &AppState) -> StatusResponse {
 }
 
 async fn cancel_query(state: &AppState) {
-    let mut querying = state.querying.lock().await;
-    *querying = false;
+    // Take the cancellation token and cancel it
+    let token_opt = {
+        let mut token_guard = state.cancellation_token.lock().await;
+        token_guard.take()
+    };
+
+    if let Some(token) = token_opt {
+        token.cancel();
+    }
+
+    // Clear querying flag
+    {
+        let mut querying = state.querying.lock().await;
+        *querying = false;
+    }
 }
 
 async fn configure(state: &AppState, update: ConfigUpdate) -> Result<(), String> {
     match update.key.as_str() {
         "model" => {
             let mut model = state.model.lock().await;
-            *model = update.value;
+            *model = update.value.clone();
+            let mut cfg = state.desktop_config.write().await;
+            cfg.model = Some(update.value);
+            Ok(())
+        }
+        "api_key" => {
+            let mut cfg = state.desktop_config.write().await;
+            cfg.api_key = Some(update.value);
+            Ok(())
+        }
+        "base_url" => {
+            let mut cfg = state.desktop_config.write().await;
+            cfg.base_url = Some(update.value);
+            Ok(())
+        }
+        "provider" => {
+            let mut provider = state.provider.lock().await;
+            *provider = update.value.clone();
+            let mut cfg = state.desktop_config.write().await;
+            cfg.provider = Some(update.value);
+            Ok(())
+        }
+        "working_dir" => {
+            let mut cfg = state.desktop_config.write().await;
+            cfg.working_dir = Some(update.value);
+            Ok(())
+        }
+        "theme" => {
+            let mut cfg = state.desktop_config.write().await;
+            cfg.theme = Some(update.value);
             Ok(())
         }
         _ => Err(format!("Unknown config key: {}", update.key)),
@@ -293,6 +368,148 @@ fn provider_from_str(s: &str) -> String {
         "anthropic" | "openai" | "ollama" | "deepseek" | "gemini" | "mistral" | "groq"
         | "openrouter" | "xai" => s.to_string(),
         _ => "custom".to_string(),
+    }
+}
+
+// ── Session management (mirrors commands.rs) ──────────────────────
+
+/// Mirrors new_session: creates session, persists to state_manager, returns UUID.
+async fn new_session(state: &AppState) -> Result<String, String> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let title = format!("Session {}", id.split('-').next().unwrap_or(&id));
+    let now = chrono_timestamp();
+
+    let session_meta = SessionMeta {
+        id: id.clone(),
+        title: title.clone(),
+        created_at: now,
+        _message_count: 0,
+    };
+
+    {
+        let mut sessions = state.sessions.lock().await;
+        sessions.push(session_meta);
+    }
+
+    // Persist empty session to state_manager
+    let uuid = uuid::Uuid::parse_str(&id).map_err(|e| e.to_string())?;
+    let metadata = shannon_core::state::SessionPersistMetadata {
+        model: "test".to_string(),
+        turn_count: 0,
+        title: Some(title),
+        ..Default::default()
+    };
+    state
+        .state_manager
+        .save_session(&uuid, &[], &metadata)
+        .map_err(|e| e.to_string())?;
+
+    Ok(id)
+}
+
+/// Mirrors list_sessions: returns session info.
+async fn list_sessions(state: &AppState) -> Vec<SessionMeta> {
+    state.sessions.lock().await.clone()
+}
+
+/// Mirrors load_session: finds session by ID, loads messages from state_manager.
+async fn load_session(state: &AppState, id: &str) -> Result<Vec<ChatMessage>, String> {
+    let sessions = state.sessions.lock().await;
+    sessions
+        .iter()
+        .find(|s| s.id == id)
+        .ok_or_else(|| format!("Session not found: {}", id))?;
+    drop(sessions);
+
+    let uuid = uuid::Uuid::parse_str(id).map_err(|e| e.to_string())?;
+    let session_data = state
+        .state_manager
+        .load_session(&uuid)
+        .map_err(|e| e.to_string())?;
+
+    match session_data {
+        Some(data) => {
+            let messages: Vec<ChatMessage> = data
+                .messages
+                .into_iter()
+                .map(|m| ChatMessage {
+                    role: m.role,
+                    content: match m.content {
+                        shannon_core::api::MessageContent::Text(t) => t,
+                        shannon_core::api::MessageContent::Blocks(blocks) => blocks
+                            .into_iter()
+                            .filter_map(|b| match b {
+                                shannon_core::api::ContentBlock::Text { text } => Some(text),
+                                _ => None,
+                            })
+                            .collect::<Vec<_>>()
+                            .join(""),
+                    },
+                    timestamp: chrono_timestamp(),
+                })
+                .collect();
+            Ok(messages)
+        }
+        None => Ok(vec![]),
+    }
+}
+
+/// Mirrors delete_session: removes session by ID and deletes file.
+async fn delete_session(state: &AppState, id: &str) -> Result<bool, String> {
+    let mut sessions = state.sessions.lock().await;
+    let original_len = sessions.len();
+    sessions.retain(|s| s.id != id);
+    let removed = sessions.len() < original_len;
+    drop(sessions);
+
+    if removed {
+        if let Ok(uuid) = uuid::Uuid::parse_str(id) {
+            let _ = state.state_manager.delete_session(uuid);
+            // Also delete session file from disk (StateManager only removes from memory)
+            let home = std::env::var("HOME")
+                .or_else(|_| std::env::var("USERPROFILE"))
+                .ok();
+            if let Some(home) = home {
+                let path = std::path::PathBuf::from(home)
+                    .join(".shannon")
+                    .join("sessions")
+                    .join(format!("{}.json", uuid));
+                let _ = std::fs::remove_file(&path);
+            }
+        }
+    }
+
+    Ok(removed)
+}
+
+// ── Permission bridge (mirrors commands.rs) ────────────────────────
+
+/// Mirrors request_permission: creates channel, stores sender.
+async fn request_permission_setup(
+    state: &AppState,
+    _tool: String,
+    _input: serde_json::Value,
+    _risk: String,
+) -> (String, oneshot::Receiver<bool>) {
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let (tx, rx) = oneshot::channel();
+
+    {
+        let mut pending = state.pending_permissions.lock().await;
+        pending.insert(request_id.clone(), tx);
+    }
+
+    (request_id, rx)
+}
+
+/// Mirrors respond_permission: finds and sends response.
+async fn respond_permission(state: &AppState, request_id: &str, allow: bool) -> Result<(), String> {
+    let mut pending = state.pending_permissions.lock().await;
+    if let Some(tx) = pending.remove(request_id) {
+        let _ = tx.send(allow);
+        Ok(())
+    } else {
+        Err(format!("Permission request not found: {}", request_id))
     }
 }
 
@@ -661,4 +878,527 @@ fn test_anthropic_models_match_production_ids() {
         ids.contains(&"claude-opus-4-7"),
         "must match production model id"
     );
+}
+
+// ── new_session ────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn new_session_returns_uuid() {
+    let state = AppState::new();
+    let result = new_session(&state).await;
+    assert!(result.is_ok());
+    let id = result.unwrap();
+    assert_eq!(id.len(), 36); // UUID v4 format
+}
+
+#[tokio::test]
+async fn new_session_adds_to_sessions_list() {
+    let state = AppState::new();
+    let _ = new_session(&state).await.unwrap();
+    let sessions = list_sessions(&state).await;
+    assert_eq!(sessions.len(), 1);
+    assert!(!sessions[0].id.is_empty());
+}
+
+#[tokio::test]
+async fn new_session_title_contains_prefix() {
+    let state = AppState::new();
+    let _ = new_session(&state).await.unwrap();
+    let sessions = list_sessions(&state).await;
+    assert!(sessions[0].title.starts_with("Session "));
+}
+
+// ── list_sessions ───────────────────────────────────────────────────
+
+#[tokio::test]
+async fn list_sessions_empty_initially() {
+    let state = AppState::new();
+    let sessions = list_sessions(&state).await;
+    assert!(sessions.is_empty());
+}
+
+#[tokio::test]
+async fn list_sessions_returns_all_sessions() {
+    let state = AppState::new();
+    let _ = new_session(&state).await.unwrap();
+    let _ = new_session(&state).await.unwrap();
+    let sessions = list_sessions(&state).await;
+    assert_eq!(sessions.len(), 2);
+}
+
+#[tokio::test]
+async fn list_sessions_has_valid_timestamps() {
+    let state = AppState::new();
+    let _ = new_session(&state).await.unwrap();
+    let sessions = list_sessions(&state).await;
+    assert!(sessions[0].created_at > 1704067200); // After 2024-01-01
+}
+
+// ── load_session ─────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn load_session_finds_existing_session() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+    let result = load_session(&state, &id).await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn load_session_returns_error_for_unknown_session() {
+    let state = AppState::new();
+    let result = load_session(&state, "unknown-id").await;
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not found"));
+}
+
+#[tokio::test]
+async fn load_session_returns_empty_messages_mvp() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+    let messages = load_session(&state, &id).await.unwrap();
+    assert!(messages.is_empty()); // MVP returns empty
+}
+
+// ── delete_session ───────────────────────────────────────────────────
+
+#[tokio::test]
+async fn delete_session_removes_existing_session() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+    let result = delete_session(&state, &id).await;
+    assert!(result.is_ok());
+    assert!(result.unwrap()); // Deleted
+    assert!(list_sessions(&state).await.is_empty());
+}
+
+#[tokio::test]
+async fn delete_session_returns_false_for_unknown_session() {
+    let state = AppState::new();
+    let result = delete_session(&state, "unknown").await;
+    assert!(result.is_ok());
+    assert!(!result.unwrap()); // Not deleted
+}
+
+#[tokio::test]
+async fn delete_session_only_removes_targeted_session() {
+    let state = AppState::new();
+    let id1 = new_session(&state).await.unwrap();
+    let id2 = new_session(&state).await.unwrap();
+    let _ = delete_session(&state, &id1).await;
+    let sessions = list_sessions(&state).await;
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].id, id2);
+}
+
+// ── request_permission / respond_permission ───────────────────────
+
+#[tokio::test]
+async fn request_permission_creates_pending_entry() {
+    let state = AppState::new();
+    let (request_id, _rx) = request_permission_setup(
+        &state,
+        "bash".into(),
+        serde_json::json!({"command": "ls"}),
+        "medium".into(),
+    )
+    .await;
+    let pending = state.pending_permissions.lock().await;
+    assert!(pending.contains_key(&request_id));
+}
+
+#[tokio::test]
+async fn respond_permission_allows_execution() {
+    let state = AppState::new();
+    let (request_id, rx) = request_permission_setup(
+        &state,
+        "bash".into(),
+        serde_json::json!({"command": "ls"}),
+        "low".into(),
+    )
+    .await;
+    let _ = respond_permission(&state, &request_id, true).await;
+    let allowed = rx.await.unwrap();
+    assert!(allowed);
+}
+
+#[tokio::test]
+async fn respond_permission_denies_execution() {
+    let state = AppState::new();
+    let (request_id, rx) = request_permission_setup(
+        &state,
+        "write".into(),
+        serde_json::json!({"path": "/tmp/test"}),
+        "high".into(),
+    )
+    .await;
+    let _ = respond_permission(&state, &request_id, false).await;
+    let allowed = rx.await.unwrap();
+    assert!(!allowed);
+}
+
+#[tokio::test]
+async fn respond_permission_returns_error_for_unknown_request() {
+    let state = AppState::new();
+    let result = respond_permission(&state, "unknown-id", true).await;
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not found"));
+}
+
+#[tokio::test]
+async fn permission_timeout_returns_false() {
+    let state = AppState::new();
+    let (request_id, rx) = request_permission_setup(
+        &state,
+        "bash".into(),
+        serde_json::json!({"command": "sleep 10"}),
+        "medium".into(),
+    )
+    .await;
+
+    // Simulate timeout by dropping the sender without responding
+    {
+        let mut pending = state.pending_permissions.lock().await;
+        pending.remove(&request_id);
+    }
+
+    let result = tokio::time::timeout(tokio::time::Duration::from_millis(100), rx).await;
+    assert!(result.is_err() || result.unwrap().is_err()); // Timeout or error
+}
+
+// ── Session lifecycle integration ─────────────────────────────────────
+
+#[tokio::test]
+async fn session_lifecycle_create_list_delete() {
+    let state = AppState::new();
+
+    // Create session
+    let id = new_session(&state).await.unwrap();
+
+    // List sessions
+    let sessions = list_sessions(&state).await;
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].id, id);
+
+    // Delete session
+    let deleted = delete_session(&state, &id).await.unwrap();
+    assert!(deleted);
+
+    // Verify deletion
+    let sessions = list_sessions(&state).await;
+    assert!(sessions.is_empty());
+}
+
+#[tokio::test]
+async fn multiple_sessions_independent() {
+    let state = AppState::new();
+
+    let id1 = new_session(&state).await.unwrap();
+    let id2 = new_session(&state).await.unwrap();
+
+    assert_ne!(id1, id2);
+
+    let _ = delete_session(&state, &id1).await;
+
+    let sessions = list_sessions(&state).await;
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0].id, id2);
+}
+
+// ── Session Persistence Tests ───────────────────────────────────────────
+
+#[tokio::test]
+async fn session_persistence_creates_file() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+
+    // Verify session file was created
+    let session_uuid = uuid::Uuid::parse_str(&id).unwrap();
+    let session_data = state.state_manager.load_session(&session_uuid).unwrap();
+    assert!(
+        session_data.is_some(),
+        "Session file should exist after creation"
+    );
+}
+
+#[tokio::test]
+async fn session_persistence_loads_messages() {
+    let state = AppState::new();
+
+    // Create a session with some messages
+    let id = new_session(&state).await.unwrap();
+    let session_uuid = uuid::Uuid::parse_str(&id).unwrap();
+
+    // Save some messages to the session
+    let messages = vec![
+        shannon_core::api::Message {
+            role: "user".to_string(),
+            content: shannon_core::api::MessageContent::Text("Hello".to_string()),
+        },
+        shannon_core::api::Message {
+            role: "assistant".to_string(),
+            content: shannon_core::api::MessageContent::Text("Hi there!".to_string()),
+        },
+    ];
+
+    let metadata = shannon_core::state::SessionPersistMetadata {
+        model: "test-model".to_string(),
+        turn_count: 1,
+        title: Some("Test Session".to_string()),
+        ..Default::default()
+    };
+
+    state
+        .state_manager
+        .save_session(&session_uuid, &messages, &metadata)
+        .unwrap();
+
+    // Load the session
+    let loaded_messages = load_session(&state, &id).await.unwrap();
+    assert_eq!(loaded_messages.len(), 2);
+    assert_eq!(loaded_messages[0].role, "user");
+    assert_eq!(loaded_messages[0].content, "Hello");
+    assert_eq!(loaded_messages[1].role, "assistant");
+}
+
+#[tokio::test]
+async fn session_persistence_deletes_file() {
+    let state = AppState::new();
+
+    // Create session
+    let id = new_session(&state).await.unwrap();
+    let session_uuid = uuid::Uuid::parse_str(&id).unwrap();
+
+    // Verify file exists
+    let session_data = state.state_manager.load_session(&session_uuid).unwrap();
+    assert!(session_data.is_some());
+
+    // Delete session
+    let deleted = delete_session(&state, &id).await.unwrap();
+    assert!(deleted);
+
+    // Verify file was deleted
+    let session_data = state.state_manager.load_session(&session_uuid).unwrap();
+    assert!(session_data.is_none(), "Session file should be deleted");
+}
+
+#[tokio::test]
+async fn session_persistence_returns_error_for_invalid_uuid() {
+    let state = AppState::new();
+    let result = load_session(&state, "invalid-uuid").await;
+    assert!(result.is_err(), "Should return error for invalid UUID");
+}
+
+#[tokio::test]
+async fn session_persistence_nonexistent_session() {
+    let state = AppState::new();
+    let fake_id = uuid::Uuid::new_v4().to_string();
+    let result = load_session(&state, &fake_id).await;
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("not found"));
+}
+
+// ── Cancellation Tests ───────────────────────────────────────────────────
+
+#[tokio::test]
+async fn cancellation_clears_querying_flag() {
+    let state = AppState::new();
+
+    // Set querying flag
+    {
+        let mut querying = state.querying.lock().await;
+        *querying = true;
+    }
+
+    // Cancel query
+    cancel_query(&state).await;
+
+    // Verify flag is cleared
+    assert!(!*state.querying.lock().await);
+}
+
+#[tokio::test]
+async fn cancellation_clears_token() {
+    let state = AppState::new();
+
+    // Set a cancellation token
+    let token = tokio_util::sync::CancellationToken::new();
+    {
+        let mut token_guard = state.cancellation_token.lock().await;
+        *token_guard = Some(token.clone());
+    }
+
+    // Cancel query
+    cancel_query(&state).await;
+
+    // Verify token was taken
+    let token_guard = state.cancellation_token.lock().await;
+    assert!(
+        token_guard.is_none(),
+        "Token should be cleared after cancellation"
+    );
+}
+
+#[tokio::test]
+async fn cancellation_token_is_cancelled() {
+    let state = AppState::new();
+
+    // Set a cancellation token
+    let token = tokio_util::sync::CancellationToken::new();
+    {
+        let mut token_guard = state.cancellation_token.lock().await;
+        *token_guard = Some(token.clone());
+    }
+
+    // Cancel query
+    cancel_query(&state).await;
+
+    // Verify token is cancelled
+    assert!(token.is_cancelled(), "Token should be cancelled");
+}
+
+// ── Config Persistence Tests ────────────────────────────────────────────
+
+#[tokio::test]
+async fn config_persistence_updates_model() {
+    let state = AppState::new();
+
+    // Update model
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "model".to_string(),
+            value: "gpt-4.1".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify model was updated
+    assert_eq!(*state.model.lock().await, "gpt-4.1");
+}
+
+#[tokio::test]
+async fn config_persistence_updates_api_key() {
+    let state = AppState::new();
+
+    // Update API key
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "api_key".to_string(),
+            value: "sk-test-key".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify API key was persisted
+    let desktop_cfg = state.desktop_config.read().await;
+    assert_eq!(desktop_cfg.api_key, Some("sk-test-key".to_string()));
+}
+
+#[tokio::test]
+async fn config_persistence_updates_base_url() {
+    let state = AppState::new();
+
+    // Update base URL
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "base_url".to_string(),
+            value: "https://api.example.com".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify base URL was persisted
+    let desktop_cfg = state.desktop_config.read().await;
+    assert_eq!(
+        desktop_cfg.base_url,
+        Some("https://api.example.com".to_string())
+    );
+}
+
+#[tokio::test]
+async fn config_persistence_updates_provider() {
+    let state = AppState::new();
+
+    // Update provider
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "provider".to_string(),
+            value: "openai".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify provider was persisted
+    assert_eq!(*state.provider.lock().await, "openai");
+    let desktop_cfg = state.desktop_config.read().await;
+    assert_eq!(desktop_cfg.provider, Some("openai".to_string()));
+}
+
+#[tokio::test]
+async fn config_persistence_updates_working_dir() {
+    let state = AppState::new();
+
+    // Update working directory
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "working_dir".to_string(),
+            value: "/home/user/projects".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify working dir was persisted
+    let desktop_cfg = state.desktop_config.read().await;
+    assert_eq!(
+        desktop_cfg.working_dir,
+        Some("/home/user/projects".to_string())
+    );
+}
+
+#[tokio::test]
+async fn config_persistence_updates_theme() {
+    let state = AppState::new();
+
+    // Update theme
+    configure(
+        &state,
+        ConfigUpdate {
+            key: "theme".to_string(),
+            value: "dark".to_string(),
+        },
+    )
+    .await
+    .unwrap();
+
+    // Verify theme was persisted
+    let desktop_cfg = state.desktop_config.read().await;
+    assert_eq!(desktop_cfg.theme, Some("dark".to_string()));
+}
+
+#[tokio::test]
+async fn config_persistence_unknown_key_returns_error() {
+    let state = AppState::new();
+
+    // Try to update unknown key
+    let result = configure(
+        &state,
+        ConfigUpdate {
+            key: "unknown_key".to_string(),
+            value: "value".to_string(),
+        },
+    )
+    .await;
+
+    assert!(result.is_err());
+    assert!(result.unwrap_err().contains("Unknown config key"));
 }

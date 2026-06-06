@@ -28,7 +28,7 @@
 │                   Shannon Desktop App                    │
 │                                                          │
 │  ┌────────────────────────────────────────────────────┐  │
-│  │           Svelte 5 Frontend (WebView)              │  │
+│  │           React 18 Frontend (WebView)              │  │
 │  │                                                     │  │
 │  │  ┌──────────┐ ┌──────────┐ ┌────────────────────┐ │  │
 │  │  │ Chat     │ │ Agent    │ │ Settings           │ │  │
@@ -36,7 +36,7 @@
 │  │  └────┬─────┘ └────┬─────┘ └────────┬───────────┘ │  │
 │  │       │             │                │             │  │
 │  │  ┌────▼─────────────▼────────────────▼───────────┐ │  │
-│  │  │          Store Layer (Svelte Runes)            │ │  │
+│  │  │          Store Layer (React Runes)            │ │  │
 │  │  │  $state messages | agents | config | sessions  │ │  │
 │  │  └───────────────────┬───────────────────────────┘ │  │
 │  │                      │ listen() / invoke()         │  │
@@ -87,7 +87,7 @@
 
 ## 三、分层架构详解
 
-### Layer 1: Frontend (Svelte 5 + TypeScript)
+### Layer 1: Frontend (React 18 + TypeScript)
 
 ```
 ui/
@@ -179,7 +179,7 @@ App.svelte
 └── StatusBar.svelte                  # 底部: provider/model/cost/status
 ```
 
-#### Streaming 数据流 (Svelte 5 Runes)
+#### Streaming 数据流 (React 18 Runes)
 
 ```typescript
 // stores/messages.ts
@@ -223,7 +223,7 @@ export function initEventListeners() {
 }
 ```
 
-**为什么 Svelte 5 而不是 React**: `$state` 赋值即更新，不需要 `useState`/`useEffect`/`useRef`/`useCallback` 这套。Streaming 场景下，每次 `last.content += chunk` 自动 diff 更新 DOM，零心智负担。
+**为什么 React 18 而不是 React**: `$state` 赋值即更新，不需要 `useState`/`useEffect`/`useRef`/`useCallback` 这套。Streaming 场景下，每次 `last.content += chunk` 自动 diff 更新 DOM，零心智负担。
 
 ---
 
@@ -642,16 +642,16 @@ connect-src 'self' https://*.anthropic.com https://*.openai.com;
 
 | 组件 | 选型 | 理由 |
 |------|------|------|
-| 框架 | **Svelte 5** | 最小 runtime (~3KB), runes 天然适合 streaming |
+| 框架 | **React 18** | 最小 runtime (~3KB), runes 天然适合 streaming |
 | 语言 | **TypeScript** | 类型安全, invoke()/listen() 类型推导 |
 | 构建 | **Vite 6** | Tauri 官方推荐, HMR 快 |
 | 样式 | **Tailwind CSS 4** | utility-first, 主题系统用 CSS variables |
 | Markdown | **marked** + **highlight.js** | 轻量, 已在 MVP 验证 |
-| 图标 | **Lucide Svelte** | 轻量图标库, tree-shakable |
-| 状态 | **Svelte Runes** ($state/$derived) | 无需外部库, 流式数据天然响应 |
+| 图标 | **Lucide React** | 轻量图标库, tree-shakable |
+| 状态 | **React Runes** ($state/$derived) | 无需外部库, 流式数据天然响应 |
 | 测试 | **Vitest** + **@testing-library/svelte** | 单元 + 组件测试 |
 
-**不选 React 的理由**: 对于 Chat UI 这个场景, React 的 useState/useEffect/useRef/useCallback 是过度工程。Svelte 5 Runes 的 `let x = $state(); x += chunk` 直接触发更新, 更符合 streaming 的心智模型。
+**不选 React 的理由**: 对于 Chat UI 这个场景, React 的 useState/useEffect/useRef/useCallback 是过度工程。React 18 Runes 的 `let x = $state(); x += chunk` 直接触发更新, 更符合 streaming 的心智模型。
 
 ---
 
@@ -662,7 +662,7 @@ connect-src 'self' https://*.anthropic.com https://*.openai.com;
 **目标**: 替代当前 vanilla JS MVP, 成为可日常使用的桌面聊天工具
 
 ```
-Week 1-2: Svelte 项目搭建 + 核心组件
+Week 1-2: React 项目搭建 + 核心组件
   - npm create svelte + Vite + Tailwind 配置
   - ChatPanel + MessageBubble + InputBar
   - MarkdownContent + CodeBlock (代码高亮 + 复制)
@@ -729,7 +729,7 @@ Week 5-6: 桌面集成 + 打磨
         │  shannon-cli    │    │ shannon-desktop  │
         │  (TUI/Headless) │    │ (Tauri v2)       │
         │                 │    │                  │
-        │  ratatui UI     │    │  Svelte 5 UI     │
+        │  ratatui UI     │    │  React 18 UI     │
         │  REPL loop      │    │  WebView         │
         │  Terminal out   │    │  Tauri IPC       │
         └─────────────────┘    └──────────────────┘
@@ -749,7 +749,7 @@ matrix:
 steps:
   - Setup Rust + Node.js
   - cargo test -p shannon-desktop          # 单元测试
-  - npm ci && npm run check                 # Svelte 类型检查
+  - npm ci && npm run check                 # React 类型检查
   - npm run test                            # Vitest 组件测试
   - tauri build                             # 打包 .dmg / .msi / .AppImage
   - Upload to GitHub Release

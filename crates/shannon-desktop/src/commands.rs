@@ -10,12 +10,14 @@ use shannon_core::permissions::PermissionManager;
 use shannon_core::query_engine::{QueryContext, QueryEngine, QueryEvent};
 use shannon_core::state::StateManager;
 use shannon_core::tools::ToolRegistry;
+use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::{Mutex, RwLock, oneshot};
 
 use crate::config::{self, DesktopConfig};
 use crate::events;
 use crate::events::event_names;
+use tokio_util::sync::CancellationToken;
 
 /// Shared application state accessible to all Tauri commands.
 pub struct AppState {
@@ -39,6 +41,21 @@ pub struct AppState {
     qe_config: Arc<RwLock<shannon_core::query_engine::types::QueryEngineConfig>>,
     /// Desktop config (persisted).
     desktop_config: Arc<RwLock<DesktopConfig>>,
+    /// Pending permission requests (request_id -> sender).
+    pending_permissions: Arc<Mutex<HashMap<String, oneshot::Sender<bool>>>>,
+    /// Session metadata for session list.
+    sessions: Arc<Mutex<Vec<SessionMeta>>>,
+    /// Cancellation token for the current query.
+    cancellation_token: Arc<Mutex<Option<CancellationToken>>>,
+}
+
+/// Session metadata for session list.
+#[derive(Debug, Clone)]
+struct SessionMeta {
+    id: String,
+    title: String,
+    created_at: i64,
+    message_count: usize,
 }
 
 /// A chat message displayed in the UI.
@@ -104,8 +121,14 @@ impl AppState {
         let desktop_config = config::load_config();
         let client_config = Self::build_client_config(&desktop_config);
 
-        let model = desktop_config.model.clone();
-        let provider = desktop_config.provider.clone();
+        let model = desktop_config
+            .model
+            .clone()
+            .unwrap_or_else(|| "claude-sonnet-4-6".into());
+        let provider = desktop_config
+            .provider
+            .clone()
+            .unwrap_or_else(|| "anthropic".into());
 
         Self {
             messages: Arc::new(Mutex::new(Vec::new())),
@@ -120,11 +143,15 @@ impl AppState {
                 shannon_core::query_engine::types::QueryEngineConfig::default(),
             )),
             desktop_config: Arc::new(RwLock::new(desktop_config)),
+            pending_permissions: Arc::new(Mutex::new(HashMap::new())),
+            sessions: Arc::new(Mutex::new(Vec::new())),
+            cancellation_token: Arc::new(Mutex::new(None)),
         }
     }
 
     fn build_client_config(cfg: &DesktopConfig) -> LlmClientConfig {
-        let provider = provider_from_str(&cfg.provider);
+        let provider_str = cfg.provider.as_deref().unwrap_or("anthropic");
+        let provider = provider_from_str(provider_str);
         let api_key = cfg
             .api_key
             .clone()
@@ -134,11 +161,15 @@ impl AppState {
             .base_url
             .clone()
             .unwrap_or_else(|| provider.default_base_url().to_string());
+        let model = cfg
+            .model
+            .clone()
+            .unwrap_or_else(|| "claude-sonnet-4-6".into());
 
         LlmClientConfig {
             api_key,
             base_url,
-            model: cfg.model.clone(),
+            model,
             provider,
             ..LlmClientConfig::default()
         }
@@ -164,6 +195,13 @@ pub async fn send_message(
     {
         let mut querying = state.querying.lock().await;
         *querying = true;
+    }
+
+    // Create cancellation token
+    let cancel_token = CancellationToken::new();
+    {
+        let mut token_guard = state.cancellation_token.lock().await;
+        *token_guard = Some(cancel_token.clone());
     }
 
     // Add user message
@@ -210,6 +248,7 @@ pub async fn send_message(
     let querying_flag = state.querying.clone();
     let messages_arc = state.messages.clone();
     let app = app_handle.clone();
+    let cancel_token_clone = cancel_token.clone();
 
     tokio::spawn(async move {
         let stream = engine.process_query(context, None);
@@ -220,6 +259,17 @@ pub async fn send_message(
         let mut pin_stream = std::pin::pin!(stream);
 
         while let Some(event_result) = pin_stream.next().await {
+            // Check for cancellation
+            if cancel_token_clone.is_cancelled() {
+                let _ = app.emit(
+                    event_names::QUERY_CANCELLED,
+                    events::QueryCancelledPayload {
+                        query_id: qid_str.clone(),
+                    },
+                );
+                break;
+            }
+
             match event_result {
                 Ok(event) => match event {
                     QueryEvent::Text { content, .. } => {
@@ -354,7 +404,7 @@ pub async fn send_message(
             }
         }
 
-        // Clear querying flag
+        // Clear querying flag and cancellation token
         {
             let mut q = querying_flag.lock().await;
             *q = false;
@@ -469,11 +519,26 @@ pub async fn get_status(state: tauri::State<'_, AppState>) -> Result<StatusRespo
 
 /// Cancel the current query.
 #[tauri::command]
-pub async fn cancel_query(state: tauri::State<'_, AppState>) -> Result<(), String> {
-    // In MVP, just clear the flag. Full cancellation requires
-    // CancellationToken integration (Phase 2).
-    let mut querying = state.querying.lock().await;
-    *querying = false;
+pub async fn cancel_query(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
+    // Take the cancellation token and cancel it
+    let token_opt = {
+        let mut token_guard = state.cancellation_token.lock().await;
+        token_guard.take()
+    };
+
+    if let Some(token) = token_opt {
+        token.cancel();
+    }
+
+    // Clear querying flag
+    {
+        let mut querying = state.querying.lock().await;
+        *querying = false;
+    }
+
     Ok(())
 }
 
@@ -520,6 +585,7 @@ pub async fn list_tools() -> Result<Vec<ToolInfo>, String> {
 #[tauri::command]
 pub async fn configure(
     state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
     update: ConfigUpdate,
 ) -> Result<(), String> {
     match update.key.as_str() {
@@ -528,6 +594,124 @@ pub async fn configure(
             *model = update.value.clone();
             let mut cfg = state.client_config.write().await;
             cfg.model = update.value;
+
+            // Update desktop config and persist
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.model = Some((*model).clone());
+            drop(desktop_cfg);
+
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            // Emit config updated event
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "model".into(),
+                    value: (*model).clone(),
+                },
+            );
+
+            Ok(())
+        }
+        "api_key" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.api_key = Some(update.value.clone());
+
+            // Update client config
+            let mut cfg = state.client_config.write().await;
+            cfg.api_key = update.value.clone();
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "api_key".into(),
+                    value: "***".into(),
+                },
+            );
+
+            Ok(())
+        }
+        "base_url" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.base_url = Some(update.value.clone());
+
+            let mut cfg = state.client_config.write().await;
+            cfg.base_url = update.value.clone();
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "base_url".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "provider" => {
+            let mut provider = state.provider.lock().await;
+            *provider = update.value.clone();
+
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.provider = Some((*provider).clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "provider".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "working_dir" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.working_dir = Some(update.value.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "working_dir".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "theme" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.theme = Some(update.value.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "theme".into(),
+                    value: update.value,
+                },
+            );
+
             Ok(())
         }
         _ => Err(format!("Unknown config key: {}", update.key)),
@@ -541,10 +725,12 @@ pub async fn switch_provider(
     request: ProviderSwitchRequest,
 ) -> Result<(), String> {
     let new_config = DesktopConfig {
-        provider: request.provider.clone(),
+        provider: Some(request.provider.clone()),
         api_key: request.api_key.clone(),
         base_url: request.base_url.clone(),
-        model: request.model.clone(),
+        model: Some(request.model.clone()),
+        working_dir: None,
+        theme: None,
     };
 
     let client_config = AppState::build_client_config(&new_config);
@@ -583,6 +769,218 @@ pub async fn get_config(state: tauri::State<'_, AppState>) -> Result<DesktopConf
         display.api_key = Some("***".into());
     }
     Ok(display)
+}
+
+/// Create a new session and return its UUID.
+#[tauri::command]
+pub async fn new_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<String, String> {
+    let id = uuid::Uuid::new_v4();
+    let id_str = id.to_string();
+    let title = format!("Session {}", id_str.split('-').next().unwrap_or(&id_str));
+    let now = chrono_timestamp();
+
+    // Create empty session file using StateManager
+    let model = state.model.lock().await.clone();
+    let metadata = shannon_core::state::SessionPersistMetadata {
+        model,
+        turn_count: 0,
+        title: Some(title),
+        ..Default::default()
+    };
+
+    state
+        .state_manager
+        .save_session(&id, &[], &metadata)
+        .map_err(|e| e.to_string())?;
+
+    // Create session metadata
+    let session_meta = SessionMeta {
+        id: id_str.clone(),
+        title: title.clone(),
+        created_at: now,
+        message_count: 0,
+    };
+
+    // Add to sessions list
+    {
+        let mut sessions = state.sessions.lock().await;
+        sessions.push(session_meta);
+    }
+
+    // Emit sessions updated event
+    let _ = app_handle.emit(event_names::SESSIONS_UPDATED, ());
+
+    Ok(id_str)
+}
+
+/// List all sessions.
+#[tauri::command]
+pub async fn list_sessions(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<events::SessionInfo>, String> {
+    let sessions = state.sessions.lock().await;
+    let result: Vec<events::SessionInfo> = sessions
+        .iter()
+        .map(|s| events::SessionInfo {
+            id: s.id.clone(),
+            title: s.title.clone(),
+            created_at: s.created_at,
+            message_count: s.message_count,
+        })
+        .collect();
+    Ok(result)
+}
+
+/// Load a session by ID.
+#[tauri::command]
+pub async fn load_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<Vec<ChatMessage>, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    // Load from StateManager
+    let session_data = state
+        .state_manager
+        .load_session(&session_uuid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Session not found: {}", id))?;
+
+    // Convert shannon_core Messages to ChatMessages
+    let messages: Vec<ChatMessage> = session_data
+        .messages
+        .into_iter()
+        .map(|msg| ChatMessage {
+            role: msg.role,
+            content: match msg.content {
+                shannon_core::api::MessageContent::Text(t) => t,
+                shannon_core::api::MessageContent::Blocks(blocks) => {
+                    // For blocks, extract text content
+                    blocks
+                        .iter()
+                        .filter_map(|b| match b {
+                            shannon_core::api::ContentBlock::Text { text } => Some(text.clone()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                }
+            },
+            timestamp: chrono_timestamp(),
+        })
+        .collect();
+
+    // Update current messages
+    {
+        let mut current_messages = state.messages.lock().await;
+        *current_messages = messages.clone();
+    }
+
+    // Emit session loaded event
+    let _ = app_handle.emit(
+        event_names::SESSION_LOADED,
+        events::SessionLoaded {
+            messages: messages.clone(),
+        },
+    );
+
+    Ok(messages)
+}
+
+/// Delete a session by ID.
+#[tauri::command]
+pub async fn delete_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<bool, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    // Delete from StateManager
+    let deleted = state
+        .state_manager
+        .delete_persisted_session(&session_uuid)
+        .map_err(|e| e.to_string())?;
+
+    if deleted {
+        // Remove from sessions list
+        let mut sessions = state.sessions.lock().await;
+        sessions.retain(|s| s.id != id);
+
+        // Emit sessions updated event
+        let _ = app_handle.emit(event_names::SESSIONS_UPDATED, ());
+
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+/// Request permission for a tool execution.
+#[tauri::command]
+pub async fn request_permission(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    tool: String,
+    input: serde_json::Value,
+    risk: String,
+) -> Result<bool, String> {
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let (tx, rx) = oneshot::channel();
+
+    // Store the sender
+    {
+        let mut pending = state.pending_permissions.lock().await;
+        pending.insert(request_id.clone(), tx);
+    }
+
+    // Emit event to frontend
+    let _ = app_handle.emit(
+        events::event_names::PERMISSION_REQUEST,
+        events::PermissionRequest {
+            tool: tool.clone(),
+            input: input.clone(),
+            risk: risk.clone(),
+            request_id: request_id.clone(),
+        },
+    );
+
+    // Wait for response with 30s timeout
+    let timeout = tokio::time::Duration::from_secs(30);
+    let result = tokio::time::timeout(timeout, rx).await;
+
+    // Clean up
+    {
+        let mut pending = state.pending_permissions.lock().await;
+        pending.remove(&request_id);
+    }
+
+    match result {
+        Ok(Ok(allowed)) => Ok(allowed),
+        Ok(Err(_)) => Ok(false), // Sender dropped
+        Err(_) => Ok(false),     // Timeout
+    }
+}
+
+/// Respond to a permission request.
+#[tauri::command]
+pub async fn respond_permission(
+    state: tauri::State<'_, AppState>,
+    request_id: String,
+    allow: bool,
+) -> Result<(), String> {
+    let mut pending = state.pending_permissions.lock().await;
+    if let Some(tx) = pending.remove(&request_id) {
+        // Send response, ignoring errors if receiver dropped
+        let _ = tx.send(allow);
+        Ok(())
+    } else {
+        Err(format!("Permission request not found: {}", request_id))
+    }
 }
 
 fn chrono_timestamp() -> i64 {

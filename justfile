@@ -196,3 +196,10 @@ desktop-release:
 # Desktop crate tests (no system deps needed)
 desktop-test:
     cargo test -p shannon-desktop
+
+# Desktop UI development and build
+desktop-ui:
+    cd crates/shannon-desktop/ui && npm install && npm run dev
+
+desktop-build:
+    cd crates/shannon-desktop/ui && npm run build && cd ../ && cargo tauri build
