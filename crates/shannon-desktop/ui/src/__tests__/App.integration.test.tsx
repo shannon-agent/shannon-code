@@ -30,6 +30,19 @@ vi.mock('@tauri-apps/api/core', () => ({
           { role: 'user', content: 'Hello', timestamp: Date.now() },
           { role: 'assistant', content: 'Hi!', timestamp: Date.now() }
         ])
+      case 'list_sessions':
+        return Promise.resolve([
+          { id: 'sess-1', title: 'Session 1', created_at: Date.now() },
+          { id: 'sess-2', title: 'Session 2', created_at: Date.now() }
+        ])
+      case 'switch_session':
+        return Promise.resolve([
+          { role: 'user', content: 'Switched', timestamp: Date.now() }
+        ])
+      case 'new_session':
+        return Promise.resolve('sess-new')
+      case 'respond_permission':
+        return Promise.resolve()
       default:
         return Promise.resolve({})
     }

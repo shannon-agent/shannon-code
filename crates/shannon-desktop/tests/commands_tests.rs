@@ -7,7 +7,6 @@
 //! The types and logic here mirror `src/commands.rs`. When the production code
 //! changes, these tests must be updated to match.
 
-use shannon_core::api::{Message, MessageContent};
 use shannon_core::state::StateManager;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -95,6 +94,7 @@ struct AppState {
     state_manager: Arc<StateManager>,
     cancellation_token: Arc<Mutex<Option<CancellationToken>>>,
     desktop_config: Arc<RwLock<TestDesktopConfig>>,
+    current_session_id: Arc<Mutex<Option<String>>>,
 }
 
 impl AppState {
@@ -109,6 +109,7 @@ impl AppState {
             state_manager: Arc::new(StateManager::new()),
             cancellation_token: Arc::new(Mutex::new(None)),
             desktop_config: Arc::new(RwLock::new(TestDesktopConfig::default())),
+            current_session_id: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -374,6 +375,7 @@ fn provider_from_str(s: &str) -> String {
 // ── Session management (mirrors commands.rs) ──────────────────────
 
 /// Mirrors new_session: creates session, persists to state_manager, returns UUID.
+/// Sets current_session_id and clears messages (mirrors production code).
 async fn new_session(state: &AppState) -> Result<String, String> {
     let id = uuid::Uuid::new_v4().to_string();
     let title = format!("Session {}", id.split('-').next().unwrap_or(&id));
@@ -404,6 +406,43 @@ async fn new_session(state: &AppState) -> Result<String, String> {
         .save_session(&uuid, &[], &metadata)
         .map_err(|e| e.to_string())?;
 
+    // Save current session before switching (mirrors production behavior)
+    {
+        let current_id = state.current_session_id.lock().await;
+        if let Some(ref old_id) = *current_id {
+            let messages = state.messages.lock().await;
+            let core_messages: Vec<shannon_core::api::Message> = messages
+                .iter()
+                .map(|m| shannon_core::api::Message {
+                    role: m.role.clone(),
+                    content: shannon_core::api::MessageContent::Text(m.content.clone()),
+                })
+                .collect();
+            if let Ok(old_uuid) = uuid::Uuid::parse_str(old_id) {
+                let model = state.model.lock().await;
+                let md = shannon_core::state::SessionPersistMetadata {
+                    model: model.clone(),
+                    turn_count: core_messages.len() / 2,
+                    title: None,
+                    ..Default::default()
+                };
+                let _ = state
+                    .state_manager
+                    .save_session(&old_uuid, &core_messages, &md);
+            }
+        }
+    }
+
+    // Set current session ID and clear messages (mirrors production new_session)
+    {
+        let mut current = state.current_session_id.lock().await;
+        *current = Some(id.clone());
+    }
+    {
+        let mut messages = state.messages.lock().await;
+        messages.clear();
+    }
+
     Ok(id)
 }
 
@@ -413,6 +452,7 @@ async fn list_sessions(state: &AppState) -> Vec<SessionMeta> {
 }
 
 /// Mirrors load_session: finds session by ID, loads messages from state_manager.
+/// Sets current_session_id to the loaded session (mirrors production code).
 async fn load_session(state: &AppState, id: &str) -> Result<Vec<ChatMessage>, String> {
     let sessions = state.sessions.lock().await;
     sessions
@@ -427,9 +467,9 @@ async fn load_session(state: &AppState, id: &str) -> Result<Vec<ChatMessage>, St
         .load_session(&uuid)
         .map_err(|e| e.to_string())?;
 
-    match session_data {
+    let messages = match session_data {
         Some(data) => {
-            let messages: Vec<ChatMessage> = data
+            let msgs: Vec<ChatMessage> = data
                 .messages
                 .into_iter()
                 .map(|m| ChatMessage {
@@ -448,10 +488,23 @@ async fn load_session(state: &AppState, id: &str) -> Result<Vec<ChatMessage>, St
                     timestamp: chrono_timestamp(),
                 })
                 .collect();
-            Ok(messages)
+            msgs
         }
-        None => Ok(vec![]),
+        None => vec![],
+    };
+
+    // Set current session ID (mirrors production load_session)
+    {
+        let mut current = state.current_session_id.lock().await;
+        *current = Some(id.to_string());
     }
+    // Replace in-memory messages with loaded messages
+    {
+        let mut mem = state.messages.lock().await;
+        *mem = messages.clone();
+    }
+
+    Ok(messages)
 }
 
 /// Mirrors delete_session: removes session by ID and deletes file.
@@ -480,6 +533,40 @@ async fn delete_session(state: &AppState, id: &str) -> Result<bool, String> {
     }
 
     Ok(removed)
+}
+
+/// Mirrors switch_session: saves current session, loads new session.
+async fn switch_session(state: &AppState, target_id: &str) -> Result<Vec<ChatMessage>, String> {
+    // Save current session if one is active
+    {
+        let current_id = state.current_session_id.lock().await;
+        if let Some(ref id) = *current_id {
+            let messages = state.messages.lock().await;
+            let core_messages: Vec<shannon_core::api::Message> = messages
+                .iter()
+                .map(|m| shannon_core::api::Message {
+                    role: m.role.clone(),
+                    content: shannon_core::api::MessageContent::Text(m.content.clone()),
+                })
+                .collect();
+
+            if let Ok(uuid) = uuid::Uuid::parse_str(id) {
+                let model = state.model.lock().await;
+                let metadata = shannon_core::state::SessionPersistMetadata {
+                    model: model.clone(),
+                    turn_count: core_messages.len() / 2,
+                    title: None,
+                    ..Default::default()
+                };
+                let _ = state
+                    .state_manager
+                    .save_session(&uuid, &core_messages, &metadata);
+            }
+        }
+    }
+
+    // Load target session
+    load_session(state, target_id).await
 }
 
 // ── Permission bridge (mirrors commands.rs) ────────────────────────
@@ -1401,4 +1488,106 @@ async fn config_persistence_unknown_key_returns_error() {
 
     assert!(result.is_err());
     assert!(result.unwrap_err().contains("Unknown config key"));
+}
+
+// ── current_session_id tracking ──────────────────────────────────────────
+
+#[tokio::test]
+async fn current_session_id_none_initially() {
+    let state = AppState::new();
+    let current = state.current_session_id.lock().await;
+    assert!(current.is_none());
+}
+
+#[tokio::test]
+async fn new_session_sets_current_session_id() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+    let current = state.current_session_id.lock().await;
+    assert_eq!(*current, Some(id));
+}
+
+#[tokio::test]
+async fn new_session_clears_messages() {
+    let state = AppState::new();
+    let _ = send_message(&state, "hello".into()).await;
+    assert_eq!(state.messages.lock().await.len(), 2);
+
+    let _ = new_session(&state).await;
+    assert!(state.messages.lock().await.is_empty());
+}
+
+#[tokio::test]
+async fn load_session_sets_current_session_id() {
+    let state = AppState::new();
+    let id = new_session(&state).await.unwrap();
+    let _ = load_session(&state, &id).await.unwrap();
+    let current = state.current_session_id.lock().await;
+    assert_eq!(*current, Some(id));
+}
+
+// ── switch_session ────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn switch_session_saves_current_and_loads_target() {
+    let state = AppState::new();
+
+    // Create two sessions
+    let id1 = new_session(&state).await.unwrap();
+    let _ = send_message(&state, "hello from session 1".into()).await;
+
+    let _id2 = new_session(&state).await.unwrap();
+    let _ = send_message(&state, "hello from session 2".into()).await;
+
+    // Switch back to session 1
+    let messages = switch_session(&state, &id1).await.unwrap();
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[0].content, "hello from session 1");
+
+    // Verify in-memory messages updated
+    let mem = state.messages.lock().await;
+    assert_eq!(mem.len(), 2);
+    assert_eq!(mem[0].content, "hello from session 1");
+}
+
+#[tokio::test]
+async fn switch_session_updates_current_session_id() {
+    let state = AppState::new();
+    let id1 = new_session(&state).await.unwrap();
+    let id2 = new_session(&state).await.unwrap();
+
+    // Currently on session 2
+    assert_eq!(*state.current_session_id.lock().await, Some(id2.clone()));
+
+    // Switch to session 1
+    let _ = switch_session(&state, &id1).await.unwrap();
+    assert_eq!(*state.current_session_id.lock().await, Some(id1.clone()));
+}
+
+#[tokio::test]
+async fn switch_session_returns_error_for_unknown() {
+    let state = AppState::new();
+    let result = switch_session(&state, "nonexistent-id").await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn switch_session_preserves_data_across_switches() {
+    let state = AppState::new();
+
+    // Session 1: send message
+    let id1 = new_session(&state).await.unwrap();
+    let _ = send_message(&state, "msg in s1".into()).await;
+
+    // Session 2: send different message
+    let id2 = new_session(&state).await.unwrap();
+    let _ = send_message(&state, "msg in s2".into()).await;
+
+    // Switch back to 1
+    let msgs1 = switch_session(&state, &id1).await.unwrap();
+    assert_eq!(msgs1[0].content, "msg in s1");
+
+    // Switch to 2
+    let msgs2 = switch_session(&state, &id2).await.unwrap();
+    assert_eq!(msgs2[0].content, "msg in s2");
 }

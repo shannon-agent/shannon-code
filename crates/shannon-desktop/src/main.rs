@@ -24,6 +24,7 @@ fn main() {
             commands::new_session,
             commands::list_sessions,
             commands::load_session,
+            commands::switch_session,
             commands::delete_session,
             commands::request_permission,
             commands::respond_permission,

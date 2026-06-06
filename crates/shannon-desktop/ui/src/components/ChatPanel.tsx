@@ -3,6 +3,7 @@ import { useAppState } from '../context/AppState'
 import { ChatMessage } from './ChatMessage'
 import { MessageInput } from './MessageInput'
 import { StatusBar } from './StatusBar'
+import { ToolCallDisplay } from './ToolCallDisplay'
 
 interface ChatPanelProps {
   sendMessage: (text: string) => Promise<void>
@@ -12,7 +13,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatPanelProps) {
-  const { messages, loading } = useAppState()
+  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission } = useAppState()
 
   if (loading) {
     return (
@@ -40,9 +41,42 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
         </div>
       )}
 
+      {/* Permission request dialog */}
+      {permissionRequest && (
+        <div className="bg-[#e0af68]/10 border-l-4 border-[#e0af68] p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-[#e0af68]">
+                Permission Request: {permissionRequest.tool}
+              </p>
+              <p className="text-xs text-[#a9b1d6] mt-1">
+                Risk: {permissionRequest.risk}
+              </p>
+              <pre className="text-xs text-[#565f89] mt-1 max-h-24 overflow-auto">
+                {JSON.stringify(permissionRequest.input, null, 2)}
+              </pre>
+            </div>
+            <div className="flex gap-2 ml-4">
+              <button
+                onClick={() => respondPermission(true)}
+                className="px-3 py-1.5 text-sm bg-[#9ece6a]/20 text-[#9ece6a] rounded hover:bg-[#9ece6a]/30"
+              >
+                Allow
+              </button>
+              <button
+                onClick={() => respondPermission(false)}
+                className="px-3 py-1.5 text-sm bg-[#f7768e]/20 text-[#f7768e] rounded hover:bg-[#f7768e]/30"
+              >
+                Deny
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto">
-        {messages.length === 0 ? (
+        {messages.length === 0 && !streamingText && activeToolCalls.length === 0 ? (
           <div className="h-full flex items-center justify-center text-text-muted">
             <div className="text-center">
               <h2 className="text-xl font-semibold text-accent mb-2">Shannon Code</h2>
@@ -61,6 +95,29 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
             {messages.map((message, index) => (
               <ChatMessage key={index} message={message} />
             ))}
+
+            {/* Active tool calls during streaming */}
+            {activeToolCalls.map(tc => (
+              <ToolCallDisplay
+                key={tc.toolUseId}
+                toolName={tc.toolName}
+                toolInput={tc.toolInput as Record<string, unknown>}
+                isRunning={tc.isRunning}
+                output={tc.result}
+                isError={tc.isError}
+              />
+            ))}
+
+            {/* Streaming text */}
+            {streamingText && (
+              <ChatMessage
+                message={{
+                  role: 'assistant',
+                  content: streamingText,
+                  timestamp: Date.now()
+                }}
+              />
+            )}
           </div>
         )}
       </div>

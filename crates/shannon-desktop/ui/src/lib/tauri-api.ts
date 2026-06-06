@@ -36,7 +36,7 @@ export async function listModels(): Promise<ModelInfo[]> {
  * Get available tools information
  */
 export async function getTools(): Promise<ToolInfo[]> {
-  return await invoke('get_tools')
+  return await invoke('list_tools')
 }
 
 /**
@@ -93,6 +93,20 @@ export async function loadSession(id: string): Promise<ChatMessage[]> {
  */
 export async function deleteSession(id: string): Promise<boolean> {
   return await invoke('delete_session', { id })
+}
+
+/**
+ * Respond to a permission request
+ */
+export async function respondPermission(requestId: string, allow: boolean): Promise<void> {
+  await invoke('respond_permission', { requestId, allow })
+}
+
+/**
+ * Switch to a different session
+ */
+export async function switchSession(id: string): Promise<ChatMessage[]> {
+  return await invoke('switch_session', { id })
 }
 
 /**

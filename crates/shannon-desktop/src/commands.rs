@@ -12,6 +12,7 @@ use shannon_core::state::StateManager;
 use shannon_core::tools::ToolRegistry;
 use std::collections::HashMap;
 use std::sync::Arc;
+use tauri::Emitter;
 use tokio::sync::{Mutex, RwLock, oneshot};
 
 use crate::config::{self, DesktopConfig};
@@ -21,7 +22,7 @@ use tokio_util::sync::CancellationToken;
 
 /// Shared application state accessible to all Tauri commands.
 pub struct AppState {
-    /// Current conversation messages for display.
+    /// Current conversation messages for the active session.
     messages: Arc<Mutex<Vec<ChatMessage>>>,
     /// Whether a query is currently in progress.
     querying: Arc<Mutex<bool>>,
@@ -38,7 +39,7 @@ pub struct AppState {
     /// Session state manager.
     state_manager: Arc<StateManager>,
     /// Query engine configuration.
-    qe_config: Arc<RwLock<shannon_core::query_engine::types::QueryEngineConfig>>,
+    qe_config: Arc<RwLock<shannon_core::query_engine::QueryEngineConfig>>,
     /// Desktop config (persisted).
     desktop_config: Arc<RwLock<DesktopConfig>>,
     /// Pending permission requests (request_id -> sender).
@@ -47,6 +48,8 @@ pub struct AppState {
     sessions: Arc<Mutex<Vec<SessionMeta>>>,
     /// Cancellation token for the current query.
     cancellation_token: Arc<Mutex<Option<CancellationToken>>>,
+    /// Currently active session ID.
+    current_session_id: Arc<Mutex<Option<String>>>,
 }
 
 /// Session metadata for session list.
@@ -140,12 +143,13 @@ impl AppState {
             permissions: Arc::new(RwLock::new(PermissionManager::new())),
             state_manager: Arc::new(StateManager::new()),
             qe_config: Arc::new(RwLock::new(
-                shannon_core::query_engine::types::QueryEngineConfig::default(),
+                shannon_core::query_engine::QueryEngineConfig::default(),
             )),
             desktop_config: Arc::new(RwLock::new(desktop_config)),
             pending_permissions: Arc::new(Mutex::new(HashMap::new())),
             sessions: Arc::new(Mutex::new(Vec::new())),
             cancellation_token: Arc::new(Mutex::new(None)),
+            current_session_id: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -221,12 +225,18 @@ pub async fn send_message(
     // Build the query engine
     let client_config = state.client_config.read().await.clone();
     let client = LlmClient::new(client_config);
-    let tools = state.tools.clone();
+    let _tools = state.tools.clone();
     let permissions = PermissionManager::new();
-    let state_mgr = state.state_manager.clone();
+    let _state_mgr = state.state_manager.clone();
     let qe_config = state.qe_config.read().await.clone();
 
-    let engine = QueryEngine::new(client, tools, permissions, state_mgr, qe_config);
+    let engine = QueryEngine::new(
+        client,
+        ToolRegistry::new(),
+        permissions,
+        StateManager::new(),
+        qe_config,
+    );
 
     // Create query context
     let model = state.model.lock().await.clone();
@@ -234,7 +244,7 @@ pub async fn send_message(
         query_id,
         session_id: uuid::Uuid::new_v4(),
         user_message: message,
-        metadata: shannon_core::query_engine::types::QueryMetadata {
+        metadata: shannon_core::query_engine::QueryMetadata {
             timestamp: chrono::Utc::now(),
             tools_allowed: true,
             max_tokens: None,
@@ -249,9 +259,13 @@ pub async fn send_message(
     let messages_arc = state.messages.clone();
     let app = app_handle.clone();
     let cancel_token_clone = cancel_token.clone();
+    let current_session_id_arc = state.current_session_id.clone();
+    let state_mgr_arc = state.state_manager.clone();
+    let model_arc = state.model.clone();
 
+    let return_qid = qid_str.clone();
     tokio::spawn(async move {
-        let stream = engine.process_query(context, None);
+        let stream = engine.process_query(context, None).await;
         let mut final_content = String::new();
 
         // Consume the stream using futures::StreamExt
@@ -373,6 +387,37 @@ pub async fn send_message(
                                 timestamp: chrono_timestamp(),
                             });
                         }
+
+                        // Auto-persist to StateManager
+                        {
+                            let session_id_opt = current_session_id_arc.lock().await.clone();
+                            if let Some(sid) = session_id_opt {
+                                let msgs = messages_arc.lock().await.clone();
+                                let model = model_arc.lock().await.clone();
+                                if let Ok(session_uuid) = uuid::Uuid::parse_str(&sid) {
+                                    let core_msgs: Vec<shannon_core::api::Message> = msgs
+                                        .iter()
+                                        .map(|m| shannon_core::api::Message {
+                                            role: m.role.clone(),
+                                            content: shannon_core::api::MessageContent::Text(
+                                                m.content.clone(),
+                                            ),
+                                        })
+                                        .collect();
+                                    let meta = shannon_core::state::SessionPersistMetadata {
+                                        model,
+                                        turn_count: core_msgs.len() / 2,
+                                        ..Default::default()
+                                    };
+                                    let _ = state_mgr_arc.save_session(
+                                        &session_uuid,
+                                        &core_msgs,
+                                        &meta,
+                                    );
+                                }
+                            }
+                        }
+
                         let _ = app.emit(
                             event_names::QUERY_COMPLETED,
                             events::QueryCompletedPayload {
@@ -411,7 +456,9 @@ pub async fn send_message(
         }
     });
 
-    Ok(SendMessageResponse { query_id: qid_str })
+    Ok(SendMessageResponse {
+        query_id: return_qid,
+    })
 }
 
 /// Get all conversation messages.
@@ -521,7 +568,7 @@ pub async fn get_status(state: tauri::State<'_, AppState>) -> Result<StatusRespo
 #[tauri::command]
 pub async fn cancel_query(
     state: tauri::State<'_, AppState>,
-    app_handle: tauri::AppHandle,
+    _app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
     // Take the cancellation token and cancel it
     let token_opt = {
@@ -787,7 +834,7 @@ pub async fn new_session(
     let metadata = shannon_core::state::SessionPersistMetadata {
         model,
         turn_count: 0,
-        title: Some(title),
+        title: Some(title.clone()),
         ..Default::default()
     };
 
@@ -808,6 +855,18 @@ pub async fn new_session(
     {
         let mut sessions = state.sessions.lock().await;
         sessions.push(session_meta);
+    }
+
+    // Set as current session
+    {
+        let mut current = state.current_session_id.lock().await;
+        *current = Some(id_str.clone());
+    }
+
+    // Clear messages for new session
+    {
+        let mut messages = state.messages.lock().await;
+        messages.clear();
     }
 
     // Emit sessions updated event
@@ -880,11 +939,115 @@ pub async fn load_session(
         *current_messages = messages.clone();
     }
 
+    // Set as current session
+    {
+        let mut current = state.current_session_id.lock().await;
+        *current = Some(id.clone());
+    }
+
     // Emit session loaded event
+    let event_messages: Vec<events::ChatMessage> = messages
+        .iter()
+        .map(|m| events::ChatMessage {
+            role: m.role.clone(),
+            content: m.content.clone(),
+            timestamp: m.timestamp,
+        })
+        .collect();
     let _ = app_handle.emit(
         event_names::SESSION_LOADED,
         events::SessionLoaded {
-            messages: messages.clone(),
+            messages: event_messages,
+        },
+    );
+
+    Ok(messages)
+}
+
+/// Switch to a different session, saving the current one first.
+#[tauri::command]
+pub async fn switch_session(
+    state: tauri::State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+    id: String,
+) -> Result<Vec<ChatMessage>, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    // Save current session before switching
+    {
+        let current_id = state.current_session_id.lock().await.clone();
+        if let Some(ref sid) = current_id {
+            let messages = state.messages.lock().await.clone();
+            if let Ok(uuid) = uuid::Uuid::parse_str(sid) {
+                let model = state.model.lock().await.clone();
+                let core_msgs: Vec<shannon_core::api::Message> = messages
+                    .iter()
+                    .map(|m| shannon_core::api::Message {
+                        role: m.role.clone(),
+                        content: shannon_core::api::MessageContent::Text(m.content.clone()),
+                    })
+                    .collect();
+                let meta = shannon_core::state::SessionPersistMetadata {
+                    model,
+                    turn_count: core_msgs.len() / 2,
+                    ..Default::default()
+                };
+                let _ = state.state_manager.save_session(&uuid, &core_msgs, &meta);
+            }
+        }
+    }
+
+    // Load new session
+    let messages = match state
+        .state_manager
+        .load_session(&session_uuid)
+        .map_err(|e| e.to_string())?
+    {
+        Some(data) => data
+            .messages
+            .into_iter()
+            .map(|msg| ChatMessage {
+                role: msg.role,
+                content: match msg.content {
+                    shannon_core::api::MessageContent::Text(t) => t,
+                    shannon_core::api::MessageContent::Blocks(blocks) => blocks
+                        .iter()
+                        .filter_map(|b| match b {
+                            shannon_core::api::ContentBlock::Text { text } => Some(text.clone()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                },
+                timestamp: chrono_timestamp(),
+            })
+            .collect(),
+        None => Vec::new(),
+    };
+
+    // Update state
+    {
+        let mut current = state.current_session_id.lock().await;
+        *current = Some(id.clone());
+    }
+    {
+        let mut msgs = state.messages.lock().await;
+        *msgs = messages.clone();
+    }
+
+    // Emit session loaded event
+    let event_messages: Vec<events::ChatMessage> = messages
+        .iter()
+        .map(|m| events::ChatMessage {
+            role: m.role.clone(),
+            content: m.content.clone(),
+            timestamp: m.timestamp,
+        })
+        .collect();
+    let _ = app_handle.emit(
+        event_names::SESSION_LOADED,
+        events::SessionLoaded {
+            messages: event_messages,
         },
     );
 
