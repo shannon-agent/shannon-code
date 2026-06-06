@@ -24,7 +24,10 @@ import {
   newSession,
   listSessions,
   switchSession,
-  deleteSession
+  deleteSession,
+  listAgents,
+  listTasks,
+  cancelBackgroundTask
 } from './lib/tauri-api'
 import type { SessionInfo } from './types/tauri-events'
 
@@ -38,6 +41,8 @@ function AppContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [settingsVisible, setSettingsVisible] = useState(true)
   const [rightPanelTab, setRightPanelTab] = useState<string>('settings')
+  const [agents, setAgents] = useState<import('./components/AgentDashboard').AgentInfo[]>([])
+  const [tasks, setTasks] = useState<import('./components/TaskBoard').TaskItem[]>([])
 
   // Register default keyboard shortcuts (dispatches DOM custom events)
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
@@ -53,11 +58,51 @@ function AppContent() {
     }
   }, [])
 
+  // Load agents and tasks on mount + listen for updates
+  useEffect(() => {
+    listAgents().then(setAgents).catch(() => {})
+    listTasks().then(apiTasks => {
+      setTasks(apiTasks.map(t => ({
+        id: t.id,
+        subject: t.title,
+        description: t.description,
+        status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
+        owner: t.assignee,
+      })))
+    }).catch(() => {})
+
+    let unlistenAgents: (() => void) | undefined
+    let unlistenTasks: (() => void) | undefined
+
+    ;(async () => {
+      unlistenAgents = await listen('background-tasks-updated', () => {
+        listAgents().then(setAgents).catch(() => {})
+      })
+      unlistenTasks = await listen('background-tasks-updated', () => {
+        listTasks().then(apiTasks => {
+          setTasks(apiTasks.map(t => ({
+            id: t.id,
+            subject: t.title,
+            description: t.description,
+            status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
+            owner: t.assignee,
+          })))
+        }).catch(() => {})
+      })
+    })()
+
+    return () => {
+      unlistenAgents?.()
+      unlistenTasks?.()
+    }
+  }, [])
+
   // Listen for DOM custom events dispatched by shortcuts
   useEffect(() => {
     const handlers: Record<string, EventListener> = {
       'shannon:command-palette': () => setCommandPaletteOpen(prev => !prev),
       'shannon:new-session': () => handleNewSession(),
+      'shannon:toggle-right-panel': () => setSettingsVisible(prev => !prev),
       'shannon:toggle-sidebar': () => setSidebarCollapsed(prev => !prev),
       'shannon:toggle-settings': () => setSettingsVisible(prev => !prev),
       'shannon:close-dialogs': () => setCommandPaletteOpen(false),
@@ -153,8 +198,8 @@ function AppContent() {
               <TabsTrigger value="mcp" className="text-[10px] px-2 py-1">MCP</TabsTrigger>
             </TabsList>
             <TabsContent value="settings" className="flex-1 overflow-hidden mt-0"><SettingsPanel /></TabsContent>
-            <TabsContent value="agents" className="flex-1 overflow-hidden mt-0"><AgentDashboard agents={[]} /></TabsContent>
-            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={[]} /></TabsContent>
+            <TabsContent value="agents" className="flex-1 overflow-hidden mt-0"><AgentDashboard agents={agents} onCancel={id => cancelBackgroundTask(id).catch(() => {})} /></TabsContent>
+            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={tasks} /></TabsContent>
             <TabsContent value="mcp" className="flex-1 overflow-hidden mt-0"><McpBrowser servers={[]} /></TabsContent>
           </Tabs>
         ) : undefined}

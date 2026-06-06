@@ -98,6 +98,30 @@ struct BackgroundTaskMeta {
     output: String,
 }
 
+/// Task info for the task board.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TaskInfo {
+    pub id: String,
+    pub title: String,
+    pub status: String,
+    pub assignee: Option<String>,
+    pub priority: Option<String>,
+    pub description: Option<String>,
+}
+
+/// Agent info for the dashboard (derived from background tasks).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AgentInfo {
+    pub id: String,
+    pub name: String,
+    pub model: String,
+    pub status: String,
+    pub task: Option<String>,
+    pub progress: Option<u32>,
+    pub tools_used: Option<u32>,
+    pub duration: Option<i64>,
+}
+
 /// A chat message displayed in the UI.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatMessage {
@@ -2381,6 +2405,93 @@ pub async fn cancel_background_task(
     } else {
         Err("Task not found".into())
     }
+}
+
+/// List active agents (derived from background tasks).
+#[tauri::command]
+pub async fn list_agents(state: tauri::State<'_, AppState>) -> Result<Vec<AgentInfo>, String> {
+    let tasks = state.background_tasks.lock().await;
+    let agents: Vec<AgentInfo> = tasks
+        .iter()
+        .map(|t| {
+            let status = match t.status.as_str() {
+                "running" => "running",
+                "completed" => "completed",
+                "failed" => "failed",
+                _ => "pending",
+            };
+            let duration = t.completed_at.map(|end| end - t.started_at);
+            AgentInfo {
+                id: t.id.clone(),
+                name: "Background Agent".into(),
+                model: "default".into(),
+                status: status.into(),
+                task: Some(t.prompt.clone()),
+                progress: None,
+                tools_used: None,
+                duration,
+            }
+        })
+        .collect();
+    Ok(agents)
+}
+
+/// List tasks from .claude/tasks/ directory (team task system).
+#[tauri::command]
+pub async fn list_tasks() -> Result<Vec<TaskInfo>, String> {
+    let tasks_dir = std::path::Path::new(".claude/tasks");
+    if !tasks_dir.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let mut tasks = Vec::new();
+    let entries =
+        std::fs::read_dir(tasks_dir).map_err(|e| format!("Cannot read tasks dir: {e}"))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().map(|e| e == "json").unwrap_or(false) {
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                if let Ok(task) = serde_json::from_str::<serde_json::Value>(&content) {
+                    let id = task
+                        .get("id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    let subject = task
+                        .get("subject")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Untitled")
+                        .to_string();
+                    let status = task
+                        .get("status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("pending")
+                        .to_string();
+                    let owner = task
+                        .get("owner")
+                        .and_then(|v| v.as_str())
+                        .map(String::from)
+                        .filter(|o| !o.is_empty());
+                    let description = task
+                        .get("description")
+                        .and_then(|v| v.as_str())
+                        .map(String::from);
+                    tasks.push(TaskInfo {
+                        id,
+                        title: subject,
+                        status,
+                        assignee: owner.filter(|o| !o.is_empty()),
+                        priority: None,
+                        description,
+                    });
+                }
+            }
+        }
+    }
+
+    tasks.sort_by(|a, b| a.id.cmp(&b.id));
+    Ok(tasks)
 }
 
 /// Recursively read a directory and return a file tree.

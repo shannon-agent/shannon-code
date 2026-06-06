@@ -190,8 +190,21 @@ export async function cancelBackgroundTask(id: string): Promise<boolean> {
 }
 
 /**
- * Get file tree for a directory
+ * List agents (derived from background tasks)
  */
+export async function listAgents(): Promise<import('../components/AgentDashboard').AgentInfo[]> {
+  return await invoke('list_agents')
+}
+
+/**
+ * List tasks from .claude/tasks/ directory
+ */
+export async function listTasks(): Promise<TaskItem[]> {
+  return await invoke('list_tasks')
+}
+
+/**
+ * Get file tree for a directory
 export async function getFileTree(path: string): Promise<FileNode> {
   return await invoke('get_file_tree', { path })
 }
@@ -219,4 +232,14 @@ export interface WorkingDirInfo {
   branch: string
   modified_files: string[]
   status: 'clean' | 'dirty' | 'merge-conflict'
+}
+
+// Task item type for TaskBoard
+export interface TaskItem {
+  id: string
+  title: string
+  status: string
+  assignee?: string
+  priority?: string
+  description?: string
 }
