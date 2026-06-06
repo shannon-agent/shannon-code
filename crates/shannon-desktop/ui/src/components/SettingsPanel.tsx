@@ -45,27 +45,31 @@ export function SettingsPanel() {
   const redactedKey = apiKey ? `${apiKey.slice(0, 8)}...` : ''
 
   return (
-    <div className="p-4">
-      <h2 className="text-lg font-semibold text-[#c0caf5] mb-4">Settings</h2>
+    <div className="p-4" role="region" aria-label="Settings panel">
+      <h2 id="settings-title" className="text-lg font-semibold text-[#c0caf5] mb-4">Settings</h2>
 
-      <div className="space-y-4">
+      <div className="space-y-4" aria-labelledby="settings-title">
         {/* API Key */}
         <div>
-          <label className="block text-sm font-medium text-[#a9b1d6] mb-1">
+          <label htmlFor="api-key-input" className="block text-sm font-medium text-[#a9b1d6] mb-1">
             API Key
           </label>
           <div className="relative">
             <input
+              id="api-key-input"
               type={showApiKey ? 'text' : 'password'}
               value={showApiKey ? apiKey : redactedKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-ant-..."
               className="w-full px-3 py-2 pr-20 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+              aria-describedby="api-key-description"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
                 className="p-1 hover:bg-[#24283b] rounded transition-colors"
+                aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+                type="button"
               >
                 {showApiKey ? (
                   <EyeOff className="w-4 h-4 text-[#565f89]" />
@@ -77,46 +81,60 @@ export function SettingsPanel() {
                 onClick={() => handleSave('api_key', apiKey)}
                 disabled={saving}
                 className="p-1 hover:bg-[#9ece6a]/20 rounded transition-colors disabled:opacity-50"
+                aria-label="Save API key"
+                type="button"
               >
                 <Save className="w-4 h-4 text-[#9ece6a]" />
               </button>
             </div>
           </div>
+          <p id="api-key-description" className="text-xs text-[#565f89] mt-1">
+            Your API key is stored locally and never shared
+          </p>
         </div>
 
         {/* Base URL */}
         <div>
-          <label className="block text-sm font-medium text-[#a9b1d6] mb-1">
+          <label htmlFor="base-url-input" className="block text-sm font-medium text-[#a9b1d6] mb-1">
             Base URL (optional)
           </label>
           <div className="relative">
             <input
+              id="base-url-input"
               type="text"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://api.example.com"
               className="w-full px-3 py-2 pr-10 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+              aria-describedby="base-url-description"
             />
             <button
               onClick={() => handleSave('base_url', baseUrl)}
               disabled={saving}
               className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#9ece6a]/20 rounded transition-colors disabled:opacity-50"
+              aria-label="Save base URL"
+              type="button"
             >
               <Save className="w-4 h-4 text-[#9ece6a]" />
             </button>
           </div>
+          <p id="base-url-description" className="text-xs text-[#565f89] mt-1">
+            Custom API endpoint URL (leave empty for default)
+          </p>
         </div>
 
         {/* Theme Selector */}
         <div>
-          <label className="block text-sm font-medium text-[#a9b1d6] mb-1 flex items-center gap-2">
-            <Palette className="w-4 h-4" />
+          <label htmlFor="theme-select" className="block text-sm font-medium text-[#a9b1d6] mb-1 flex items-center gap-2">
+            <Palette className="w-4 h-4" aria-hidden />
             Theme
           </label>
           <select
+            id="theme-select"
             value={theme}
             onChange={(e) => setTheme(e.target.value as any)}
             className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+            aria-describedby="theme-description"
           >
             {themes.map((t) => (
               <option key={t} value={t}>
@@ -127,11 +145,16 @@ export function SettingsPanel() {
               </option>
             ))}
           </select>
+          <p id="theme-description" className="text-xs text-[#565f89] mt-1">
+            Choose your preferred color scheme
+          </p>
         </div>
 
         {/* Save Status */}
         {saveStatus !== 'idle' && (
           <div
+            role="status"
+            aria-live="polite"
             className={`text-sm ${
               saveStatus === 'success' ? 'text-[#9ece6a]' : 'text-[#f7768e]'
             }`}
@@ -143,11 +166,11 @@ export function SettingsPanel() {
         {/* Global Shortcuts Section */}
         <div className="pt-4 border-t border-[#414868]">
           <h3 className="text-sm font-semibold text-[#c0caf5] mb-3 flex items-center gap-2">
-            <Keyboard className="w-4 h-4" />
+            <Keyboard className="w-4 h-4" aria-hidden />
             Global Shortcuts
           </h3>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+          <div className="space-y-2" role="list" aria-label="Keyboard shortcuts">
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
               <div className="text-sm text-[#a9b1d6]">
                 <span className="font-medium">Show/Hide Window</span>
                 <p className="text-xs text-[#565f89]">Toggle Shannon visibility</p>
@@ -156,7 +179,7 @@ export function SettingsPanel() {
                 Ctrl+Shift+S
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
               <div className="text-sm text-[#a9b1d6]">
                 <span className="font-medium">New Session</span>
                 <p className="text-xs text-[#565f89]">Create a new conversation</p>
@@ -165,7 +188,7 @@ export function SettingsPanel() {
                 Ctrl+Shift+N
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
               <div className="text-sm text-[#a9b1d6]">
                 <span className="font-medium">Focus Input</span>
                 <p className="text-xs text-[#565f89]">Focus message input field</p>
@@ -175,7 +198,7 @@ export function SettingsPanel() {
               </kbd>
             </div>
           </div>
-          <p className="text-xs text-[#565f89] mt-2">
+          <p className="text-xs text-[#565f89] mt-2" role="note">
             Shortcuts work even when Shannon is minimized to tray
           </p>
         </div>

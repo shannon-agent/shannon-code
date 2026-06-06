@@ -6,10 +6,12 @@
 use serde::{Deserialize, Serialize};
 use shannon_core::api::client::LlmClient;
 use shannon_core::api::types::LlmClientConfig;
-use shannon_core::permissions::PermissionManager;
+use shannon_core::permissions::{ApprovalMode, PermissionManager};
 use shannon_core::query_engine::{QueryContext, QueryEngine, QueryEvent};
 use shannon_core::state::StateManager;
 use shannon_core::tools::ToolRegistry;
+use shannon_mcp::McpProcessPool;
+use shannon_skills::SkillRegistry;
 use shannon_tools::register_default_tools;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -20,6 +22,23 @@ use crate::config::{self, DesktopConfig};
 use crate::events::event_names;
 use crate::events::{self, HunkAction};
 use tokio_util::sync::CancellationToken;
+
+/// Parse approval mode string into ApprovalMode enum
+fn parse_approval_mode(mode_str: &str) -> ApprovalMode {
+    match mode_str.to_lowercase().as_str() {
+        "suggest" | "default" => ApprovalMode::Suggest,
+        "plan" => ApprovalMode::Plan,
+        "auto" => ApprovalMode::Auto,
+        "auto_edit" | "autoedit" => ApprovalMode::AutoEdit,
+        "full_auto" | "fullauto" => ApprovalMode::FullAuto,
+        "readonly" | "read-only" => ApprovalMode::Readonly,
+        "plan_ro" | "plan-ro" | "planreadonly" => ApprovalMode::PlanReadonly,
+        "bypass_permissions" | "bypasspermissions" => ApprovalMode::BypassPermissions,
+        "dont_ask" | "dontask" => ApprovalMode::DontAsk,
+        "confirm" => ApprovalMode::Suggest, // "confirm" maps to Suggest (ask each time)
+        _ => ApprovalMode::Suggest,         // Default to safe mode
+    }
+}
 
 /// Shared application state accessible to all Tauri commands.
 pub struct AppState {
@@ -53,6 +72,10 @@ pub struct AppState {
     current_session_id: Arc<Mutex<Option<String>>>,
     /// Background tasks.
     background_tasks: Arc<Mutex<Vec<BackgroundTaskMeta>>>,
+    /// Skill registry for skill discovery and listing.
+    skill_registry: Arc<SkillRegistry>,
+    /// MCP process pool for real server connections.
+    mcp_pool: Arc<McpProcessPool>,
 }
 
 /// Session metadata for session list.
@@ -91,6 +114,82 @@ pub struct FileAttachment {
     pub name: String,
     pub path: String,
     pub size: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub base64_data: Option<String>,
+}
+
+/// Detect media type from file extension.
+fn detect_media_type(path: &str) -> Option<String> {
+    use std::path::Path;
+    let ext = Path::new(path).extension()?.to_str()?;
+    match ext.to_lowercase().as_str() {
+        "png" => Some("image/png".to_string()),
+        "jpg" | "jpeg" => Some("image/jpeg".to_string()),
+        "gif" => Some("image/gif".to_string()),
+        "webp" => Some("image/webp".to_string()),
+        "svg" => Some("image/svg+xml".to_string()),
+        _ => None,
+    }
+}
+
+/// Read file and convert to base64, returning (base64_string, media_type).
+fn file_to_base64(path: &str) -> Result<(String, String), String> {
+    use base64::Engine;
+    use std::fs;
+
+    let bytes = fs::read(path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let media_type =
+        detect_media_type(path).unwrap_or_else(|| "application/octet-stream".to_string());
+    let base64_string = base64::engine::general_purpose::STANDARD.encode(&bytes);
+
+    Ok((base64_string, media_type))
+}
+
+/// Convert ChatMessage to shannon_core Message, handling image attachments.
+fn chat_message_to_core_message(msg: &ChatMessage) -> shannon_core::api::Message {
+    use shannon_core::api::{ContentBlock, ImageSource, MessageContent};
+
+    // Check if message has image attachments
+    if let Some(ref attachments) = msg.file_attachments {
+        if !attachments.is_empty() {
+            let has_images = attachments.iter().any(|a| {
+                a.media_type
+                    .as_ref()
+                    .map_or(false, |mt| mt.starts_with("image/"))
+            });
+
+            if has_images {
+                let mut blocks = vec![ContentBlock::Text {
+                    text: msg.content.clone(),
+                }];
+
+                for attachment in attachments {
+                    if let Some(ref media_type) = attachment.media_type {
+                        if media_type.starts_with("image/") {
+                            if let Some(ref base64_data) = attachment.base64_data {
+                                blocks.push(ContentBlock::Image {
+                                    source: ImageSource::base64(media_type, base64_data),
+                                });
+                            }
+                        }
+                    }
+                }
+
+                return shannon_core::api::Message {
+                    role: msg.role.clone(),
+                    content: MessageContent::Blocks(blocks),
+                };
+            }
+        }
+    }
+
+    // Default to text-only message
+    shannon_core::api::Message {
+        role: msg.role.clone(),
+        content: MessageContent::Text(msg.content.clone()),
+    }
 }
 
 /// Status response for the desktop UI.
@@ -180,6 +279,8 @@ impl AppState {
             cancellation_token: Arc::new(Mutex::new(None)),
             current_session_id: Arc::new(Mutex::new(None)),
             background_tasks: Arc::new(Mutex::new(Vec::new())),
+            skill_registry: Arc::new(SkillRegistry::new()),
+            mcp_pool: Arc::new(McpProcessPool::new()),
         }
     }
 
@@ -253,10 +354,17 @@ pub async fn send_message(
                             .file_name()
                             .and_then(|name| name.to_str())
                             .and_then(|name_str| {
-                                std::fs::metadata(&path).ok().map(|meta| FileAttachment {
-                                    name: name_str.to_string(),
-                                    path: path.clone(),
-                                    size: meta.len(),
+                                std::fs::metadata(&path).ok().and_then(|meta| {
+                                    // Try to read file and convert to base64 for images
+                                    file_to_base64(&path).ok().map(|(base64_data, media_type)| {
+                                        FileAttachment {
+                                            name: name_str.to_string(),
+                                            path: path.clone(),
+                                            size: meta.len(),
+                                            media_type: Some(media_type),
+                                            base64_data: Some(base64_data),
+                                        }
+                                    })
                                 })
                             })
                     })
@@ -282,7 +390,16 @@ pub async fn send_message(
     let client_config = state.client_config.read().await.clone();
     let client = LlmClient::new(client_config);
     let tools = state.tools.clone();
-    let permissions = PermissionManager::new(); // TODO: Use shared permissions when Clone is available
+
+    // Create PermissionManager from shared state with config-based approval mode
+    let desktop_cfg = state.desktop_config.read().await;
+    let approval_mode_str = desktop_cfg.approval_mode.as_deref().unwrap_or("confirm");
+    let approval_mode = parse_approval_mode(approval_mode_str);
+
+    // Create a new PermissionManager instance configured from shared state
+    let mut permissions = PermissionManager::new();
+    permissions.set_approval_mode(approval_mode);
+
     let _state_mgr = state.state_manager.clone();
     let _qe_config = state.qe_config.read().await.clone();
 
@@ -787,6 +904,24 @@ pub async fn configure(
 
             Ok(())
         }
+        "approval_mode" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.approval_mode = Some(update.value.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "approval_mode".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
         _ => Err(format!("Unknown config key: {}", update.key)),
     }
 }
@@ -805,6 +940,7 @@ pub async fn switch_provider(
         working_dir: None,
         theme: None,
         mcp_servers: Vec::new(),
+        approval_mode: None, // Keep existing approval mode
     };
 
     let client_config = AppState::build_client_config(&new_config);
@@ -1549,20 +1685,35 @@ pub async fn get_mcp_server_config(name: String) -> Result<config::McpServerConf
 
 /// List all configured MCP servers with their status.
 #[tauri::command]
-pub async fn list_mcp_servers() -> Result<Vec<McpServerInfo>, String> {
+pub async fn list_mcp_servers(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<McpServerInfo>, String> {
     use crate::config;
+    use shannon_mcp::ServerState;
 
     let servers = config::load_mcp_servers();
+    let pool = state.mcp_pool.clone();
+
+    let pool_states = pool.list_servers().await;
+    let state_map: std::collections::HashMap<String, ServerState> =
+        pool_states.into_iter().collect();
+
     let server_infos: Vec<McpServerInfo> = servers
         .into_iter()
-        .map(|s| McpServerInfo {
-            name: s.name,
-            command: s.command,
-            enabled: s.enabled,
-            connected: false, // TODO: Query actual server state
-            tool_count: 0,
-            tools: Vec::new(),
-            last_connected: None,
+        .map(|s| {
+            let connected = state_map
+                .get(&s.name)
+                .map(|st| matches!(st, ServerState::Healthy))
+                .unwrap_or(false);
+            McpServerInfo {
+                name: s.name,
+                command: s.command,
+                enabled: s.enabled,
+                connected,
+                tool_count: 0,
+                tools: Vec::new(),
+                last_connected: None,
+            }
         })
         .collect();
 
@@ -1591,29 +1742,57 @@ pub struct SkillDetail {
     pub category: Option<String>,
 }
 
-/// List all available skills from .shannon/skills/ and .claude/commands/ directories.
+/// List all available skills from shannon-skills registry.
 #[tauri::command]
-pub async fn list_skills() -> Result<Vec<SkillInfo>, String> {
-    use std::path::Path;
+pub async fn list_skills(state: tauri::State<'_, AppState>) -> Result<Vec<SkillInfo>, String> {
+    let registry = state.skill_registry.clone();
 
-    let mut skills = Vec::new();
+    // Load skills from standard directories
+    let cwd = std::env::current_dir().map_err(|e| e.to_string())?;
 
-    // Scan .shannon/skills/ directory
-    let shannon_skills_dir = Path::new(".shannon/skills");
+    // Load from .shannon/skills/ and .claude/commands/
+    let shannon_skills_dir = cwd.join(".shannon/skills");
+    let claude_commands_dir = cwd.join(".claude/commands");
+
     if shannon_skills_dir.exists() {
-        scan_directory_for_skills(shannon_skills_dir, "shannon", &mut skills)?;
+        use shannon_skills::SkillSource;
+        let _ = registry.load_from_directory(&shannon_skills_dir, &SkillSource::Project);
     }
 
-    // Scan .claude/commands/ directory
-    let claude_commands_dir = Path::new(".claude/commands");
     if claude_commands_dir.exists() {
-        scan_directory_for_skills(claude_commands_dir, "claude", &mut skills)?;
+        use shannon_skills::SkillSource;
+        let _ =
+            registry.load_from_directory(&claude_commands_dir, &SkillSource::CommandsDeprecated);
     }
 
-    // Sort skills by name
-    skills.sort_by(|a, b| a.name.cmp(&b.name));
+    // Get all available skills
+    let skills = registry.list();
 
-    Ok(skills)
+    // Convert to SkillInfo
+    let mut skill_infos: Vec<SkillInfo> = skills
+        .into_iter()
+        .filter(|skill| skill.user_invocable && !skill.is_hidden)
+        .map(|skill| {
+            let trigger = if skill.aliases.is_empty() {
+                format!("/{}", skill.name)
+            } else {
+                format!("/{}", skill.aliases.first().unwrap_or(&skill.name))
+            };
+
+            SkillInfo {
+                name: skill.name.clone(),
+                description: skill.description,
+                trigger,
+                source: format!("{:?}", skill.source),
+                category: None,
+            }
+        })
+        .collect();
+
+    // Sort by name
+    skill_infos.sort_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(skill_infos)
 }
 
 /// Helper function to scan a directory for skill files.
@@ -1737,31 +1916,34 @@ fn extract_description_from_content(content: &str) -> Option<String> {
 
 /// Get detailed information about a specific skill.
 #[tauri::command]
-pub async fn get_skill_detail(name: String) -> Result<SkillDetail, String> {
-    use std::path::Path;
+pub async fn get_skill_detail(
+    state: tauri::State<'_, AppState>,
+    name: String,
+) -> Result<SkillDetail, String> {
+    let registry = state.skill_registry.clone();
 
-    // Search in both directories
-    let search_dirs = [
-        (Path::new(".shannon/skills"), "shannon"),
-        (Path::new(".claude/commands"), "claude"),
-    ];
+    let full = registry.get_full_skill(&name).map_err(|e| e.to_string())?;
+    let skill = &full.skill;
 
-    for (dir, source) in search_dirs {
-        if !dir.exists() {
-            continue;
-        }
+    let trigger = if skill.aliases.is_empty() {
+        format!("/{}", skill.name)
+    } else {
+        format!("/{}", skill.aliases.first().unwrap_or(&skill.name))
+    };
 
-        // Search for the skill file
-        let skill_path = find_skill_file(dir, &name)?;
-        let content = std::fs::read_to_string(&skill_path)
-            .map_err(|e| format!("Failed to read skill file: {}", e))?;
-
-        // Parse the skill detail
-        let detail = parse_skill_detail(&skill_path, &content, source)?;
-        return Ok(detail);
-    }
-
-    Err(format!("Skill not found: {}", name))
+    Ok(SkillDetail {
+        name: skill.name.clone(),
+        description: skill.description.clone(),
+        trigger,
+        content: full.content().to_string(),
+        parameters: skill
+            .argument_hint
+            .as_ref()
+            .map(|h| vec![h.clone()])
+            .unwrap_or_default(),
+        source: skill.id.to_string(),
+        category: None,
+    })
 }
 
 /// Find a skill file by name in a directory.
@@ -1959,7 +2141,11 @@ pub async fn start_background_task(
     tokio::spawn(async move {
         // Build query engine for this task
         let client = LlmClient::new(client_config);
-        let permissions = PermissionManager::new(); // TODO: Use shared permissions when Clone is available
+
+        // Create PermissionManager with default approval mode for background tasks
+        let mut permissions = PermissionManager::new();
+        permissions.set_approval_mode(ApprovalMode::FullAuto); // Background tasks use auto-approve
+
         let engine =
             QueryEngine::with_defaults_arc(client, tools, permissions, StateManager::new());
 

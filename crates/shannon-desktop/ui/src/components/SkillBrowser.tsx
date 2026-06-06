@@ -1,5 +1,5 @@
 // Skill browser for browsing and using available skills
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Search, Code, Book, Terminal, Zap, ExternalLink, X } from 'lucide-react'
 
 interface Skill {
@@ -34,6 +34,7 @@ interface SkillBrowserProps {
  * - Clicking a skill inserts its trigger into the message input
  * - Skill detail view shows description, parameters, usage examples
  * - Tokyo Night styling
+ * - Full keyboard navigation and accessibility support
  */
 export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
   const [searchQuery, setSearchQuery] = useState('')
@@ -42,11 +43,46 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
   const [skillDetail, setSkillDetail] = useState<SkillDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState(-1)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Load skills on mount
-  useState(() => {
+  useEffect(() => {
     loadSkills()
-  })
+  }, [])
+
+  // Focus search input on mount
+  useEffect(() => {
+    searchInputRef.current?.focus()
+  }, [])
+
+  // Reset focused index when search query changes
+  useEffect(() => {
+    setFocusedIndex(-1)
+  }, [searchQuery])
+
+  // Keyboard navigation for skill list
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const filteredSkills = skills.filter(skill =>
+      skill.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      skill.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (skill.category && skill.category.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setFocusedIndex(prev => Math.min(prev + 1, filteredSkills.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setFocusedIndex(prev => Math.max(prev - 1, 0))
+    } else if (e.key === 'Enter' && focusedIndex >= 0 && filteredSkills[focusedIndex]) {
+      e.preventDefault()
+      handleSkillClick(filteredSkills[focusedIndex])
+    } else if (e.key === 'Escape') {
+      e.preventDefault()
+      onClose?.()
+    }
+  }, [skills, searchQuery, focusedIndex])
 
   const loadSkills = async () => {
     setLoading(true)
@@ -146,17 +182,24 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
 
   if (selectedSkill && skillDetail) {
     return (
-      <div className="space-y-4">
+      <div
+        className="space-y-4"
+        role="region"
+        aria-label="Skill details"
+        aria-live="polite"
+      >
         {/* Header with back button */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
             className="p-2 rounded-lg bg-[#24283b] text-[#c0caf5] hover:bg-[#2a2f44] transition-colors"
+            aria-label="Back to skill list"
+            type="button"
           >
             <X size={18} />
           </button>
           <div className="flex-1">
-            <h2 className="text-[#c0caf5] text-lg font-semibold">Skill Details</h2>
+            <h2 id="skill-detail-title" className="text-[#c0caf5] text-lg font-semibold">Skill Details</h2>
             <div className="flex items-center gap-2 mt-1">
               <code className="px-2 py-1 bg-[#1a1b26] text-[#7aa2f7] text-sm rounded">
                 {skillDetail.trigger}
@@ -169,7 +212,7 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
         </div>
 
         {/* Skill detail content */}
-        <div className="space-y-4">
+        <div className="space-y-4" aria-labelledby="skill-detail-title">
           {/* Description */}
           <div className="p-4 bg-[#1f2335] border border-[#414868] rounded-lg">
             <h3 className="text-[#c0caf5] font-semibold mb-2">Description</h3>
@@ -180,11 +223,12 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
           {skillDetail.parameters.length > 0 && (
             <div className="p-4 bg-[#1f2335] border border-[#414868] rounded-lg">
               <h3 className="text-[#c0caf5] font-semibold mb-2">Parameters</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2" role="list" aria-label="Skill parameters">
                 {skillDetail.parameters.map((param) => (
                   <code
                     key={param}
                     className="px-2 py-1 bg-[#1a1b26] text-[#bb9af7] text-sm rounded border border-[#414868]"
+                    role="listitem"
                   >
                     {param}
                   </code>
@@ -196,7 +240,7 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
           {/* Usage content */}
           <div className="p-4 bg-[#1f2335] border border-[#414868] rounded-lg">
             <h3 className="text-[#c0caf5] font-semibold mb-2">Usage</h3>
-            <pre className="text-sm text-[#a9b1d6] bg-[#1a1b26] p-3 rounded overflow-x-auto">
+            <pre className="text-sm text-[#a9b1d6] bg-[#1a1b26] p-3 rounded overflow-x-auto" tabIndex={0}>
               <code>{skillDetail.content}</code>
             </pre>
           </div>
@@ -206,12 +250,16 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
             <button
               onClick={() => handleInsertTrigger(skillDetail.trigger)}
               className="flex-1 px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded-lg hover:bg-[#7aa2f7]/80 transition-colors font-medium"
+              aria-label={`Insert ${skillDetail.trigger} trigger`}
+              type="button"
             >
               Insert Trigger
             </button>
             <button
               onClick={handleBack}
               className="px-4 py-2 bg-[#414868] text-[#c0caf5] rounded-lg hover:bg-[#565f89] transition-colors"
+              aria-label="Back to skill list"
+              type="button"
             >
               Back
             </button>
@@ -222,13 +270,18 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4"
+      role="region"
+      aria-label="Skill browser"
+      onKeyDown={handleKeyDown}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Terminal className="text-[#7aa2f7]" size={20} />
+          <Terminal className="text-[#7aa2f7]" size={20} aria-hidden />
           <div>
-            <h2 className="text-[#c0caf5] text-lg font-semibold">Skill Browser</h2>
+            <h2 id="skill-browser-title" className="text-[#c0caf5] text-lg font-semibold">Skill Browser</h2>
             <p className="text-[#565f89] text-sm">
               Browse and use available skills
             </p>
@@ -238,6 +291,8 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
           <button
             onClick={onClose}
             className="p-2 rounded-lg bg-[#24283b] text-[#c0caf5] hover:bg-[#2a2f44] transition-colors"
+            aria-label="Close skill browser"
+            type="button"
           >
             <X size={18} />
           </button>
@@ -246,52 +301,68 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
 
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#565f89]" size={18} />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#565f89]" size={18} aria-hidden />
         <input
+          ref={searchInputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search skills by name or description..."
           className="w-full pl-10 pr-4 py-2 bg-[#1f2335] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7]"
+          aria-label="Search skills"
+          aria-describedby="search-instructions"
         />
+        <span id="search-instructions" className="sr-only">
+          Use arrow keys to navigate, Enter to select, Escape to close
+        </span>
       </div>
 
       <>
         {/* Loading state */}
         {loading && (
-          <div className="text-center py-8 text-[#565f89]">
+          <div className="text-center py-8 text-[#565f89]" role="status">
             Loading skills...
           </div>
         )}
 
         {/* Error state */}
         {error && (
-          <div className="p-4 bg-[#f7768e]/10 border border-[#f7768e] rounded-lg">
+          <div
+            className="p-4 bg-[#f7768e]/10 border border-[#f7768e] rounded-lg"
+            role="alert"
+          >
             <p className="text-[#f7768e]">Error: {error}</p>
           </div>
         )}
 
         {/* Skills list */}
         {!loading && !error && (
-          <div className="space-y-4">
+          <div className="space-y-4" role="list" aria-label="Available skills">
             {Object.keys(skillsByCategory).length === 0 ? (
-              <div className="text-center py-8 text-[#565f89]">
+              <div className="text-center py-8 text-[#565f89]" role="status">
                 {searchQuery ? 'No matching skills found' : 'No skills available'}
               </div>
             ) : (
               Object.entries(skillsByCategory).map(([category, categorySkills]) => (
-                <div key={category} className="space-y-2">
+                <div key={category} className="space-y-2" role="group">
                   <div className="flex items-center gap-2">
-                    <Book className="text-[#7dcfff]" size={16} />
+                    <Book className="text-[#7dcfff]" size={16} aria-hidden />
                     <h3 className="text-[#c0caf5] font-semibold capitalize">{category}</h3>
-                    <span className="text-[#565f89] text-sm">({categorySkills.length})</span>
+                    <span className="text-[#565f89] text-sm" aria-label={`${categorySkills.length} skills in ${category}`}>
+                      ({categorySkills.length})
+                    </span>
                   </div>
                   <div className="space-y-2 ml-6">
-                    {categorySkills.map((skill) => (
+                    {categorySkills.map((skill, index) => (
                       <div
                         key={skill.name}
                         onClick={() => handleSkillClick(skill)}
-                        className="p-3 bg-[#1f2335] border border-[#414868] rounded-lg hover:border-[#565f89] transition-colors cursor-pointer"
+                        tabIndex={focusedIndex === index ? 0 : -1}
+                        role="listitem"
+                        aria-label={`${skill.name}: ${skill.description}, trigger: ${skill.trigger}`}
+                        className={`p-3 bg-[#1f2335] border border-[#414868] rounded-lg hover:border-[#565f89] transition-colors cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[#7aa2f7] ${
+                          focusedIndex === index ? 'ring-1 ring-[#7aa2f7]' : ''
+                        }`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
@@ -308,7 +379,7 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
                               </code>
                             </div>
                           </div>
-                          <Zap className="text-[#565f89] flex-shrink-0" size={16} />
+                          <Zap className="text-[#565f89] flex-shrink-0" size={16} aria-hidden />
                         </div>
                       </div>
                     ))}
@@ -322,7 +393,11 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
 
       {/* Stats footer */}
       {!loading && !error && skills.length > 0 && (
-        <div className="flex items-center gap-4 text-sm text-[#565f89] pt-2 border-t border-[#2a2f44]">
+        <div
+          className="flex items-center gap-4 text-sm text-[#565f89] pt-2 border-t border-[#2a2f44]"
+          role="status"
+          aria-label={`Showing ${skills.length} skills in ${Object.keys(skillsByCategory).length} categories`}
+        >
           <span>{skills.length} skills</span>
           <span>•</span>
           <span>{Object.keys(skillsByCategory).length} categories</span>

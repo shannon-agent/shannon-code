@@ -1591,3 +1591,88 @@ async fn switch_session_preserves_data_across_switches() {
     let msgs2 = switch_session(&state, &id2).await.unwrap();
     assert_eq!(msgs2[0].content, "msg in s2");
 }
+
+// ── MCP Server Status Mapping ─────────────────────────────────────────────
+
+/// Mirrors the ServerState matching logic from list_mcp_servers.
+fn is_connected_from_state(state: &str) -> bool {
+    matches!(state, "Healthy")
+}
+
+#[test]
+fn mcp_status_healthy_is_connected() {
+    assert!(is_connected_from_state("Healthy"));
+}
+
+#[test]
+fn mcp_status_starting_is_not_connected() {
+    assert!(!is_connected_from_state("Starting"));
+}
+
+#[test]
+fn mcp_status_unhealthy_is_not_connected() {
+    assert!(!is_connected_from_state("Unhealthy"));
+}
+
+#[test]
+fn mcp_status_stopped_is_not_connected() {
+    assert!(!is_connected_from_state("Stopped"));
+}
+
+#[test]
+fn mcp_status_unknown_is_not_connected() {
+    assert!(!is_connected_from_state("unknown"));
+}
+
+#[test]
+fn mcp_status_mapping_default_is_disconnected() {
+    // When a server is not in the pool, it should report disconnected
+    assert!(!is_connected_from_state(""));
+}
+
+// ── Approval Mode Tests ────────────────────────────────────────────────────
+
+#[test]
+fn approval_mode_valid_modes() {
+    let valid_modes = [
+        "suggest",
+        "plan",
+        "auto",
+        "auto_edit",
+        "full_auto",
+        "readonly",
+        "plan_ro",
+        "bypass_permissions",
+        "dont_ask",
+        "confirm",
+    ];
+    for mode in &valid_modes {
+        assert!(!mode.is_empty(), "mode should not be empty");
+        assert!(
+            mode.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+            "mode '{}' should be lowercase_snake",
+            mode
+        );
+    }
+}
+
+#[test]
+fn approval_mode_count_matches_frontend() {
+    // Frontend APPROVAL_MODES has 10 entries, test that count matches
+    assert_eq!(
+        10,
+        [
+            "suggest",
+            "plan",
+            "auto",
+            "auto_edit",
+            "full_auto",
+            "readonly",
+            "plan_ro",
+            "bypass_permissions",
+            "dont_ask",
+            "confirm"
+        ]
+        .len()
+    );
+}

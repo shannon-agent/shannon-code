@@ -1,5 +1,5 @@
 // Inline permission dialog for tool execution approval
-import { useState } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { ShieldAlert, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useTauriEvent } from '../hooks/useTauriEvent'
 import { respondPermission } from '../lib/tauri-api'
@@ -28,6 +28,9 @@ export function PermissionDialog({
   const [alwaysAllow, setAlwaysAllow] = useState(false)
   const [expanded, setExpanded] = useState(true)
   const [responding, setResponding] = useState(false)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const allowButtonRef = useRef<HTMLButtonElement>(null)
+  const denyButtonRef = useRef<HTMLButtonElement>(null)
 
   const request = externalRequest ?? internalRequest
 
@@ -41,6 +44,29 @@ export function PermissionDialog({
       }
     }
   )
+
+  // Focus management when dialog appears
+  useEffect(() => {
+    if (request && expanded) {
+      allowButtonRef.current?.focus()
+    }
+  }, [request, expanded])
+
+  // Keyboard navigation for dialog actions
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape' && expanded) {
+      e.preventDefault()
+      setExpanded(false)
+    } else if (e.key === 'Enter' && e.shiftKey && request) {
+      // Shift+Enter to deny
+      e.preventDefault()
+      handleDeny()
+    } else if (e.key === 'Enter' && request) {
+      // Enter to allow
+      e.preventDefault()
+      handleApprove()
+    }
+  }, [expanded, request])
 
   const handleApprove = async () => {
     if (request) {
@@ -70,29 +96,48 @@ export function PermissionDialog({
     }
   }
 
+  const handleToggleExpanded = useCallback(() => {
+    setExpanded(!expanded)
+  }, [expanded])
+
   if (!request) return null
 
   const riskVariant = RISK_VARIANT[request.risk.toLowerCase()] || 'success'
+  const dialogId = `permission-dialog-${request.request_id}`
+  const contentId = `${dialogId}-content`
 
   return (
-    <div className="mx-4 my-2">
-      <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] overflow-hidden transition-all duration-150">
+    <div
+      ref={dialogRef}
+      className="mx-4 my-2"
+      role="alertdialog"
+      aria-labelledby={`${dialogId}-title`}
+      aria-describedby={`${dialogId}-description`}
+      aria-modal="false"
+    >
+      <div
+        className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] overflow-hidden transition-all duration-150"
+        onKeyDown={handleKeyDown}
+      >
         {/* Header row */}
         <div className="flex items-center gap-2 px-4 py-2.5">
-          <ShieldAlert className="w-4 h-4 flex-shrink-0 text-[var(--warning)]" />
+          <ShieldAlert className="w-4 h-4 flex-shrink-0 text-[var(--warning)]" aria-hidden />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-[var(--text-primary)]">
+              <span id={`${dialogId}-title`} className="text-sm font-medium text-[var(--text-primary)]">
                 {request.tool}
               </span>
-              <Badge variant={riskVariant}>{request.risk}</Badge>
+              <Badge variant={riskVariant} aria-label={`Risk level: ${request.risk}`}>{request.risk}</Badge>
             </div>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setExpanded(!expanded)}
+            onClick={handleToggleExpanded}
             className="h-6 w-6 p-0"
+            aria-expanded={expanded}
+            aria-controls={contentId}
+            aria-label={expanded ? 'Collapse details' : 'Expand details'}
           >
             {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </Button>
@@ -102,12 +147,14 @@ export function PermissionDialog({
         {expanded && (
           <>
             <Separator />
-            <div className="px-4 py-3 space-y-3">
-              <ScrollArea className="max-h-32">
-                <pre className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed">
-                  <code>{JSON.stringify(request.input, null, 2)}</code>
-                </pre>
-              </ScrollArea>
+            <div id={contentId} className="px-4 py-3 space-y-3">
+              <div id={`${dialogId}-description`}>
+                <ScrollArea className="max-h-32">
+                  <pre className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed">
+                    <code>{JSON.stringify(request.input, null, 2)}</code>
+                  </pre>
+                </ScrollArea>
+              </div>
 
               <div className="flex items-center justify-between gap-2">
                 <label className="flex items-center gap-1.5 cursor-pointer">
@@ -116,17 +163,32 @@ export function PermissionDialog({
                     checked={alwaysAllow}
                     onChange={(e) => setAlwaysAllow(e.target.checked)}
                     className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
+                    aria-label="Always allow this tool"
                   />
                   <span className="text-[11px] text-[var(--text-muted)]">Always allow</span>
                 </label>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="destructive" size="sm" onClick={handleDeny} disabled={responding}>
-                    <X className="w-3 h-3 mr-1" />
+                  <Button
+                    ref={denyButtonRef}
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDeny}
+                    disabled={responding}
+                    aria-label={`Deny ${request.tool} (Shift+Enter)`}
+                  >
+                    <X className="w-3 h-3 mr-1" aria-hidden />
                     Deny
                   </Button>
-                  <Button variant="success" size="sm" onClick={handleApprove} disabled={responding}>
-                    <Check className="w-3 h-3 mr-1" />
+                  <Button
+                    ref={allowButtonRef}
+                    variant="success"
+                    size="sm"
+                    onClick={handleApprove}
+                    disabled={responding}
+                    aria-label={`Allow ${request.tool} (Enter)`}
+                  >
+                    <Check className="w-3 h-3 mr-1" aria-hidden />
                     Allow
                   </Button>
                 </div>

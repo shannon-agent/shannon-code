@@ -5571,11 +5571,14 @@ name = "shannon-desktop"
 version = "0.2.4"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "chrono",
  "futures",
  "serde",
  "serde_json",
  "shannon-core",
+ "shannon-mcp",
+ "shannon-skills",
  "shannon-tools",
  "shannon-types",
  "tauri",

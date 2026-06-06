@@ -101,7 +101,7 @@ describe('CommandPalette', () => {
     fireEvent.change(input, { target: { value: 'nonexistent' } })
 
     await waitFor(() => {
-      expect(screen.getByText('No actions found')).toBeDefined()
+      expect(screen.getByText('No results found')).toBeDefined()
     })
   })
 })

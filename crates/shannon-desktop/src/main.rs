@@ -7,7 +7,7 @@
 #[cfg(feature = "tauri")]
 fn main() {
     use shannon_desktop::commands;
-    use tauri::{Emitter, Manager};
+    use tauri::{Emitter, Listener, Manager};
     use tauri::{
         menu::{MenuBuilder, MenuItemBuilder},
         tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -88,19 +88,47 @@ fn main() {
                     let _ = app.emit("focus-input", ());
                 });
 
-            // System tray configuration
+            // Listen for check-updates events from frontend
+            let handle = app.handle().clone();
+            let _ = app.listen("check-updates", move |_event| {
+                let handle = handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(Some(update_info)) = handle.updater()?.check().await {
+                        let payload = serde_json::json!({
+                            "version": update_info.version,
+                            "date": update_info.date.map(|d| d.to_string()),
+                            "body": update_info.body
+                        });
+                        let _ = handle.emit("update-available", payload);
+                    }
+                    Ok::<(), tauri_plugin_updater::Error>(())
+                });
+            });
 
             // System tray configuration
             let show_item = MenuItemBuilder::with_id("show", "Show Shannon").build(app)?;
             let new_session_item =
                 MenuItemBuilder::with_id("new-session", "New Session").build(app)?;
+            let check_updates_item =
+                MenuItemBuilder::with_id("check-updates", "Check for Updates").build(app)?;
+            let status_item =
+                MenuItemBuilder::with_id("status", "Status: anthropic / claude-sonnet-4-6")
+                    .enabled(false)
+                    .build(app)?;
             let quit_item = MenuItemBuilder::with_id("quit", "Quit").build(app)?;
 
             let menu = MenuBuilder::new(app)
-                .items(&[&show_item, &new_session_item, &quit_item])
+                .items(&[
+                    &status_item,
+                    &show_item,
+                    &new_session_item,
+                    &check_updates_item,
+                    &quit_item,
+                ])
                 .build()?;
 
             let _tray = TrayIconBuilder::new()
+                .tooltip("Shannon AI Assistant — anthropic / claude-sonnet-4-6")
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id().as_ref() {
                     "show" => {
@@ -113,6 +141,10 @@ fn main() {
                     "new-session" => {
                         // Trigger new session via event
                         let _ = app.emit("new-session", ());
+                    }
+                    "check-updates" => {
+                        // Trigger update check via event
+                        let _ = app.emit("check-updates", ());
                     }
                     "quit" => {
                         app.exit(0);
@@ -140,18 +172,13 @@ fn main() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Ok(Some(update_info)) = handle.updater()?.check().await {
-                    println!(
-                        "Update available: {} from {}",
-                        update_info.version,
-                        update_info
-                            .date
-                            .map(|d| d.to_string())
-                            .unwrap_or_else(|| "unknown".to_string())
-                    );
-                    if let Some(body) = update_info.body {
-                        println!("Release notes: {}", body);
-                    }
-                    // Note: Update installation UI notification will be handled by worker-2
+                    // Emit update-available event for frontend
+                    let payload = serde_json::json!({
+                        "version": update_info.version,
+                        "date": update_info.date.map(|d| d.to_string()),
+                        "body": update_info.body
+                    });
+                    let _ = handle.emit("update-available", payload);
                 } else {
                     println!("No updates available or update check failed");
                 }

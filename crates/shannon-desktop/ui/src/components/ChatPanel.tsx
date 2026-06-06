@@ -7,6 +7,8 @@ import { ToolCallDisplay } from './ToolCallDisplay'
 import { DiffViewer } from './DiffViewer'
 import { DiffReviewPanel } from './DiffReviewPanel'
 import { ModeToggle } from './ModeToggle'
+import { ApprovalModeSelector } from './ApprovalModeSelector'
+import { PermissionDialog } from './PermissionDialog'
 import { Button } from './ui/button'
 import { Shield, CheckCircle, AlertCircle } from 'lucide-react'
 import { Badge } from './ui/badge'
@@ -129,31 +131,8 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
         </div>
       )}
 
-      {permissionRequest && (
-        <div className="bg-[var(--warning)]/10 border-l-4 border-[var(--warning)] p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-[var(--warning)]">
-                  Permission Request: {permissionRequest.tool}
-                </p>
-                <Badge variant="warning">{permissionRequest.risk}</Badge>
-              </div>
-              <pre className="text-xs text-[var(--text-muted)] mt-1 max-h-24 overflow-auto">
-                {JSON.stringify(permissionRequest.input, null, 2)}
-              </pre>
-            </div>
-            <div className="flex gap-2 ml-4">
-              <Button variant="success" size="sm" onClick={() => respondPermission(true)}>
-                Allow
-              </Button>
-              <Button variant="destructive" size="sm" onClick={() => respondPermission(false)}>
-                Deny
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Permission Dialog */}
+      <PermissionDialog request={permissionRequest} />
 
       {/* Review Changes button */}
       {diffReviewAvailable && (
@@ -221,48 +200,13 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
         <div className="flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-4">
             <ModeToggle mode={mode} onChange={setMode} disabled={isStreaming} />
-            
+
             {/* Approval Mode Selector */}
-            <div className="flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setApprovalMode('always')}
-                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
-                    approvalMode === 'always'
-                      ? 'bg-[var(--success)] text-[#1a1b26]'
-                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
-                  }`}
-                  disabled={isStreaming}
-                >
-                  <CheckCircle className="w-3 h-3 inline mr-1" />
-                  Always
-                </button>
-                <button
-                  onClick={() => setApprovalMode('confirm')}
-                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
-                    approvalMode === 'confirm'
-                      ? 'bg-[var(--warning)] text-[#1a1b26]'
-                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
-                  }`}
-                  disabled={isStreaming}
-                >
-                  <AlertCircle className="w-3 h-3 inline mr-1" />
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setApprovalMode('never')}
-                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
-                    approvalMode === 'never'
-                      ? 'bg-[var(--error)] text-white'
-                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
-                  }`}
-                  disabled={isStreaming}
-                >
-                  Never
-                </button>
-              </div>
-            </div>
+            <ApprovalModeSelector
+              mode={approvalMode}
+              onChange={setApprovalMode}
+              disabled={isStreaming}
+            />
           </div>
           <span className="text-[10px] text-[var(--text-muted)]">
             {mode === 'plan' ? 'Read-only · no tool execution' : 'Full access · tools enabled'}

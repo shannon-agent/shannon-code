@@ -7,6 +7,7 @@
 
 pub mod config;
 pub mod events;
+pub mod mcp;
 
 #[cfg(feature = "tauri")]
 pub mod commands;

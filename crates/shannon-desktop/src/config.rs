@@ -16,6 +16,7 @@ pub struct DesktopConfig {
     pub working_dir: Option<String>,
     pub theme: Option<String>,
     pub mcp_servers: Vec<McpServerConfig>,
+    pub approval_mode: Option<String>,
 }
 
 /// MCP server configuration.
@@ -38,6 +39,7 @@ impl Default for DesktopConfig {
             working_dir: None,
             theme: None,
             mcp_servers: Vec::new(),
+            approval_mode: Some("confirm".into()),
         }
     }
 }
@@ -113,6 +115,7 @@ mod tests {
         assert_eq!(config.model, Some("claude-sonnet-4-6".into()));
         assert!(config.working_dir.is_none());
         assert!(config.theme.is_none());
+        assert_eq!(config.approval_mode, Some("confirm".into()));
     }
 
     #[test]
@@ -125,6 +128,7 @@ mod tests {
             working_dir: None,
             theme: None,
             mcp_servers: vec![],
+            approval_mode: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
@@ -139,5 +143,45 @@ mod tests {
         assert!(path.to_string_lossy().contains(".shannon"));
         assert!(path.to_string_lossy().contains("desktop"));
         assert!(path.to_string_lossy().contains("config.json"));
+    }
+
+    #[test]
+    fn test_approval_mode_serialization() {
+        let config = DesktopConfig {
+            provider: Some("anthropic".into()),
+            api_key: None,
+            base_url: None,
+            model: Some("claude-sonnet-4-6".into()),
+            working_dir: None,
+            theme: None,
+            mcp_servers: vec![],
+            approval_mode: Some("auto".into()),
+        };
+        let json = serde_json::to_string(&config).unwrap();
+        let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.approval_mode, Some("auto".into()));
+    }
+
+    #[test]
+    fn test_approval_mode_persistence() {
+        let config = DesktopConfig {
+            provider: Some("anthropic".into()),
+            api_key: None,
+            base_url: None,
+            model: Some("claude-sonnet-4-6".into()),
+            working_dir: None,
+            theme: None,
+            mcp_servers: vec![],
+            approval_mode: Some("full_auto".into()),
+        };
+
+        // Test serialization preserves approval_mode
+        let json = serde_json::to_string_pretty(&config).unwrap();
+        assert!(json.contains("approval_mode"));
+        assert!(json.contains("full_auto"));
+
+        // Test deserialization
+        let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.approval_mode, Some("full_auto".into()));
     }
 }

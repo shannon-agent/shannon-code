@@ -5,7 +5,8 @@ import {
   getConfig,
   getStatus,
   getConversation,
-  respondPermission as respondPermissionApi
+  respondPermission as respondPermissionApi,
+  configure
 } from '../lib/tauri-api'
 import { useToast } from '../components/ToastProvider'
 import type {
@@ -89,6 +90,11 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
         setProvider(status.provider)
         setQuerying(status.querying)
         setMessages(conversation)
+
+        // Load approval mode from config, default to 'confirm'
+        if (cfg.approval_mode) {
+          setApprovalMode(cfg.approval_mode as ApprovalMode)
+        }
       } catch (error) {
         console.error('Failed to load initial state:', error)
       } finally {
@@ -112,6 +118,18 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
       }
     }
   }, [permissionRequest, addToast])
+
+  // Set approval mode and persist to backend config
+  const handleSetApprovalMode = useCallback(async (mode: ApprovalMode) => {
+    setApprovalMode(mode)
+    try {
+      await configure({ key: 'approval_mode', value: mode })
+      addToast(`Approval mode set to ${mode}`, 'success')
+    } catch (error) {
+      console.error('Failed to save approval mode:', error)
+      addToast('Failed to save approval mode', 'error')
+    }
+  }, [addToast])
 
   // Subscribe to Tauri events
   useEffect(() => {
@@ -234,7 +252,7 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     setMode,
     respondPermission,
     approvalMode,
-    setApprovalMode
+    setApprovalMode: handleSetApprovalMode
   }
 
   return (

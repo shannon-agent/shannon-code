@@ -1,5 +1,6 @@
 // IDE-style layout with sidebar, main content, bottom panel, and right panel
 import { ReactNode, useState, useCallback } from 'react'
+import { UpdateBanner } from './UpdateBanner'
 
 interface LayoutProps {
   sidebar?: ReactNode
@@ -34,7 +35,11 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
   const toggleSidebar = externalToggleSidebar ?? (() => setInternalSidebarCollapsed(prev => !prev))
 
   return (
-    <div className="flex h-screen bg-[var(--bg-primary)]">
+    <div className="flex h-screen bg-[var(--bg-primary)] flex flex-col">
+      {/* Update Banner */}
+      <UpdateBanner />
+
+      <div className="flex flex-1 min-h-0">
       {/* Left Sidebar */}
       {sidebar && !sidebarCollapsed && (
         <aside className="w-[220px] flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border)] overflow-hidden">
@@ -95,6 +100,7 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
           {panel}
         </aside>
       )}
+      </div>
     </div>
   )
 }

@@ -145,6 +145,21 @@ pub struct HunkAction {
     pub action: String, // "accept" or "reject"
 }
 
+/// Update available event payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateAvailablePayload {
+    pub version: String,
+    pub date: Option<String>,
+    pub body: Option<String>,
+}
+
+/// Update download progress event payload.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateProgressPayload {
+    pub progress: f32, // 0.0 to 1.0
+    pub status: String,
+}
+
 /// Diff file info for review panel.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiffFileInfo {
@@ -181,6 +196,10 @@ pub mod event_names {
     pub const DIFF_REVIEW_AVAILABLE: &str = "diff-review-available";
     pub const BACKGROUND_TASK_UPDATE: &str = "background-task-update";
     pub const BACKGROUND_TASKS_UPDATED: &str = "background-tasks-updated";
+    pub const UPDATE_AVAILABLE: &str = "update-available";
+    pub const UPDATE_PROGRESS: &str = "update-progress";
+    pub const UPDATE_COMPLETED: &str = "update-completed";
+    pub const CHECK_UPDATES: &str = "check-updates";
 }
 
 #[cfg(test)]

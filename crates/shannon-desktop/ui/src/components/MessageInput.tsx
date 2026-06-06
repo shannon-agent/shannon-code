@@ -89,6 +89,20 @@ export function MessageInput({
   }, [])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle keyboard shortcuts for attachment navigation
+    if (e.key === 'Escape' && attachments.length > 0) {
+      // Clear all attachments
+      e.preventDefault()
+      setAttachments([])
+      return
+    }
+
+    // Handle Tab for attachment navigation when attachments exist
+    if (e.key === 'Tab' && attachments.length > 0) {
+      // Could be implemented for attachment selection
+      // For now, let default behavior continue
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if ((text.trim() || attachments.length > 0) && !disabled) {
@@ -131,35 +145,41 @@ export function MessageInput({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      role="region"
+      aria-label="Message input area"
     >
       {/* File attachments */}
       {attachments.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-2" role="list" aria-label="Attached files">
           {attachments.map((attachment, index) => (
             <div
               key={index}
               className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg group"
+              role="listitem"
+              aria-label={`Attachment: ${attachment.name}, ${formatFileSize(attachment.size)}`}
             >
               {attachment.preview ? (
-                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
-                  <img 
-                    src={attachment.preview} 
+                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0" aria-hidden>
+                  <img
+                    src={attachment.preview}
                     alt={attachment.name}
                     className="w-full h-full object-cover"
                   />
                 </div>
               ) : (
-                <Paperclip className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
+                <Paperclip className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" aria-hidden />
               )}
               <span className="text-sm text-[var(--text-secondary)] truncate max-w-[150px]">
                 {attachment.name}
               </span>
-              <span className="text-xs text-[var(--text-muted)]">
+              <span className="text-xs text-[var(--text-muted)]" aria-label={`Size: ${formatFileSize(attachment.size)}`}>
                 {formatFileSize(attachment.size)}
               </span>
               <button
                 onClick={() => removeAttachment(index)}
                 className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-[var(--bg-primary)] rounded transition-all"
+                aria-label={`Remove ${attachment.name}`}
+                title={`Remove ${attachment.name}`}
               >
                 <X className="w-3 h-3 text-[var(--text-muted)]" />
               </button>
@@ -175,6 +195,8 @@ export function MessageInput({
             ? 'border-[var(--accent)] bg-[var(--accent)]/5'
             : 'border-[var(--border)] focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_0_3px_var(--accent)]/15'
         )}
+        role="search"
+        aria-label="Compose message"
       >
         <input
           ref={fileInputRef}
@@ -189,28 +211,31 @@ export function MessageInput({
                 path: (file as any).path || file.name,
                 size: file.size
               }
-              
+
               // Generate preview for images
               if (file.type.startsWith('image/')) {
                 const reader = new FileReader()
                 reader.onload = (ev) => {
                   const preview = ev.target?.result as string
-                  setAttachments(prev => prev.map(a => 
+                  setAttachments(prev => prev.map(a =>
                     a.path === attachment.path ? { ...a, preview } : a
                   ))
                 }
                 reader.readAsDataURL(file)
               }
-              
+
               return attachment
             })
             setAttachments(prev => [...prev, ...processedAttachments])
           }}
+          aria-label="Attach files"
         />
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex-shrink-0 p-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
           title="Attach files"
+          aria-label="Attach files"
+          type="button"
         >
           <Paperclip className="w-4 h-4" />
         </button>
@@ -225,6 +250,8 @@ export function MessageInput({
           rows={1}
           className="border-0 bg-transparent focus-visible:ring-0 px-0 py-3 pr-2 text-sm leading-relaxed"
           style={{ maxHeight: '200px' }}
+          aria-label="Message text"
+          aria-describedby={attachments.length > 0 ? 'attachments-instructions' : undefined}
         />
 
         <Button
@@ -237,6 +264,8 @@ export function MessageInput({
               ? ''
               : 'bg-transparent text-[var(--text-muted)] hover:bg-transparent hover:text-[var(--text-muted)]'
           )}
+          aria-label="Send message"
+          title="Send message (Enter)"
         >
           {disabled ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -248,23 +277,34 @@ export function MessageInput({
 
       {/* Drag overlay */}
       {isDragging && (
-        <div className="absolute inset-0 flex items-center justify-center bg-[var(--accent)]/10 rounded-xl border-2 border-dashed border-[var(--accent)] pointer-events-none">
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-[var(--accent)]/10 rounded-xl border-2 border-dashed border-[var(--accent)] pointer-events-none"
+          role="status"
+          aria-live="polite"
+        >
           <div className="text-center">
-            <Paperclip className="w-8 h-8 mx-auto mb-2 text-[var(--accent)]" />
+            <Paperclip className="w-8 h-8 mx-auto mb-2 text-[var(--accent)]" aria-hidden />
             <p className="text-sm font-medium text-[var(--accent)]">Drop files to attach</p>
           </div>
         </div>
       )}
 
       <div className="flex items-center justify-between mt-1.5 px-1">
-        <div className="text-[10px] text-[var(--text-muted)]">
+        <div
+          id="attachments-instructions"
+          className="text-[10px] text-[var(--text-muted)]"
+          aria-hidden
+        >
           <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Enter</kbd>
           {' send '}
           <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Shift+Enter</kbd>
           {' newline'}
         </div>
         {characterCount > 0 && (
-          <span className={cn('text-[10px] tabular-nums', isNearLimit ? 'text-[var(--error)]' : 'text-[var(--text-muted)]')}>
+          <span
+            className={cn('text-[10px] tabular-nums', isNearLimit ? 'text-[var(--error)]' : 'text-[var(--text-muted)]')}
+            aria-label={`Character count: ${characterCount} of ${maxLength}`}
+          >
             {characterCount}/{maxLength}
           </span>
         )}

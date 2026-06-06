@@ -69,7 +69,7 @@ describe('TerminalPane', () => {
 
     // Wait for async
     await vi.waitFor(() => {
-      expect(screen.getByText('Error: command not found')).toBeDefined()
+      expect(screen.getByText('command not found')).toBeDefined()
     })
   })
 

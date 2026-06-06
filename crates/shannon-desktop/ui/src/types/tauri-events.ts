@@ -118,6 +118,16 @@ export interface DesktopConfig {
   api_key: string
   base_url?: string
   model: string
+  working_dir?: string
+  theme?: string
+  mcp_servers: Array<{
+    name: string
+    command: string
+    args: string[]
+    env: Record<string, string>
+    enabled: boolean
+  }>
+  approval_mode?: string
 }
 
 export interface SendMessageResponse {
@@ -185,10 +195,20 @@ export interface BackgroundTaskInfo {
   output: string
 }
 
-// Approval mode for tool execution
-export type ApprovalMode = 'always' | 'confirm' | 'never'
+// Approval mode for tool execution - matches Rust ApprovalMode enum
+export type ApprovalMode =
+  | 'suggest'      // Ask for confirmation on every tool execution (default)
+  | 'plan'         // Plan first, ask before execution
+  | 'auto'         // Background safety classifier auto-approves low-risk operations
+  | 'auto_edit'    // Auto-accept file ops, ask for bash
+  | 'full_auto'    // Auto-approve everything except critical
+  | 'readonly'     // Only allow read operations
+  | 'plan_ro'      // Read-only analysis mode, no tool execution
+  | 'bypass_permissions' // Skip all permission checks
+  | 'dont_ask'     // Accept everything without prompting
+  | 'confirm'      // Alias for suggest (ask each time)
 
 export interface ApprovalModeConfig {
   mode: ApprovalMode
- highRiskTools?: string[]  // Tools that always require confirmation
+  highRiskTools?: string[]  // Tools that always require confirmation
 }
