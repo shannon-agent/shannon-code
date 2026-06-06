@@ -1,7 +1,7 @@
 // Left sidebar session list with create/delete functionality and polished design
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Trash2, MessageSquare, Search, MoreHorizontal, Edit, Copy } from 'lucide-react'
-import { listSessions, newSession, deleteSession, searchSessions, renameSession, duplicateSession } from '../lib/tauri-api'
+import { Plus, Trash2, MessageSquare, Search, MoreHorizontal, Edit, Copy, Download } from 'lucide-react'
+import { listSessions, newSession, deleteSession, searchSessions, renameSession, duplicateSession, exportSession } from '../lib/tauri-api'
 import type { SessionInfo } from '../types/tauri-events'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
@@ -131,6 +131,23 @@ export function SessionList({
       onSessionSelect(newSession.id)
     } catch (error) {
       console.error('Failed to duplicate session:', error)
+    }
+    setContextMenu(null)
+  }
+
+  const handleExport = async (sessionId: string, format: 'markdown' | 'json') => {
+    try {
+      const content = await exportSession(sessionId, format)
+      const ext = format === 'markdown' ? 'md' : 'json'
+      const blob = new Blob([content], { type: format === 'markdown' ? 'text/markdown' : 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `session-${sessionId.slice(0, 8)}.${ext}`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Failed to export session:', error)
     }
     setContextMenu(null)
   }
@@ -303,6 +320,20 @@ export function SessionList({
           >
             <Copy className="w-3.5 h-3.5" />
             Duplicate
+          </button>
+          <button
+            onClick={() => handleExport(contextMenu.sessionId, 'markdown')}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export Markdown
+          </button>
+          <button
+            onClick={() => handleExport(contextMenu.sessionId, 'json')}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export JSON
           </button>
           <div className="h-px bg-[var(--border)] my-1" />
           <button

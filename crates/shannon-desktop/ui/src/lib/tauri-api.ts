@@ -153,6 +153,13 @@ export async function applyDiff(filePath: string, hunks: HunkAction[]): Promise<
   return await invoke('apply_diff', { filePath, hunks })
 }
 
+/**
+ * Export a session to Markdown or JSON format
+ */
+export async function exportSession(id: string, format: 'markdown' | 'json'): Promise<string> {
+  return await invoke('export_session', { id, format })
+}
+
 // File diff response type
 export interface FileDiff {
   old_content: string

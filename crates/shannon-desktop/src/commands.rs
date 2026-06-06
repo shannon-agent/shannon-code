@@ -1150,6 +1150,96 @@ pub async fn load_session(
     Ok(messages)
 }
 
+/// Export a session to Markdown or JSON format.
+#[tauri::command]
+pub async fn export_session(
+    state: tauri::State<'_, AppState>,
+    id: String,
+    format: String,
+) -> Result<String, String> {
+    let session_uuid = uuid::Uuid::parse_str(&id).map_err(|e| format!("Invalid UUID: {}", e))?;
+
+    let session_data = state
+        .state_manager
+        .load_session(&session_uuid)
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| format!("Session not found: {}", id))?;
+
+    let title = session_data
+        .metadata
+        .title
+        .as_deref()
+        .unwrap_or("Untitled Session");
+
+    match format.as_str() {
+        "markdown" | "md" => {
+            let mut md = format!("# {}\n\n", title);
+            md.push_str(&format!(
+                "Exported: {}\n\n---\n\n",
+                chrono::Local::now().format("%Y-%m-%d %H:%M:%S")
+            ));
+            for msg in &session_data.messages {
+                let role_label = match msg.role.as_str() {
+                    "user" => "**You**",
+                    "assistant" => "**Assistant**",
+                    "system" => "**System**",
+                    other => &format!("**{}**", other),
+                };
+                let content = match &msg.content {
+                    shannon_core::api::MessageContent::Text(t) => t.clone(),
+                    shannon_core::api::MessageContent::Blocks(blocks) => blocks
+                        .iter()
+                        .filter_map(|b| match b {
+                            shannon_core::api::ContentBlock::Text { text } => Some(text.clone()),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                };
+                md.push_str(&format!("### {}\n\n{}\n\n---\n\n", role_label, content));
+            }
+            Ok(md)
+        }
+        "json" => {
+            let messages: Vec<serde_json::Value> = session_data
+                .messages
+                .iter()
+                .map(|msg| {
+                    let content = match &msg.content {
+                        shannon_core::api::MessageContent::Text(t) => t.clone(),
+                        shannon_core::api::MessageContent::Blocks(blocks) => blocks
+                            .iter()
+                            .filter_map(|b| match b {
+                                shannon_core::api::ContentBlock::Text { text } => {
+                                    Some(text.clone())
+                                }
+                                _ => None,
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    };
+                    serde_json::json!({
+                        "role": msg.role,
+                        "content": content,
+                    })
+                })
+                .collect();
+            let export = serde_json::json!({
+                "id": id,
+                "title": title,
+                "exported_at": chrono::Local::now().to_rfc3339(),
+                "message_count": messages.len(),
+                "messages": messages,
+            });
+            serde_json::to_string_pretty(&export).map_err(|e| e.to_string())
+        }
+        _ => Err(format!(
+            "Unsupported format: {}. Use 'markdown' or 'json'.",
+            format
+        )),
+    }
+}
+
 /// Switch to a different session, saving the current one first.
 #[tauri::command]
 pub async fn switch_session(
@@ -1550,9 +1640,10 @@ pub struct McpServerInfo {
     pub last_connected: Option<i64>,
 }
 
-/// Add an MCP server configuration.
+/// Add an MCP server configuration and start the process.
 #[tauri::command]
 pub async fn add_mcp_server(
+    state: tauri::State<'_, AppState>,
     name: String,
     command: String,
     args: Vec<String>,
@@ -1560,7 +1651,6 @@ pub async fn add_mcp_server(
 ) -> Result<McpServerInfo, String> {
     use crate::config;
 
-    // Validate inputs
     if name.is_empty() {
         return Err("Server name cannot be empty".to_string());
     }
@@ -1568,36 +1658,51 @@ pub async fn add_mcp_server(
         return Err("Command cannot be empty".to_string());
     }
 
-    // Create server config
     let server_config = config::McpServerConfig {
         name: name.clone(),
-        command,
-        args,
-        env,
+        command: command.clone(),
+        args: args.clone(),
+        env: env.clone(),
         enabled: true,
     };
 
-    // Load existing servers, add new one, save
     let mut servers = config::load_mcp_servers();
     servers.push(server_config.clone());
     config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
 
-    // Return server info (not connected initially)
+    // Start the server process
+    let pool = state.mcp_pool.clone();
+    let connected = pool
+        .start_server(&name, &command, &args, &env)
+        .await
+        .is_ok();
+
     Ok(McpServerInfo {
         name: server_config.name,
         command: server_config.command,
         enabled: server_config.enabled,
-        connected: false,
+        connected,
         tool_count: 0,
         tools: Vec::new(),
-        last_connected: None,
+        last_connected: if connected {
+            Some(chrono_timestamp())
+        } else {
+            None
+        },
     })
 }
 
-/// Remove an MCP server configuration.
+/// Remove an MCP server configuration and stop its process.
 #[tauri::command]
-pub async fn remove_mcp_server(name: String) -> Result<bool, String> {
+pub async fn remove_mcp_server(
+    state: tauri::State<'_, AppState>,
+    name: String,
+) -> Result<bool, String> {
     use crate::config;
+
+    // Stop the server process first
+    let pool = state.mcp_pool.clone();
+    let _ = pool.stop_server(&name).await;
 
     // Load servers, remove matching one, save
     let mut servers = config::load_mcp_servers();
@@ -1612,62 +1717,45 @@ pub async fn remove_mcp_server(name: String) -> Result<bool, String> {
     }
 }
 
-/// Restart an MCP server.
+/// Restart an MCP server (stop then start).
 #[tauri::command]
-pub async fn restart_mcp_server(name: String) -> Result<McpServerInfo, String> {
+pub async fn restart_mcp_server(
+    state: tauri::State<'_, AppState>,
+    name: String,
+) -> Result<McpServerInfo, String> {
     use crate::config;
 
-    // Load servers
-    let mut servers = config::load_mcp_servers();
-
-    // Find the server and collect needed data
-    let server_name = servers
+    let servers = config::load_mcp_servers();
+    let server = servers
         .iter()
         .find(|s| s.name == name)
-        .map(|s| s.name.clone())
         .ok_or_else(|| format!("Server not found: {}", name))?;
 
-    // Find and update the server
-    let server = servers
-        .iter_mut()
-        .find(|s| s.name == name)
-        .ok_or_else(|| format!("Server not found: {}", name))?;
+    let command = server.command.clone();
+    let args = server.args.clone();
+    let env = server.env.clone();
 
-    // Toggle enabled state to restart
-    server.enabled = !server.enabled;
+    let pool = state.mcp_pool.clone();
 
-    // Collect server info before saving
-    let server_info = McpServerInfo {
-        name: server_name.clone(),
-        command: server.command.clone(),
-        enabled: false, // Currently disabled during restart
-        connected: false,
-        tool_count: 0,
-        tools: Vec::new(),
-        last_connected: None,
-    };
-
-    // Release mutable borrow before saving
-    let _ = server;
-
-    // Save changes (server disabled)
-    config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
-
-    // Reload and re-enable
-    let mut servers = config::load_mcp_servers();
-    if let Some(server) = servers.iter_mut().find(|s| s.name == server_name) {
-        server.enabled = true;
-        config::save_mcp_servers(&servers).map_err(|e| e.to_string())?;
-    }
+    // Stop then start
+    let _ = pool.stop_server(&name).await;
+    let connected = pool
+        .start_server(&name, &command, &args, &env)
+        .await
+        .is_ok();
 
     Ok(McpServerInfo {
-        name: server_name,
-        command: server_info.command,
+        name: name.clone(),
+        command,
         enabled: true,
-        connected: false,
+        connected,
         tool_count: 0,
         tools: Vec::new(),
-        last_connected: None,
+        last_connected: if connected {
+            Some(chrono_timestamp())
+        } else {
+            None
+        },
     })
 }
 

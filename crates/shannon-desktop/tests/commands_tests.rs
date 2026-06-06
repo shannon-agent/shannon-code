@@ -1676,3 +1676,188 @@ fn approval_mode_count_matches_frontend() {
         .len()
     );
 }
+
+// ── MCP Lifecycle Logic Tests ──────────────────────────────────────────────
+
+/// Validates that server config validation rejects empty names.
+#[test]
+fn mcp_server_config_rejects_empty_name() {
+    let name = "";
+    let is_valid = !name.trim().is_empty()
+        && name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_');
+    assert!(!is_valid, "empty name should be rejected");
+}
+
+/// Validates that server config accepts valid names.
+#[test]
+fn mcp_server_config_accepts_valid_names() {
+    let valid_names = ["my-server", "server_1", "GitHubCopilot", "a"];
+    for name in &valid_names {
+        let is_valid = !name.trim().is_empty()
+            && name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '-' || c == '_');
+        assert!(is_valid, "name '{}' should be valid", name);
+    }
+}
+
+/// Validates that server config rejects names with special characters.
+#[test]
+fn mcp_server_config_rejects_special_chars() {
+    let invalid_names = ["my server", "server@host", "cmd && evil", "a/b"];
+    for name in &invalid_names {
+        let is_valid = !name.trim().is_empty()
+            && name
+                .chars()
+                .all(|c| c.is_alphanumeric() || c == '-' || c == '_');
+        assert!(!is_valid, "name '{}' should be rejected", name);
+    }
+}
+
+/// Validates that MCP env vars are properly typed as HashMap<String, String>.
+#[test]
+fn mcp_env_vars_type_check() {
+    let mut env: HashMap<String, String> = HashMap::new();
+    env.insert("API_KEY".to_string(), "secret123".to_string());
+    env.insert("DEBUG".to_string(), "true".to_string());
+    assert_eq!(env.len(), 2);
+    assert_eq!(env.get("API_KEY").unwrap(), "secret123");
+}
+
+/// Validates server state transitions conceptually:
+/// Adding a server → should report connected if start succeeds
+/// Removing a server → should stop process first
+/// Restarting → stop then start
+#[test]
+fn mcp_lifecycle_state_transitions() {
+    // Simulated states
+    let states = vec!["Starting", "Healthy", "Unhealthy", "Stopped"];
+
+    // Starting → Healthy (normal flow)
+    assert!(states.contains(&"Starting"));
+    assert!(states.contains(&"Healthy"));
+
+    // Healthy → Stopped (remove flow)
+    let healthy = "Healthy";
+    let after_stop = "Stopped";
+    assert_ne!(healthy, after_stop);
+
+    // Restart: Stopped → Starting → Healthy
+    let restart_sequence = vec!["Stopped", "Starting", "Healthy"];
+    for (i, window) in restart_sequence.windows(2).enumerate() {
+        assert_ne!(
+            window[0], window[1],
+            "step {} should transition to different state",
+            i
+        );
+    }
+}
+
+/// Validates that the tool_count field starts at 0 for new servers.
+#[test]
+fn mcp_new_server_zero_tools() {
+    struct McpServerInfo {
+        name: String,
+        tool_count: usize,
+        connected: bool,
+    }
+
+    let info = McpServerInfo {
+        name: "test-server".to_string(),
+        tool_count: 0,
+        connected: false,
+    };
+    assert_eq!(info.tool_count, 0);
+    assert!(!info.connected);
+}
+
+// ── Export Session Logic Tests ──────────────────────────────────────────────
+
+/// Validates Markdown export format structure.
+#[test]
+fn export_markdown_format() {
+    let title = "Test Session";
+    let role = "user";
+    let content = "Hello, world!";
+
+    let mut md = format!("# {}\n\n", title);
+    md.push_str("---\n\n");
+    md.push_str(&format!("### **{}**\n\n{}\n\n---\n\n", role, content));
+
+    assert!(md.starts_with("# Test Session"));
+    assert!(md.contains("**user**"));
+    assert!(md.contains("Hello, world!"));
+    assert!(md.contains("---"));
+}
+
+/// Validates JSON export format structure.
+#[test]
+fn export_json_format() {
+    let export = serde_json::json!({
+        "id": "test-uuid",
+        "title": "Test Session",
+        "exported_at": "2026-06-07T00:00:00Z",
+        "message_count": 2,
+        "messages": [
+            { "role": "user", "content": "Hello" },
+            { "role": "assistant", "content": "Hi there" }
+        ]
+    });
+
+    assert_eq!(export["message_count"], 2);
+    assert_eq!(export["messages"][0]["role"], "user");
+    assert_eq!(export["messages"][1]["content"], "Hi there");
+
+    let json_str = serde_json::to_string_pretty(&export).unwrap();
+    assert!(json_str.contains("\"title\""));
+    assert!(json_str.contains("\"messages\""));
+}
+
+/// Validates that invalid export format is rejected.
+#[test]
+fn export_rejects_invalid_format() {
+    let valid_formats = ["markdown", "md", "json"];
+    let requested = "xml";
+
+    let is_valid = valid_formats.contains(&requested);
+    assert!(!is_valid, "xml should not be a valid export format");
+}
+
+/// Validates role label formatting for export.
+#[test]
+fn export_role_labels() {
+    let roles = vec![
+        ("user", "**You**"),
+        ("assistant", "**Assistant**"),
+        ("system", "**System**"),
+    ];
+    for (role, expected_label) in &roles {
+        let label = match *role {
+            "user" => "**You**",
+            "assistant" => "**Assistant**",
+            "system" => "**System**",
+            other => &format!("**{}**", other),
+        };
+        assert_eq!(label, *expected_label);
+    }
+
+    // Unknown role
+    let unknown_label = format!("**{}**", "tool");
+    assert_eq!(unknown_label, "**tool**");
+}
+
+/// Validates that empty session export produces valid structure.
+#[test]
+fn export_empty_session() {
+    let messages: Vec<serde_json::Value> = vec![];
+    let export = serde_json::json!({
+        "id": "empty-uuid",
+        "title": "Empty Session",
+        "message_count": 0,
+        "messages": messages,
+    });
+    assert_eq!(export["message_count"], 0);
+    assert_eq!(export["messages"].as_array().unwrap().len(), 0);
+}

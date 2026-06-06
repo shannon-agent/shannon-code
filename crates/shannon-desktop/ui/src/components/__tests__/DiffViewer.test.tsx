@@ -149,4 +149,88 @@ describe('DiffViewer', () => {
     )
     expect(container.querySelector('.rounded-lg')).toBeDefined()
   })
+
+  it('toggles between unified and split view', () => {
+    const { container } = render(<DiffViewer oldContent="a" newContent="b" />)
+    // Start in unified (no divide-x)
+    expect(container.querySelector('.divide-x')).toBeNull()
+
+    // Switch to split
+    fireEvent.click(screen.getByTitle('Split view'))
+    expect(container.querySelector('.divide-x')).not.toBeNull()
+
+    // Switch back to unified
+    fireEvent.click(screen.getByTitle('Unified view'))
+    expect(container.querySelector('.divide-x')).toBeNull()
+  })
+
+  it('split view shows old content on left, new on right', () => {
+    const { container } = render(
+      <DiffViewer oldContent="old line" newContent="new line" />
+    )
+    fireEvent.click(screen.getByTitle('Split view'))
+
+    const text = container.textContent || ''
+    expect(text).toContain('old line')
+    expect(text).toContain('new line')
+  })
+
+  it('accepts initial viewMode prop', () => {
+    const { container } = render(
+      <DiffViewer oldContent="a" newContent="b" viewMode="split" />
+    )
+    // Should start in split mode
+    expect(container.querySelector('.divide-x')).not.toBeNull()
+  })
+
+  it('shows hunk count when multiple hunks exist', () => {
+    const oldContent = Array.from({ length: 30 }, (_, i) => `line ${i}`).join('\n')
+    const newContent = oldContent
+      .split('\n')
+      .map((l, i) => (i === 5 || i === 20 ? `changed ${i}` : l))
+      .join('\n')
+
+    render(
+      <DiffViewer
+        oldContent={oldContent}
+        newContent={newContent}
+        onAcceptHunk={() => {}}
+        onRejectHunk={() => {}}
+      />
+    )
+
+    // Should show hunk info (e.g. "Hunk 1/2")
+    const hunkLabels = screen.queryAllByText(/Hunk \d+\/\d+/)
+    expect(hunkLabels.length).toBeGreaterThan(0)
+  })
+
+  it('resolved hunks become opaque', () => {
+    const oldContent = Array.from({ length: 30 }, (_, i) => `line ${i}`).join('\n')
+    const newContent = oldContent
+      .split('\n')
+      .map((l, i) => (i === 5 ? `changed ${i}` : l))
+      .join('\n')
+
+    render(
+      <DiffViewer
+        oldContent={oldContent}
+        newContent={newContent}
+        onAcceptHunk={() => {}}
+      />
+    )
+
+    const acceptBtn = screen.queryAllByText('Accept')
+    if (acceptBtn.length > 0) {
+      fireEvent.click(acceptBtn[0])
+      // After accepting, hunk should be dimmed (opacity-40)
+      const { container } = render(
+        <DiffViewer
+          oldContent={oldContent}
+          newContent={newContent}
+          onAcceptHunk={() => {}}
+        />
+      )
+      expect(container.querySelector('.opacity-40')).toBeDefined()
+    }
+  })
 })

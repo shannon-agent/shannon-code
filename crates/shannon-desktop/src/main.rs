@@ -32,6 +32,7 @@ fn main() {
             commands::list_sessions,
             commands::search_sessions,
             commands::load_session,
+            commands::export_session,
             commands::switch_session,
             commands::delete_session,
             commands::rename_session,

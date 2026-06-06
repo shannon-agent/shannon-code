@@ -9,7 +9,8 @@ vi.mock('../../lib/tauri-api', () => ({
     { id: 'session-1', title: 'Test Session', created_at: Date.now(), message_count: 5 }
   ])),
   newSession: vi.fn(() => Promise.resolve('new-session-id')),
-  deleteSession: vi.fn(() => Promise.resolve(true))
+  deleteSession: vi.fn(() => Promise.resolve(true)),
+  exportSession: vi.fn(() => Promise.resolve('# Test Session\n\nexported content'))
 }))
 
 // Mock window.confirm
@@ -89,5 +90,27 @@ describe('SessionList', () => {
     await waitFor(() => {
       expect(screen.getByText('New Chat')).toBeDefined()
     })
+  })
+
+  it('shows context menu with export options on right-click', async () => {
+    render(
+      <SessionList
+        currentSessionId="session-1"
+        onSessionSelect={vi.fn()}
+        onNewSession={vi.fn()}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Session')).toBeDefined()
+    })
+
+    // Right-click on a session
+    const sessionItem = screen.getByText('Test Session')
+    fireEvent.contextMenu(sessionItem)
+
+    // Context menu should show export options
+    expect(screen.getByText('Export Markdown')).toBeDefined()
+    expect(screen.getByText('Export JSON')).toBeDefined()
   })
 })
