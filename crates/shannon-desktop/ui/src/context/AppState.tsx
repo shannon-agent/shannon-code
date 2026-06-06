@@ -17,6 +17,7 @@ import type {
   QueryFailedPayload,
   PermissionRequest
 } from '../types/tauri-events'
+import type { AgentMode } from '../components/ModeToggle'
 import { EVENT_NAMES } from '../types/tauri-events'
 import type { DesktopConfig } from '../types/tauri-events'
 
@@ -40,6 +41,8 @@ interface AppStateContextType {
   activeToolCalls: ToolCall[]
   usage: { inputTokens: number; outputTokens: number; costUsd: number } | null
   permissionRequest: PermissionRequest | null
+  mode: AgentMode
+  setMode: (mode: AgentMode) => void
   respondPermission: (allow: boolean) => void
 }
 
@@ -60,6 +63,7 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
   const [activeToolCalls, setActiveToolCalls] = useState<ToolCall[]>([])
   const [usage, setUsage] = useState<{ inputTokens: number; outputTokens: number; costUsd: number } | null>(null)
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null)
+  const [mode, setMode] = useState<AgentMode>('act')
 
   // Load initial state on mount
   useEffect(() => {
@@ -204,6 +208,8 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     activeToolCalls,
     usage,
     permissionRequest,
+    mode,
+    setMode,
     respondPermission
   }
 

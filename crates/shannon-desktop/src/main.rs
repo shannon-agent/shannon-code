@@ -28,6 +28,7 @@ fn main() {
             commands::delete_session,
             commands::request_permission,
             commands::respond_permission,
+            commands::get_file_diff,
         ])
         .setup(|app| {
             let state = commands::AppState::new();

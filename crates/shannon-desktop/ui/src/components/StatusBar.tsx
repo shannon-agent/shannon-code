@@ -1,33 +1,41 @@
-// Bottom status bar showing model, provider, and connection status
+// Bottom status bar showing model, provider, cost, and connection status
 import { useAppState } from '../context/AppState'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Zap } from 'lucide-react'
+import { UsageStats } from './UsageStats'
 
 export function StatusBar() {
-  const { model, provider, querying } = useAppState()
+  const { model, provider, querying, usage, messages } = useAppState()
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 bg-[#16161e] border-t border-[#414868] text-sm">
-      {/* Model and Provider */}
-      <div className="flex items-center gap-3">
-        <span className="text-[#a9b1d6]">
-          <span className="text-[#565f89]">Model:</span> {model}
+    <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-secondary)]/80 border-t border-[var(--border)] text-xs backdrop-blur-sm">
+      {/* Left: Model and Provider */}
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--bg-input)]">
+          <Zap className="w-3 h-3 text-[var(--accent)]" />
+          <span className="text-[var(--text-secondary)] font-medium truncate max-w-[200px]">
+            {model}
+          </span>
+        </div>
+        <span className="text-[var(--text-muted)] capitalize px-1.5 py-0.5 rounded bg-[var(--bg-primary)]">
+          {provider}
         </span>
-        <span className="text-[#565f89]">•</span>
-        <span className="text-[#a9b1d6] capitalize">{provider}</span>
       </div>
 
-      {/* Querying Indicator */}
-      <div className="flex items-center gap-2">
-        {querying && (
-          <>
-            <Loader2 className="w-4 h-4 text-[#7aa2f7] animate-spin" />
-            <span className="text-[#7aa2f7] text-xs">Querying...</span>
-          </>
-        )}
-        {!querying && (
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#9ece6a]" />
-            <span className="text-[#565f89] text-xs">Connected</span>
+      {/* Right: Cost and Status */}
+      <div className="flex items-center gap-3">
+        {/* Token usage */}
+        <UsageStats usage={usage} messageCount={messages.length} />
+
+        {/* Connection / Querying status */}
+        {querying ? (
+          <div className="flex items-center gap-1.5">
+            <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin" />
+            <span className="text-[var(--accent)]">Querying</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+            <span className="text-[var(--text-muted)]">Ready</span>
           </div>
         )}
       </div>

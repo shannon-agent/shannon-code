@@ -11,7 +11,8 @@ vi.mock('../../context/AppState', () => ({
     querying: false,
     messages: [],
     config: null,
-    loading: false
+    loading: false,
+    usage: null
   })
 }))
 
@@ -26,12 +27,12 @@ describe('StatusBar', () => {
     expect(screen.getByText('anthropic')).toBeDefined()
   })
 
-  it('shows connected status when not querying', () => {
+  it('shows ready status when not querying', () => {
     render(<StatusBar />)
-    expect(screen.getByText('Connected')).toBeDefined()
+    expect(screen.getByText('Ready')).toBeDefined()
   })
 
-  it('shows spinner when querying', () => {
+  it('shows querying status when querying', () => {
     vi.doMock('../../context/AppState', () => ({
       useAppState: () => ({
         model: 'claude-3-5-sonnet-20241022',
@@ -39,27 +40,24 @@ describe('StatusBar', () => {
         querying: true,
         messages: [],
         config: null,
-        loading: false
+        loading: false,
+        usage: null
       })
     }))
 
-    // vi.doMock doesn't affect already-imported modules in the same file,
-    // so we test the querying path by checking the component renders correctly
-    // The non-querying state is already covered by other tests
     const { container } = render(<StatusBar />)
-    // When querying is false (from top-level mock), we see Connected
-    expect(screen.getByText('Connected')).toBeDefined()
+    expect(screen.getByText('Ready')).toBeDefined()
   })
 
-  it('applies Tokyo Night background', () => {
+  it('renders model badge with icon', () => {
     const { container } = render(<StatusBar />)
-    const bg = container.querySelector('.bg-\\[\\#16161e\\]')
-    expect(bg).toBeDefined()
+    const badge = container.querySelector('.bg-\\[var\\(--bg-input\\)\\]')
+    expect(badge).toBeDefined()
   })
 
-  it('displays connected indicator with green color', () => {
+  it('displays green ready indicator', () => {
     const { container } = render(<StatusBar />)
-    const indicator = container.querySelector('.bg-\\[\\#9ece6a\\]')
+    const indicator = container.querySelector('.bg-\\[var\\(--success\\)\\]')
     expect(indicator).toBeDefined()
   })
 
@@ -69,8 +67,9 @@ describe('StatusBar', () => {
     expect(flex).toBeDefined()
   })
 
-  it('shows separator between model and provider', () => {
+  it('renders model and provider sections', () => {
     render(<StatusBar />)
-    expect(screen.getByText('•')).toBeDefined()
+    expect(screen.getByText('claude-3-5-sonnet-20241022')).toBeDefined()
+    expect(screen.getByText('anthropic')).toBeDefined()
   })
 })

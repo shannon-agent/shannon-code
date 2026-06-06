@@ -26,7 +26,6 @@ describe('ChatMessage', () => {
   it('renders user message correctly', () => {
     render(<ChatMessage message={userMessage} />)
     expect(screen.getByText('Hello, how are you?')).toBeDefined()
-    expect(screen.getByText('You')).toBeDefined()
   })
 
   it('renders assistant message correctly', () => {
@@ -62,7 +61,7 @@ describe('ChatMessage', () => {
     const { container: userContainer } = render(<ChatMessage message={userMessage} />)
     const { container: assistantContainer } = render(<ChatMessage message={assistantMessage} />)
 
-    expect(userContainer.textContent).toContain('U')
-    expect(assistantContainer.textContent).toContain('A')
+    expect(userContainer.textContent).toContain('You')
+    expect(assistantContainer.textContent).toContain('S')
   })
 })

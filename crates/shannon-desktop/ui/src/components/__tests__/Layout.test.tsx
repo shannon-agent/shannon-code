@@ -72,9 +72,9 @@ describe('Layout', () => {
     expect(panel).toBeDefined()
   })
 
-  it('applies Tokyo Night background color', () => {
+  it('uses CSS variable background', () => {
     const { container } = render(<Layout>Test</Layout>)
-    const bg = container.querySelector('.bg-\\[\\#1a1b26\\]')
+    const bg = container.querySelector('.bg-\\[var\\(--bg-primary\\)\\]')
     expect(bg).toBeDefined()
   })
 
@@ -87,5 +87,24 @@ describe('Layout', () => {
 
     const main = container.querySelector('main')
     expect(main?.className).toContain('flex-1')
+  })
+
+  it('renders bottom panel when provided', () => {
+    const { container } = render(
+      <Layout bottomPanel={<div>Terminal</div>}>
+        <div>Main</div>
+      </Layout>
+    )
+    expect(container.textContent).toContain('Terminal')
+  })
+
+  it('applies border to sidebar and panel', () => {
+    const { container } = render(
+      <Layout sidebar={<div>S</div>} panel={<div>P</div>}>
+        <div>Main</div>
+      </Layout>
+    )
+    const borders = container.querySelectorAll('.border-\\[var\\(--border\\)\\]')
+    expect(borders.length).toBeGreaterThanOrEqual(2)
   })
 })

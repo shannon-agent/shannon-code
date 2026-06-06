@@ -1146,6 +1146,69 @@ pub async fn respond_permission(
     }
 }
 
+/// File diff result for the diff viewer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileDiff {
+    pub old_content: String,
+    pub new_content: String,
+    pub file_name: String,
+    pub language: String,
+}
+
+/// Get the diff for a file (working tree vs last committed, or old vs new content).
+#[tauri::command]
+pub async fn get_file_diff(path: String) -> Result<FileDiff, String> {
+    use std::process::Command;
+
+    let file_path = std::path::Path::new(&path);
+    let file_name = file_path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.clone());
+
+    // Detect language from extension
+    let language = file_path
+        .extension()
+        .map(|e| e.to_string_lossy().to_string())
+        .unwrap_or_else(|| "plaintext".to_string());
+
+    // Try git diff first
+    let dir = file_path.parent().unwrap_or(std::path::Path::new("."));
+    let git_output = Command::new("git")
+        .args(["diff", "HEAD", "--", &path])
+        .current_dir(dir)
+        .output();
+
+    let (old_content, new_content) = match git_output {
+        Ok(output) if output.status.success() && !output.stdout.is_empty() => {
+            // Parse unified diff - for simplicity, just read current file as new
+            // and reconstruct old from git show
+            let new = std::fs::read_to_string(&path).unwrap_or_default();
+            let old_output = Command::new("git")
+                .args(["show", &format!("HEAD:{}", path)])
+                .current_dir(dir)
+                .output();
+            let old = match old_output {
+                Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).to_string(),
+                _ => String::new(),
+            };
+            (old, new)
+        }
+        _ => {
+            // Not a git repo or no changes - read file as new, empty old
+            let content = std::fs::read_to_string(&path).unwrap_or_default();
+            (String::new(), content)
+        }
+    };
+
+    Ok(FileDiff {
+        old_content,
+        new_content,
+        file_name,
+        language,
+    })
+}
+
 fn chrono_timestamp() -> i64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -1341,5 +1404,22 @@ mod tests {
         assert_send_sync::<ConfigUpdate>();
         assert_send_sync::<ProviderSwitchRequest>();
         assert_send_sync::<SendMessageResponse>();
+        assert_send_sync::<FileDiff>();
+    }
+
+    #[test]
+    fn test_file_diff_serialization() {
+        let diff = FileDiff {
+            old_content: "old text".to_string(),
+            new_content: "new text".to_string(),
+            file_name: "test.rs".to_string(),
+            language: "rust".to_string(),
+        };
+        let json = serde_json::to_string(&diff).unwrap();
+        let deserialized: FileDiff = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized.old_content, "old text");
+        assert_eq!(deserialized.new_content, "new text");
+        assert_eq!(deserialized.file_name, "test.rs");
+        assert_eq!(deserialized.language, "rust");
     }
 }

@@ -11,6 +11,11 @@ import { SessionList } from './components/SessionList'
 import { SettingsPanel } from './components/SettingsPanel'
 import { CommandPalette } from './components/CommandPalette'
 import { TabBar } from './components/TabBar'
+import { FileTree } from './components/FileTree'
+import { TerminalPane } from './components/TerminalPane'
+import { AgentDashboard } from './components/AgentDashboard'
+import { TaskBoard } from './components/TaskBoard'
+import { McpBrowser } from './components/McpBrowser'
 import {
   newSession,
   listSessions,
@@ -27,6 +32,7 @@ function AppContent() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [settingsVisible, setSettingsVisible] = useState(true)
+  const [rightPanelTab, setRightPanelTab] = useState<'settings' | 'agents' | 'tasks' | 'mcp'>('settings')
 
   // Register default keyboard shortcuts (dispatches DOM custom events)
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
@@ -107,7 +113,33 @@ function AppContent() {
             onNewSession={handleNewSession}
           />
         ) : undefined}
-        panel={settingsVisible ? <SettingsPanel /> : undefined}
+        panel={settingsVisible ? (
+          <div className="flex flex-col h-full">
+            {/* Panel tabs */}
+            <div className="flex items-center gap-0.5 px-2 py-1 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+              {(['settings', 'agents', 'tasks', 'mcp'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setRightPanelTab(tab)}
+                  className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${
+                    rightPanelTab === tab
+                      ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {tab === 'mcp' ? 'MCP' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+            {/* Panel content */}
+            <div className="flex-1 overflow-hidden">
+              {rightPanelTab === 'settings' && <SettingsPanel />}
+              {rightPanelTab === 'agents' && <AgentDashboard agents={[]} />}
+              {rightPanelTab === 'tasks' && <TaskBoard tasks={[]} />}
+              {rightPanelTab === 'mcp' && <McpBrowser servers={[]} />}
+            </div>
+          </div>
+        ) : undefined}
         tabBar={
           <TabBar
             sessions={sessions}
@@ -117,6 +149,7 @@ function AppContent() {
             onNewSession={handleNewSession}
           />
         }
+        bottomPanel={<TerminalPane />}
       >
         <ChatPanel
           sendMessage={sendMessage}

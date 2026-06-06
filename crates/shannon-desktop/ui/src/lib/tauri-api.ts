@@ -116,5 +116,20 @@ export async function newSession(): Promise<string> {
   return await invoke('new_session')
 }
 
+/**
+ * Get file diff (old vs new content)
+ */
+export async function getFileDiff(path: string): Promise<FileDiff> {
+  return await invoke('get_file_diff', { path })
+}
+
+// File diff response type
+export interface FileDiff {
+  old_content: string
+  new_content: string
+  file_name: string
+  language: string
+}
+
 // Import SessionInfo from types
 import type { SessionInfo } from '../types/tauri-events'

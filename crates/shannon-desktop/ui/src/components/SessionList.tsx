@@ -1,4 +1,4 @@
-// Left sidebar session list with create/delete functionality
+// Left sidebar session list with create/delete functionality and polished design
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, MessageSquare } from 'lucide-react'
 import { listSessions, newSession, deleteSession } from '../lib/tauri-api'
@@ -8,6 +8,43 @@ interface SessionListProps {
   currentSessionId?: string
   onSessionSelect: (sessionId: string) => void
   onNewSession: () => void
+}
+
+interface GroupedSessions {
+  label: string
+  sessions: SessionInfo[]
+}
+
+function groupSessionsByDate(sessions: SessionInfo[]): GroupedSessions[] {
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const yesterday = today - 86400000
+  const weekAgo = today - 7 * 86400000
+
+  const groups: GroupedSessions[] = []
+  const todaySessions: SessionInfo[] = []
+  const yesterdaySessions: SessionInfo[] = []
+  const weekSessions: SessionInfo[] = []
+  const olderSessions: SessionInfo[] = []
+
+  for (const session of sessions) {
+    if (session.created_at >= today) {
+      todaySessions.push(session)
+    } else if (session.created_at >= yesterday) {
+      yesterdaySessions.push(session)
+    } else if (session.created_at >= weekAgo) {
+      weekSessions.push(session)
+    } else {
+      olderSessions.push(session)
+    }
+  }
+
+  if (todaySessions.length) groups.push({ label: 'Today', sessions: todaySessions })
+  if (yesterdaySessions.length) groups.push({ label: 'Yesterday', sessions: yesterdaySessions })
+  if (weekSessions.length) groups.push({ label: 'This Week', sessions: weekSessions })
+  if (olderSessions.length) groups.push({ label: 'Older', sessions: olderSessions })
+
+  return groups.length ? groups : [{ label: 'Sessions', sessions: [] }]
 }
 
 export function SessionList({
@@ -56,25 +93,15 @@ export function SessionList({
     }
   }
 
-  const formatDate = (timestamp: number) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    return date.toLocaleDateString()
-  }
+  const grouped = groupSessionsByDate(sessions)
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-[#414868]">
+      <div className="p-3 border-b border-[var(--border)]">
         <button
           onClick={handleNewSession}
-          className="w-full flex items-center gap-2 px-4 py-2 bg-[#7aa2f7] hover:bg-[#7aa2f7]/80 text-[#1a1b26] rounded-lg font-medium transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-primary)] rounded-lg font-medium text-sm transition-all duration-150 shadow-sm hover:shadow-md"
         >
           <Plus className="w-4 h-4" />
           New Chat
@@ -84,38 +111,56 @@ export function SessionList({
       {/* Session List */}
       <div className="flex-1 overflow-y-auto">
         {loading ? (
-          <div className="p-4 text-center text-[#565f89]">Loading...</div>
+          <div className="p-4 text-center text-[var(--text-muted)] text-sm">
+            <div className="animate-spin w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto mb-2" />
+            Loading...
+          </div>
         ) : sessions.length === 0 ? (
-          <div className="p-4 text-center text-[#565f89]">No sessions yet</div>
+          <div className="p-4 text-center text-[var(--text-muted)] text-sm">
+            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
+            No sessions yet
+          </div>
         ) : (
-          <div className="py-2">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                onClick={() => onSessionSelect(session.id)}
-                className={`mx-2 px-3 py-2 rounded-lg cursor-pointer transition-colors group ${
-                  currentSessionId === session.id
-                    ? 'bg-[#7aa2f7]/20 text-[#7aa2f7]'
-                    : 'hover:bg-[#24283b]/50 text-[#a9b1d6]'
-                }`}
-              >
-                <div className="flex items-start gap-2">
-                  <MessageSquare className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {session.title || 'New Conversation'}
-                    </div>
-                    <div className="text-xs text-[#565f89] mt-0.5">
-                      {session.message_count} messages • {formatDate(session.created_at)}
+          <div className="py-1">
+            {grouped.map((group) => (
+              <div key={group.label}>
+                {/* Group label */}
+                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                  {group.label}
+                </div>
+                {/* Session items */}
+                {group.sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={() => onSessionSelect(session.id)}
+                    className={`mx-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative ${
+                      currentSessionId === session.id
+                        ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20'
+                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] border border-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                        currentSessionId === session.id ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm truncate leading-tight">
+                          {session.title || 'New Conversation'}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-muted)] mt-0.5 tabular-nums">
+                          {session.message_count} msgs
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => handleDeleteSession(session.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--error)]/20 rounded transition-all duration-100"
+                        title="Delete session"
+                      >
+                        <Trash2 className="w-3 h-3 text-[var(--error)]" />
+                      </button>
                     </div>
                   </div>
-                  <button
-                    onClick={(e) => handleDeleteSession(session.id, e)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[#f7768e]/20 rounded transition-all"
-                  >
-                    <Trash2 className="w-3 h-3 text-[#f7768e]" />
-                  </button>
-                </div>
+                ))}
               </div>
             ))}
           </div>

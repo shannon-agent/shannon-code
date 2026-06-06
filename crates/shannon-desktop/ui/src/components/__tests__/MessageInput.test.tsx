@@ -6,7 +6,7 @@ import { MessageInput } from '../MessageInput'
 describe('MessageInput', () => {
   it('renders input field correctly', () => {
     render(<MessageInput onSend={vi.fn()} />)
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     expect(input).toBeDefined()
   })
 
@@ -14,7 +14,7 @@ describe('MessageInput', () => {
     const handleSend = vi.fn()
     render(<MessageInput onSend={handleSend} />)
 
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.change(input, { target: { value: 'Test message' } })
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })
 
@@ -25,7 +25,7 @@ describe('MessageInput', () => {
     const handleSend = vi.fn()
     render(<MessageInput onSend={handleSend} />)
 
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })
 
     expect(handleSend).not.toHaveBeenCalled()
@@ -35,7 +35,7 @@ describe('MessageInput', () => {
     const handleSend = vi.fn()
     render(<MessageInput onSend={handleSend} />)
 
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.change(input, { target: { value: 'Line 1' } })
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
 
@@ -44,7 +44,7 @@ describe('MessageInput', () => {
 
   it('disables input when disabled prop is true', () => {
     render(<MessageInput onSend={vi.fn()} disabled={true} />)
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     expect(input).toBeDisabled()
   })
 
@@ -52,7 +52,7 @@ describe('MessageInput', () => {
     const handleSend = vi.fn()
     render(<MessageInput onSend={handleSend} />)
 
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.change(input, { target: { value: 'Test' } })
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })
 
@@ -61,15 +61,15 @@ describe('MessageInput', () => {
 
   it('shows character count', () => {
     render(<MessageInput onSend={vi.fn()} />)
-    const input = screen.getByPlaceholderText('Type your message...')
+    const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.change(input, { target: { value: 'Hello' } })
 
-    expect(screen.getByText('5')).toBeDefined()
+    expect(screen.getByText('5/4000')).toBeDefined()
   })
 
   it('displays keyboard shortcut hints', () => {
     render(<MessageInput onSend={vi.fn()} />)
-    expect(screen.getAllByText('Enter')).toHaveLength(2)
+    expect(screen.getByText('Enter')).toBeDefined()
     expect(screen.getByText('Shift+Enter')).toBeDefined()
   })
 

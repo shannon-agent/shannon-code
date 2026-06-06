@@ -1,5 +1,6 @@
-// Multi-line message input with keyboard shortcuts
+// Multi-line message input with keyboard shortcuts and polished design
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { Send, Loader2 } from 'lucide-react'
 
 interface MessageInputProps {
   onSend: (message: string) => void
@@ -10,12 +11,12 @@ interface MessageInputProps {
 export function MessageInput({
   onSend,
   disabled = false,
-  placeholder = 'Type your message...'
+  placeholder = 'Ask Shannon anything...'
 }: MessageInputProps) {
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-resize textarea
+  // Auto-resize textarea with smooth animation
   useEffect(() => {
     const textarea = textareaRef.current
     if (textarea) {
@@ -25,13 +26,11 @@ export function MessageInput({
   }, [text])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Enter to send, Shift+Enter for newline
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       if (text.trim() && !disabled) {
         onSend(text.trim())
         setText('')
-        // Reset height
         if (textareaRef.current) {
           textareaRef.current.style.height = 'auto'
         }
@@ -39,12 +38,23 @@ export function MessageInput({
     }
   }
 
+  const handleSend = () => {
+    if (text.trim() && !disabled) {
+      onSend(text.trim())
+      setText('')
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto'
+      }
+    }
+  }
+
   const characterCount = text.length
   const maxLength = 4000
+  const isNearLimit = characterCount > maxLength * 0.9
 
   return (
-    <div className="border-t border-[#414868] bg-[#24283b] p-4">
-      <div className="relative">
+    <div className="border-t border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 backdrop-blur-sm">
+      <div className="relative flex items-end gap-2 bg-[var(--bg-input)] rounded-xl border border-[var(--border)] focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_0_3px_var(--accent)/15] transition-all duration-150">
         <textarea
           ref={textareaRef}
           value={text}
@@ -53,30 +63,41 @@ export function MessageInput({
           disabled={disabled}
           placeholder={placeholder}
           rows={1}
-          className={`w-full resize-none bg-[#1a1b26] text-[#a9b1d6] placeholder-[#565f89] border border-[#414868] rounded-lg px-4 py-3 pr-16 focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed transition-all`}
+          className="flex-1 resize-none bg-transparent text-[var(--text-secondary)] placeholder-[var(--text-muted)] px-4 py-3 pr-2 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed text-sm leading-relaxed"
           style={{ maxHeight: '200px' }}
         />
 
-        {/* Character count and send hint */}
-        <div className="absolute right-3 bottom-3 flex items-center gap-2">
-          <span
-            className={`text-xs ${
-              characterCount > maxLength * 0.9
-                ? 'text-[#f7768e]'
-                : 'text-[#565f89]'
-            }`}
-          >
-            {characterCount}
-          </span>
-          <kbd className="text-xs text-[#565f89] bg-[#1a1b26] px-1.5 py-0.5 rounded">
-            Enter
-          </kbd>
-        </div>
+        {/* Send button */}
+        <button
+          onClick={handleSend}
+          disabled={disabled || !text.trim()}
+          className={`flex-shrink-0 m-1.5 p-2 rounded-lg transition-all duration-150 ${
+            text.trim() && !disabled
+              ? 'bg-[var(--accent)] text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] shadow-sm'
+              : 'text-[var(--text-muted)] cursor-not-allowed'
+          }`}
+        >
+          {disabled ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+        </button>
       </div>
 
-      <div className="mt-2 text-xs text-[#565f89]">
-        Press <kbd className="bg-[#1a1b26] px-1 rounded">Enter</kbd> to send,
-        <kbd className="bg-[#1a1b26] px-1 rounded">Shift+Enter</kbd> for newline
+      {/* Bottom hints */}
+      <div className="flex items-center justify-between mt-1.5 px-1">
+        <div className="text-[10px] text-[var(--text-muted)]">
+          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Enter</kbd>
+          {' send '}
+          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Shift+Enter</kbd>
+          {' newline'}
+        </div>
+        {characterCount > 0 && (
+          <span className={`text-[10px] tabular-nums ${isNearLimit ? 'text-[var(--error)]' : 'text-[var(--text-muted)]'}`}>
+            {characterCount}/{maxLength}
+          </span>
+        )}
       </div>
     </div>
   )

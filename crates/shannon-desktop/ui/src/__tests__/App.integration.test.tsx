@@ -68,7 +68,7 @@ describe('App Integration', () => {
     )
 
     await waitFor(() => {
-      expect(container.querySelector('.bg-\\[\\#1a1b26\\]')).toBeDefined()
+      expect(container.querySelector('.bg-\\[var\\(--bg-primary\\)\\]')).toBeDefined()
     })
   })
 

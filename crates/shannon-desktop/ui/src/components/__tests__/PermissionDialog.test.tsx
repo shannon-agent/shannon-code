@@ -1,11 +1,10 @@
 // Tests for PermissionDialog component
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { PermissionDialog } from '../PermissionDialog'
 
 describe('PermissionDialog', () => {
   beforeEach(() => {
-    // Clear any previous event state
     vi.clearAllMocks()
   })
 
@@ -23,25 +22,7 @@ describe('PermissionDialog', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('renders when request is provided via state', async () => {
-    const TestWrapper = () => {
-      const [request, setRequest] = useState(mockRequest)
-
-      return (
-        <>
-          <button onClick={() => setRequest(mockRequest)}>Show Dialog</button>
-          <PermissionDialog
-            request={request}
-            onApprove={vi.fn()}
-            onDeny={vi.fn()}
-          />
-        </>
-      )
-    }
-
-    // Mock useState hook
-    vi.spyOn(require('react'), 'useState').mockReturnValue([mockRequest, vi.fn()])
-
+  it('renders when request is provided', () => {
     const { container } = render(
       <PermissionDialog
         request={mockRequest}
@@ -53,7 +34,7 @@ describe('PermissionDialog', () => {
     expect(container.textContent).toContain('bash')
   })
 
-  it('calls onApprove when Approve button is clicked', () => {
+  it('calls onApprove when Allow button is clicked', () => {
     const handleApprove = vi.fn()
 
     const { container } = render(
@@ -64,14 +45,14 @@ describe('PermissionDialog', () => {
       />
     )
 
-    const approveButton = Array.from(container.querySelectorAll('button')).find(btn =>
-      btn.textContent?.includes('Approve')
+    const allowButton = Array.from(container.querySelectorAll('button')).find(btn =>
+      btn.textContent?.includes('Allow')
     )
 
-    expect(approveButton).toBeDefined()
+    expect(allowButton).toBeDefined()
 
-    if (approveButton) {
-      fireEvent.click(approveButton)
+    if (allowButton) {
+      fireEvent.click(allowButton)
       expect(handleApprove).toHaveBeenCalledWith('req-123', false)
     }
   })
@@ -130,13 +111,13 @@ describe('PermissionDialog', () => {
     )
 
     const checkbox = container.querySelector('input[type="checkbox"]')
-    const approveButton = Array.from(container.querySelectorAll('button')).find(btn =>
-      btn.textContent?.includes('Approve')
+    const allowButton = Array.from(container.querySelectorAll('button')).find(btn =>
+      btn.textContent?.includes('Allow')
     )
 
-    if (checkbox && approveButton) {
+    if (checkbox && allowButton) {
       fireEvent.click(checkbox)
-      fireEvent.click(approveButton)
+      fireEvent.click(allowButton)
 
       expect(handleApprove).toHaveBeenCalledWith('req-123', true)
     }
@@ -178,8 +159,6 @@ describe('PermissionDialog', () => {
       />
     )
 
-    expect(container.textContent).toContain('Critical')
+    expect(container.textContent).toContain('critical')
   })
 })
-
-import { useState } from 'react'
