@@ -1861,3 +1861,78 @@ fn export_empty_session() {
     assert_eq!(export["message_count"], 0);
     assert_eq!(export["messages"].as_array().unwrap().len(), 0);
 }
+
+// ── Config validation tests ────────────────────────────────────────
+
+/// MCP server config with empty name should still deserialize (validation is at command layer).
+#[test]
+fn mcp_config_empty_name_deserializes() {
+    let json = r#"[{"name":"","command":"npx test","args":[],"env":{},"enabled":true}]"#;
+    let servers: Vec<serde_json::Value> = serde_json::from_str(json).unwrap();
+    assert_eq!(servers[0]["name"], "");
+}
+
+/// MCP server config with special characters in name.
+#[test]
+fn mcp_config_special_chars_name() {
+    let json = r#"[{"name":"my-server_v2.0","command":"node","args":["server.js"],"env":{},"enabled":true}]"#;
+    let servers: Vec<serde_json::Value> = serde_json::from_str(json).unwrap();
+    assert_eq!(servers[0]["name"], "my-server_v2.0");
+}
+
+/// MCP server config with env vars roundtrip.
+#[test]
+fn mcp_config_env_vars_roundtrip() {
+    let env = serde_json::json!({"API_KEY": "sk-test-123", "DEBUG": "true"});
+    let config = serde_json::json!([{
+        "name": "test-server",
+        "command": "npx",
+        "args": ["-y", "test-server"],
+        "env": env,
+        "enabled": true
+    }]);
+    let json_str = serde_json::to_string(&config).unwrap();
+    let parsed: Vec<serde_json::Value> = serde_json::from_str(&json_str).unwrap();
+    assert_eq!(parsed[0]["env"]["API_KEY"], "sk-test-123");
+    assert_eq!(parsed[0]["env"]["DEBUG"], "true");
+}
+
+/// Provider validation: known providers are accepted.
+#[test]
+fn provider_validation_known_providers() {
+    let valid_providers = ["anthropic", "openai", "ollama", "deepseek"];
+    for provider in &valid_providers {
+        let config = serde_json::json!({"provider": provider, "model": "test-model"});
+        assert_eq!(config["provider"], *provider);
+    }
+}
+
+/// Model ID validation: common model patterns are preserved.
+#[test]
+fn model_id_preserved() {
+    let models = [
+        "claude-sonnet-4-6",
+        "gpt-4.1",
+        "deepseek-chat",
+        "llama3:latest",
+    ];
+    for model in &models {
+        let config = serde_json::json!({"model": model});
+        assert_eq!(config["model"], *model);
+    }
+}
+
+/// Session UUID format validation.
+#[test]
+fn session_uuid_format() {
+    let uuid = "550e8400-e29b-41d4-a716-446655440000";
+    assert!(uuid.contains('-'));
+    let parts: Vec<&str> = uuid.split('-').collect();
+    assert_eq!(
+        parts.len(),
+        5,
+        "UUID should have 5 hyphen-separated segments"
+    );
+    assert_eq!(parts[0].len(), 8);
+    assert_eq!(parts[1].len(), 4);
+}

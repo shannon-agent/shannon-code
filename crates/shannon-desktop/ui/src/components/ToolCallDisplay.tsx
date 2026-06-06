@@ -1,6 +1,6 @@
 // Enhanced tool execution panel with animated progress, live output, and diff previews
-import { useState, useEffect } from 'react'
-import { ChevronDown, ChevronRight, AlertCircle, Loader2, Terminal, FileDiff } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ChevronDown, ChevronRight, AlertCircle, Loader2, Terminal, FileDiff, Copy, Check } from 'lucide-react'
 
 interface ToolCallDisplayProps {
   toolName: string
@@ -112,10 +112,23 @@ export function ToolCallDisplay({
   const [showOutput, setShowOutput] = useState(false)
   const [showStdout, setShowStdout] = useState(false)
   const [showDiff, setShowDiff] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   const statusBadge = getStatusBadge(isRunning, isCancelled, isError)
   const hasFileEdit = toolName.includes('edit') || toolName.includes('write')
   const hasBash = toolName.includes('bash') || toolName.includes('shell')
+
+  const bashCommand = hasBash && toolInput && typeof toolInput === 'object'
+    ? (toolInput as Record<string, unknown>).command as string | undefined
+    : undefined
+
+  const handleCopyCommand = useCallback(async () => {
+    if (bashCommand) {
+      await navigator.clipboard.writeText(bashCommand)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [bashCommand])
 
   // Auto-expand when running, collapse when complete
   useEffect(() => {
@@ -159,6 +172,16 @@ export function ToolCallDisplay({
 
         {hasBash && (
           <Terminal className="w-4 h-4 text-[#565f89]" aria-label="Bash command" />
+        )}
+        {bashCommand && !isRunning && (
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCopyCommand() }}
+            className="ml-auto px-2 py-0.5 text-xs text-[#565f89] hover:text-[#7aa2f7] flex items-center gap-1 transition-colors"
+            aria-label="Copy command to clipboard"
+          >
+            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+            {copied ? 'Copied' : 'Copy'}
+          </button>
         )}
         {hasFileEdit && diff && (
           <FileDiff className="w-4 h-4 text-[#565f89]" aria-label="File edit with diff" />

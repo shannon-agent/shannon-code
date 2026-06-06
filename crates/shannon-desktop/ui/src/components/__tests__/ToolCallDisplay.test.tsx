@@ -190,4 +190,19 @@ describe('ToolCallDisplay', () => {
     const button = container.querySelector('button')
     expect(button?.getAttribute('aria-label')).toContain('bash')
   })
+
+  it('shows copy button for completed bash commands', () => {
+    render(<ToolCallDisplay toolName="bash" toolInput={toolInput} />)
+    expect(screen.getByLabelText('Copy command to clipboard')).toBeDefined()
+  })
+
+  it('does not show copy button while running', () => {
+    render(<ToolCallDisplay toolName="bash" toolInput={toolInput} isRunning={true} />)
+    expect(screen.queryByLabelText('Copy command to clipboard')).toBeNull()
+  })
+
+  it('does not show copy button for non-bash tools', () => {
+    render(<ToolCallDisplay toolName="file_read" toolInput={toolInput} />)
+    expect(screen.queryByLabelText('Copy command to clipboard')).toBeNull()
+  })
 })

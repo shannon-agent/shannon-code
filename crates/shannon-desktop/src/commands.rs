@@ -1786,24 +1786,43 @@ pub async fn list_mcp_servers(
     let state_map: std::collections::HashMap<String, ServerState> =
         pool_states.into_iter().collect();
 
-    let server_infos: Vec<McpServerInfo> = servers
-        .into_iter()
-        .map(|s| {
-            let connected = state_map
-                .get(&s.name)
-                .map(|st| matches!(st, ServerState::Healthy))
-                .unwrap_or(false);
-            McpServerInfo {
-                name: s.name,
-                command: s.command,
-                enabled: s.enabled,
-                connected,
-                tool_count: 0,
-                tools: Vec::new(),
-                last_connected: None,
+    let mut server_infos = Vec::new();
+    for s in servers {
+        let connected = state_map
+            .get(&s.name)
+            .map(|st| matches!(st, ServerState::Healthy))
+            .unwrap_or(false);
+
+        let (tool_count, tools) = if connected {
+            match pool.refresh_tools_for_server(&s.name).await {
+                adapters if !adapters.is_empty() => {
+                    use shannon_core::Tool as ToolTrait;
+                    let tools: Vec<ToolInfo> = adapters
+                        .iter()
+                        .map(|a| ToolInfo {
+                            name: a.name().to_string(),
+                            description: a.description().to_string(),
+                            enabled: true,
+                        })
+                        .collect();
+                    (tools.len(), tools)
+                }
+                _ => (0, Vec::new()),
             }
-        })
-        .collect();
+        } else {
+            (0, Vec::new())
+        };
+
+        server_infos.push(McpServerInfo {
+            name: s.name,
+            command: s.command,
+            enabled: s.enabled,
+            connected,
+            tool_count,
+            tools,
+            last_connected: None,
+        });
+    }
 
     Ok(server_infos)
 }
