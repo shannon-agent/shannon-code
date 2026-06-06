@@ -1,7 +1,7 @@
 // Theme context for Shannon Desktop with Tokyo Night variants and popular themes
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-export type Theme = 'tokyo-night' | 'tokyo-night-light' | 'catppuccin' | 'nord'
+export type Theme = 'tokyo-night' | 'tokyo-night-light' | 'catppuccin' | 'nord' | 'ember' | 'slate'
 
 interface ThemeContextType {
   theme: Theme
@@ -59,7 +59,7 @@ export function ThemeProvider({ children, defaultTheme = 'tokyo-night' }: ThemeP
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
   const [isLoading, setIsLoading] = useState(true)
 
-  const themes: Theme[] = ['tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord']
+  const themes: Theme[] = ['tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord', 'ember', 'slate']
 
   // Load theme on mount
   useEffect(() => {

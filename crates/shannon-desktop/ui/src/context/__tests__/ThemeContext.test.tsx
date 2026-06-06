@@ -57,6 +57,8 @@ describe('ThemeContext', () => {
     expect(result.current.themes).toContain('tokyo-night-light')
     expect(result.current.themes).toContain('catppuccin')
     expect(result.current.themes).toContain('nord')
+    expect(result.current.themes).toContain('ember')
+    expect(result.current.themes).toContain('slate')
   })
 
   it('defaults to tokyo-night theme', () => {

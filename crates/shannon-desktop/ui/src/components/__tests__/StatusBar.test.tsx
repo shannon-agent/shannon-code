@@ -1,19 +1,26 @@
-// Tests for StatusBar component
-import { describe, it, expect } from 'vitest'
+// Tests for StatusBar component including ContextUsageIndicator
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { StatusBar } from '../StatusBar'
 
-// Mock useAppState hook
+// Mock UsageStats component
+vi.mock('../UsageStats', () => ({
+  UsageStats: () => <div data-testid="usage-stats" />,
+}))
+
+// Default mock factory
+const mockAppState = {
+  model: 'claude-3-5-sonnet-20241022',
+  provider: 'anthropic',
+  querying: false,
+  messages: [],
+  config: null,
+  loading: false,
+  usage: null,
+}
+
 vi.mock('../../context/AppState', () => ({
-  useAppState: () => ({
-    model: 'claude-3-5-sonnet-20241022',
-    provider: 'anthropic',
-    querying: false,
-    messages: [],
-    config: null,
-    loading: false,
-    usage: null
-  })
+  useAppState: () => mockAppState,
 }))
 
 describe('StatusBar', () => {
@@ -32,44 +39,29 @@ describe('StatusBar', () => {
     expect(screen.getByText('Ready')).toBeDefined()
   })
 
-  it('shows querying status when querying', () => {
-    vi.doMock('../../context/AppState', () => ({
-      useAppState: () => ({
-        model: 'claude-3-5-sonnet-20241022',
-        provider: 'anthropic',
-        querying: true,
-        messages: [],
-        config: null,
-        loading: false,
-        usage: null
-      })
-    }))
-
-    const { container } = render(<StatusBar />)
-    expect(screen.getByText('Ready')).toBeDefined()
-  })
-
-  it('renders model badge with icon', () => {
-    const { container } = render(<StatusBar />)
-    const badge = container.querySelector('.bg-\\[var\\(--bg-input\\)\\]')
-    expect(badge).toBeDefined()
-  })
-
-  it('displays green ready indicator', () => {
-    const { container } = render(<StatusBar />)
-    const indicator = container.querySelector('.bg-\\[var\\(--success\\)\\]')
-    expect(indicator).toBeDefined()
-  })
-
-  it('uses flex layout', () => {
-    const { container } = render(<StatusBar />)
-    const flex = container.querySelector('.flex.items-center.justify-between')
-    expect(flex).toBeDefined()
-  })
-
-  it('renders model and provider sections', () => {
+  it('renders UsageStats', () => {
     render(<StatusBar />)
-    expect(screen.getByText('claude-3-5-sonnet-20241022')).toBeDefined()
-    expect(screen.getByText('anthropic')).toBeDefined()
+    expect(screen.getByTestId('usage-stats')).toBeDefined()
+  })
+
+  describe('ContextUsageIndicator', () => {
+    it('shows 0% when usage is null', () => {
+      mockAppState.usage = null
+      render(<StatusBar />)
+      expect(screen.getByText('0%')).toBeDefined()
+    })
+
+    it('shows percentage based on token usage', () => {
+      mockAppState.usage = { inputTokens: 40000, outputTokens: 40000 }
+      render(<StatusBar />)
+      expect(screen.getByText('40%')).toBeDefined()
+    })
+
+    it('has context title with token counts', () => {
+      mockAppState.usage = { inputTokens: 50000, outputTokens: 30000 }
+      render(<StatusBar />)
+      const indicator = screen.getByTitle(/Context:.*80,000.*200,000/)
+      expect(indicator).toBeDefined()
+    })
   })
 })
