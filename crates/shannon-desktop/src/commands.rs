@@ -2444,12 +2444,24 @@ pub async fn list_tasks() -> Result<Vec<TaskInfo>, String> {
         return Ok(Vec::new());
     }
 
+    let canonical_dir = tasks_dir
+        .canonicalize()
+        .map_err(|e| format!("Invalid tasks dir: {e}"))?;
+
     let mut tasks = Vec::new();
     let entries =
         std::fs::read_dir(tasks_dir).map_err(|e| format!("Cannot read tasks dir: {e}"))?;
 
     for entry in entries.flatten() {
         let path = entry.path();
+        // Validate path stays within .claude/tasks to prevent symlink traversal
+        if let Ok(canonical) = path.canonicalize() {
+            if !canonical.starts_with(&canonical_dir) {
+                continue;
+            }
+        } else {
+            continue;
+        }
         if path.extension().map(|e| e == "json").unwrap_or(false) {
             if let Ok(content) = std::fs::read_to_string(&path) {
                 if let Ok(task) = serde_json::from_str::<serde_json::Value>(&content) {
