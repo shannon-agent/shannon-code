@@ -8,7 +8,7 @@ license.workspace = true
 
 [features]
 default = ["tauri"]
-tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell", "dep:tauri-plugin-updater", "dep:tauri-plugin-global-shortcut"]
+tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell", "dep:tauri-plugin-updater", "dep:tauri-plugin-global-shortcut", "dep:tauri-plugin-window-state"]
 
 [dependencies]
 shannon-core = { path = "../shannon-core" }
@@ -32,6 +32,7 @@ tauri = { version = "2", optional = true, features = ["tray-icon"] }
 tauri-plugin-shell = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
 tauri-plugin-global-shortcut = { version = "2", optional = true }
+tauri-plugin-window-state = { version = "2", optional = true }
 
 [build-dependencies]
 tauri-build = { version = "2", optional = true , features = [] }

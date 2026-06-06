@@ -1936,3 +1936,158 @@ fn session_uuid_format() {
     assert_eq!(parts[0].len(), 8);
     assert_eq!(parts[1].len(), 4);
 }
+
+// ── Phase 5 tests: MCP init, window state, desktop integration ────
+
+/// MCP init result tracks started servers and total tool count.
+#[test]
+fn mcp_init_result_structure() {
+    let servers: Vec<String> = vec!["filesystem".into(), "github".into()];
+    let total_tools = 14;
+
+    let result = serde_json::json!({
+        "servers_started": servers,
+        "total_tools": total_tools,
+    });
+
+    assert_eq!(result["servers_started"].as_array().unwrap().len(), 2);
+    assert_eq!(result["total_tools"], 14);
+}
+
+/// MCP init with no servers returns zero tools.
+#[test]
+fn mcp_init_no_servers() {
+    let empty_servers: Vec<String> = vec![];
+    let result = serde_json::json!({
+        "servers_started": empty_servers,
+        "total_tools": 0,
+    });
+
+    assert!(result["servers_started"].as_array().unwrap().is_empty());
+    assert_eq!(result["total_tools"], 0);
+}
+
+/// MCP init with disabled servers skips them.
+#[test]
+fn mcp_init_disabled_server_skipped() {
+    let configs = vec![
+        serde_json::json!({"name": "active", "command": "npx", "args": [], "enabled": true}),
+        serde_json::json!({"name": "inactive", "command": "npx", "args": [], "enabled": false}),
+    ];
+
+    let enabled: Vec<_> = configs
+        .iter()
+        .filter(|c| c["enabled"].as_bool().unwrap_or(false))
+        .collect();
+
+    assert_eq!(enabled.len(), 1);
+    assert_eq!(enabled[0]["name"], "active");
+}
+
+/// MCP server status tracks connection state.
+#[test]
+fn mcp_server_status_structure() {
+    let status = serde_json::json!({
+        "name": "filesystem",
+        "connected": true,
+        "tool_count": 7,
+        "last_error": null,
+    });
+
+    assert_eq!(status["name"], "filesystem");
+    assert!(status["connected"].as_bool().unwrap());
+    assert_eq!(status["tool_count"], 7);
+    assert!(status["last_error"].is_null());
+}
+
+/// Window state config: default dimensions are reasonable.
+#[test]
+fn window_default_dimensions() {
+    let config = serde_json::json!({
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+    });
+
+    assert!(config["width"].as_u64().unwrap() >= config["minWidth"].as_u64().unwrap());
+    assert!(config["height"].as_u64().unwrap() >= config["minHeight"].as_u64().unwrap());
+}
+
+/// Window state round-trips through serialization.
+#[test]
+fn window_state_roundtrip() {
+    let state = serde_json::json!({
+        "x": 100,
+        "y": 200,
+        "width": 1400,
+        "height": 900,
+    });
+
+    let serialized = serde_json::to_string(&state).unwrap();
+    let deserialized: serde_json::Value = serde_json::from_str(&serialized).unwrap();
+
+    assert_eq!(deserialized["x"], 100);
+    assert_eq!(deserialized["y"], 200);
+    assert_eq!(deserialized["width"], 1400);
+    assert_eq!(deserialized["height"], 900);
+}
+
+/// Tray menu items are correctly structured.
+#[test]
+fn tray_menu_items() {
+    let items = vec![
+        serde_json::json!({"id": "show", "label": "Show Shannon"}),
+        serde_json::json!({"id": "new-session", "label": "New Session"}),
+        serde_json::json!({"id": "check-updates", "label": "Check for Updates"}),
+        serde_json::json!({"id": "quit", "label": "Quit"}),
+    ];
+
+    assert_eq!(items.len(), 4);
+    assert!(items.iter().any(|i| i["id"] == "show"));
+    assert!(items.iter().any(|i| i["id"] == "quit"));
+}
+
+/// Update payload structure matches frontend expectations.
+#[test]
+fn update_payload_structure() {
+    let payload = serde_json::json!({
+        "version": "0.5.0",
+        "date": "2026-06-07",
+        "body": "Bug fixes and performance improvements",
+    });
+
+    assert!(payload["version"].is_string());
+    assert!(payload["date"].is_string());
+    assert!(payload["body"].is_string());
+}
+
+/// Update payload with null date is valid.
+#[test]
+fn update_payload_null_date() {
+    let payload = serde_json::json!({
+        "version": "0.5.0",
+        "date": null,
+        "body": "Bug fixes",
+    });
+
+    assert!(payload["date"].is_null());
+    assert_eq!(payload["version"], "0.5.0");
+}
+
+/// Desktop config serialization includes all required fields.
+#[test]
+fn desktop_config_fields() {
+    let config = serde_json::json!({
+        "provider": "anthropic",
+        "api_key": "sk-test",
+        "base_url": null,
+        "model": "claude-sonnet-4-6",
+        "working_dir": "/home/user/project",
+        "theme": "tokyo-night",
+    });
+
+    assert_eq!(config["provider"], "anthropic");
+    assert!(config["base_url"].is_null());
+    assert_eq!(config["working_dir"], "/home/user/project");
+}

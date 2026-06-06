@@ -49,7 +49,9 @@ impl McpManager {
                         Ok(_) => {
                             info!(server = %name, "MCP server started");
                             servers_started.push(name.clone());
-                            total_tools += 1; // Placeholder
+                            // Discover actual tools from the server
+                            let tools = self.pool.refresh_tools_for_server(&name).await;
+                            total_tools += tools.len();
                         }
                         Err(e) => {
                             error!(server = %name, error = %e, "Failed to start MCP server");
