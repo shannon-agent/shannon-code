@@ -26,7 +26,7 @@ interface McpBrowserProps {
 function ToolItem({ tool, index }: { tool: McpTool; index: number }) {
   return (
     <div
-      className="flex items-start gap-2 px-3 py-1.5 pl-8"
+      className="flex items-start gap-2 px-3 py-2 pl-8"
       role="listitem"
       tabIndex={0}
       aria-label={`Tool: ${tool.name}${tool.description ? ` - ${tool.description}` : ''}`}
@@ -66,7 +66,7 @@ function ServerItem({ server, index }: { server: McpServer; index: number }) {
         role="button"
         aria-expanded={expanded}
         aria-controls={toolsListId}
-        className="flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-[var(--bg-secondary)]/50 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
+        className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[var(--bg-secondary)]/50 transition-colors duration-150 outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)]"
       >
         {expanded ? (
           <ChevronDown className="w-3 h-3 flex-shrink-0 text-[var(--text-muted)] aria-hidden" />
@@ -103,7 +103,7 @@ export function McpBrowser({ servers, onRefresh }: McpBrowserProps) {
 
   return (
     <div className="flex flex-col h-full" role="region" aria-labelledby="mcp-browsers-title">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <Plug className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden />
           <span id="mcp-browsers-title" className="text-xs font-medium text-[var(--text-secondary)]">MCP Servers</span>

@@ -154,7 +154,7 @@ export function MessageInput({
           {attachments.map((attachment, index) => (
             <div
               key={index}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg group"
+              className="flex items-center gap-2 px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg group"
               role="listitem"
               aria-label={`Attachment: ${attachment.name}, ${formatFileSize(attachment.size)}`}
             >
@@ -190,7 +190,7 @@ export function MessageInput({
 
       <div
         className={cn(
-          'relative flex items-end gap-2 bg-[var(--bg-input)] rounded-xl border transition-all duration-150',
+          'relative flex items-end gap-2 bg-[var(--bg-input)] rounded-lg border transition-all duration-150',
           isDragging
             ? 'border-[var(--accent)] bg-[var(--accent)]/5'
             : 'border-[var(--border)] focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_0_3px_var(--accent)]/15'
@@ -278,7 +278,7 @@ export function MessageInput({
       {/* Drag overlay */}
       {isDragging && (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-[var(--accent)]/10 rounded-xl border-2 border-dashed border-[var(--accent)] pointer-events-none"
+          className="absolute inset-0 flex items-center justify-center bg-[var(--accent)]/10 rounded-lg border-2 border-dashed border-[var(--accent)] pointer-events-none"
           role="status"
           aria-live="polite"
         >

@@ -53,7 +53,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
             return (
               <div
                 key={i}
-                className={`flex items-start gap-3 transition-opacity duration-[var(--duration-normal)] ${isActive ? 'opacity-100' : isDone ? 'opacity-50' : 'opacity-30'}`}
+                className={`flex items-start gap-3 transition-all duration-200 ${isActive ? 'opacity-100 cursor-default' : isDone ? 'opacity-50' : 'opacity-30 hover:bg-[var(--bg-secondary)] rounded-md cursor-pointer'}`}
               >
                 <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-[var(--success)]/20 text-[var(--success)]' : isActive ? 'bg-[var(--accent)]/20 text-[var(--accent)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'}`}>
                   {isDone ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}

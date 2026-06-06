@@ -217,10 +217,10 @@ export function CommandPalette({
       />
 
       {/* Modal */}
-      <div className="relative bg-[#1a1b26] border border-[#414868] rounded-lg shadow-2xl w-full max-w-xl mx-4 overflow-hidden">
+      <div className="relative bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-2xl w-full max-w-xl mx-4 overflow-hidden">
         {/* Search Input */}
-        <div className="flex items-center px-4 py-3 border-b border-[#414868]">
-          <Search className="text-[#565f89] mr-3" size={20} />
+        <div className="flex items-center px-4 py-3 border-b border-[var(--border)]">
+          <Search className="text-[var(--text-muted)] mr-3" size={20} />
           <input
             ref={inputRef}
             type="text"
@@ -228,11 +228,11 @@ export function CommandPalette({
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a command or search..."
-            className="flex-1 bg-transparent text-[#c0caf5] placeholder-[#565f89] outline-none"
+            className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[#565f89] outline-none"
           />
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-[#24283b] text-[#565f89] hover:text-[#c0caf5]"
+            className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
           >
             <X size={18} />
           </button>
@@ -241,8 +241,19 @@ export function CommandPalette({
         {/* Action List */}
         <div className="max-h-80 overflow-y-auto py-2">
           {filteredActions.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[#565f89]">
-              {searchingSessions ? 'Searching...' : 'No results found'}
+            <div className="px-4 py-8 text-center text-[var(--text-muted)]">
+              {searchingSessions ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin h-5 w-5 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
+                  <span>Searching...</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <Search className="w-8 h-8 opacity-50" />
+                  <span>No results found</span>
+                  <span className="text-xs">Try a different search term</span>
+                </div>
+              )}
             </div>
           ) : (
             filteredActions.map((action, index) => {
@@ -260,7 +271,7 @@ export function CommandPalette({
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={`
                     w-full flex items-center gap-3 px-4 py-3 transition-colors
-                    ${isSelected ? 'bg-[#2a2f44] text-[#7aa2f7]' : 'text-[#c0caf5] hover:bg-[#24283b]'}
+                    ${isSelected ? 'bg-[var(--bg-tertiary)] text-[var(--accent)]' : 'text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'}
                   `}
                 >
                   <Icon className="flex-shrink-0" size={18} strokeWidth={2} />
@@ -268,24 +279,24 @@ export function CommandPalette({
                     {highlightMatch(action.label, query).map((part, i) => (
                       <span
                         key={i}
-                        className={part.highlight ? 'text-[#7aa2f7] font-bold' : ''}
+                        className={part.highlight ? 'text-[var(--accent)] font-bold' : ''}
                       >
                         {part.text}
                       </span>
                     ))}
                   </span>
                   {!isSession && action.type !== 'skill' && (
-                    <span className="text-xs text-[#565f89]">
+                    <span className="text-xs text-[var(--text-muted)]">
                       {action.shortcut}
                     </span>
                   )}
                   {action.type === 'skill' && (
-                    <span className="text-xs px-2 py-1 bg-[#1a1b26] text-[#7aa2f7] rounded">
+                    <span className="text-xs px-2 py-1 bg-[var(--bg-primary)] text-[var(--accent)] rounded">
                       {action.shortcut}
                     </span>
                   )}
                   {isSession && (
-                    <span className="text-xs text-[#565f89]">Session</span>
+                    <span className="text-xs text-[var(--text-muted)]">Session</span>
                   )}
                 </button>
               )
@@ -294,7 +305,7 @@ export function CommandPalette({
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 border-t border-[#414868] flex items-center gap-4 text-xs text-[#565f89]">
+        <div className="px-4 py-2 border-t border-[var(--border)] flex items-center gap-4 text-xs text-[var(--text-muted)]">
           <span>↑↓ Navigate</span>
           <span>Enter Execute</span>
           <span>Esc Close</span>

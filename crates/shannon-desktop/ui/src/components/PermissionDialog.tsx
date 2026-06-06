@@ -120,7 +120,7 @@ export function PermissionDialog({
         onKeyDown={handleKeyDown}
       >
         {/* Header row */}
-        <div className="flex items-center gap-2 px-4 py-2.5">
+        <div className="flex items-center gap-2 px-4 py-3">
           <ShieldAlert className="w-4 h-4 flex-shrink-0 text-[var(--warning)]" aria-hidden />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">

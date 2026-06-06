@@ -28,7 +28,7 @@ export function ApprovalModeSelector({ mode, onChange, disabled }: ApprovalModeS
         value={mode}
         onChange={(e) => onChange(e.target.value as ApprovalMode)}
         disabled={disabled}
-        className="px-2 py-1 text-[10px] rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-colors"
+        className="px-2 py-1 text-[10px] rounded bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border)] hover:border-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all duration-200"
         title="Approval mode for tool execution"
       >
         {Object.entries(APPROVAL_MODES).map(([value, config]) => (

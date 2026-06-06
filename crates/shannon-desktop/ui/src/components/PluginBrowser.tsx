@@ -181,70 +181,70 @@ export function PluginBrowser({
       <div className="flex items-center gap-3">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded-lg hover:bg-[#7aa2f7]/80 transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-[#1a1b26] rounded-lg hover:bg-[var(--accent)]/80 transition-colors font-medium"
         >
           <Plus size={18} />
           Add Server
         </button>
 
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#565f89]" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} />
           <input
             type="text"
             value={searchQuery}
             onChange={handleSearch}
             placeholder="Search servers and tools..."
-            className="w-full pl-10 pr-4 py-2 bg-[#1f2335] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7]"
+            className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[#565f89] focus:outline-none focus:border-[var(--accent)]"
           />
         </div>
       </div>
 
       {/* Add Plugin Form */}
       {showAddForm && (
-        <div className="p-4 bg-[#24283b] border border-[#414868] rounded-lg">
-          <h3 className="text-[#c0caf5] font-semibold mb-3">Add MCP Server</h3>
+        <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg">
+          <h3 className="text-[var(--text-primary)] font-semibold mb-3">Add MCP Server</h3>
           <form onSubmit={handleAddPlugin} className="space-y-3">
             <div>
-              <label className="block text-sm text-[#a9b1d6] mb-1">Server Name</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Server Name</label>
               <input
                 type="text"
                 value={newPlugin.name}
                 onChange={(e) => setNewPlugin({ ...newPlugin, name: e.target.value })}
                 placeholder="e.g., filesystem"
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7]"
+                className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[#565f89] focus:outline-none focus:border-[var(--accent)]"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[#a9b1d6] mb-1">Command or URL</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Command or URL</label>
               <input
                 type="text"
                 value={newPlugin.command}
                 onChange={(e) => setNewPlugin({ ...newPlugin, command: e.target.value })}
                 placeholder="e.g., npx @modelcontextprotocol/server-filesystem /path"
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7] font-mono text-sm"
+                className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[#565f89] focus:outline-none focus:border-[var(--accent)] font-mono text-sm"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[#a9b1d6] mb-1">Arguments (JSON array)</label>
+              <label className="block text-sm text-[var(--text-secondary)] mb-1">Arguments (JSON array)</label>
               <textarea
                 value={newPlugin.args}
                 onChange={(e) => setNewPlugin({ ...newPlugin, args: e.target.value })}
                 placeholder='e.g., ["--arg1", "value1", "--arg2", "value2"]'
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7] font-mono text-sm h-20 resize-none"
+                className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[#565f89] focus:outline-none focus:border-[var(--accent)] font-mono text-sm h-20 resize-none"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm text-[#a9b1d6]">Environment Variables</label>
+                <label className="block text-sm text-[var(--text-secondary)]">Environment Variables</label>
                 <button
                   type="button"
                   onClick={handleAddEnvVar}
-                  className="text-xs px-2 py-1 bg-[#7aa2f7] text-[#1a1b26] rounded hover:bg-[#7aa2f7]/80 transition-colors"
+                  className="text-xs px-2 py-1 bg-[var(--accent)] text-[#1a1b26] rounded hover:bg-[var(--accent)]/80 transition-colors"
                 >
                   + Add Variable
                 </button>
@@ -256,19 +256,19 @@ export function PluginBrowser({
                       type="text"
                       value={key}
                       readOnly
-                      className="w-1/3 px-2 py-1 bg-[#1a1b26] border border-[#414868] rounded text-[#565f89] text-sm"
+                      className="w-1/3 px-2 py-1 bg-[var(--bg-primary)] border border-[var(--border)] rounded text-[var(--text-muted)] text-sm"
                     />
                     <input
                       type="text"
                       value={value}
                       onChange={(e) => handleEnvChange(key, e.target.value)}
                       placeholder="Value"
-                      className="flex-1 px-2 py-1 bg-[#1a1b26] border border-[#414868] rounded text-[#c0caf5] text-sm focus:outline-none focus:border-[#7aa2f7]"
+                      className="flex-1 px-2 py-1 bg-[var(--bg-primary)] border border-[var(--border)] rounded text-[var(--text-primary)] text-sm focus:outline-none focus:border-[var(--accent)]"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveEnvVar(key)}
-                      className="text-[#f7768e] hover:text-[#db4b4b] transition-colors"
+                      className="text-[var(--error)] hover:text-[#db4b4b] transition-colors"
                     >
                       <XCircle size={16} />
                     </button>
@@ -283,22 +283,22 @@ export function PluginBrowser({
                 id="enabled"
                 checked={newPlugin.enabled}
                 onChange={(e) => setNewPlugin({ ...newPlugin, enabled: e.target.checked })}
-                className="w-4 h-4 rounded border-[#414868] bg-[#1a1b26] text-[#7aa2f7] focus:ring-[#7aa2f7]"
+                className="w-4 h-4 rounded border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-[var(--accent)]"
               />
-              <label htmlFor="enabled" className="text-sm text-[#a9b1d6]">Enable on add</label>
+              <label htmlFor="enabled" className="text-sm text-[var(--text-secondary)]">Enable on add</label>
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded-lg hover:bg-[#7aa2f7]/80 transition-colors font-medium"
+                className="px-4 py-2 bg-[var(--accent)] text-[#1a1b26] rounded-lg hover:bg-[var(--accent)]/80 transition-colors font-medium"
               >
                 Add Server
               </button>
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-[#414868] text-[#c0caf5] rounded-lg hover:bg-[#565f89] transition-colors"
+                className="px-4 py-2 bg-[#414868] text-[var(--text-primary)] rounded-lg hover:bg-[#565f89] transition-colors"
               >
                 Cancel
               </button>
@@ -310,7 +310,7 @@ export function PluginBrowser({
       {/* Plugins List */}
       <div className="space-y-3">
         {filteredPlugins.length === 0 ? (
-          <div className="text-center py-8 text-[#565f89]">
+          <div className="text-center py-8 text-[var(--text-muted)]">
             {searchQuery ? 'No matching servers or tools found' : 'No MCP servers configured'}
           </div>
         ) : (
@@ -331,7 +331,7 @@ export function PluginBrowser({
 
       {/* Stats Footer */}
       {plugins.length > 0 && (
-        <div className="flex items-center gap-4 text-sm text-[#565f89] pt-2 border-t border-[#2a2f44]">
+        <div className="flex items-center gap-4 text-sm text-[var(--text-muted)] pt-2 border-t border-[#2a2f44]">
           <span>{plugins.length} servers</span>
           <span>•</span>
           <span>{plugins.filter(p => p.connected).length} connected</span>
@@ -340,7 +340,7 @@ export function PluginBrowser({
           {onRefreshTools && (
             <button
               onClick={() => plugins.forEach(p => onRefreshTools(p.name))}
-              className="ml-auto flex items-center gap-1 text-[#7aa2f7] hover:text-[#9aa5ce] transition-colors"
+              className="ml-auto flex items-center gap-1 text-[var(--accent)] hover:text-[#9aa5ce] transition-colors"
               title="Refresh all tools"
             >
               <RefreshCw size={14} />

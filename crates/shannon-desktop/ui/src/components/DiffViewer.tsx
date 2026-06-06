@@ -183,6 +183,9 @@ export function DiffViewer({
     return { added, removed, unchanged: diffLines.length - added - removed }
   }, [diffLines])
 
+  // Check if files are identical
+  const hasChanges = useMemo(() => stats.added > 0 || stats.removed > 0, [stats])
+
   const handleAccept = useCallback((idx: number) => {
     setAcceptedHunks(prev => new Set(prev).add(idx))
     onAcceptHunk?.(idx)
@@ -240,6 +243,15 @@ export function DiffViewer({
 
   return (
     <div className="my-2 rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--bg-primary)]">
+      {/* Empty state for identical files */}
+      {!hasChanges && (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-[var(--text-muted)]">
+          <Check className="w-12 h-12 text-[var(--success)] mb-4" />
+          <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Files are identical</h3>
+          <p className="text-sm">No changes detected between versions</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="flex items-center gap-3">

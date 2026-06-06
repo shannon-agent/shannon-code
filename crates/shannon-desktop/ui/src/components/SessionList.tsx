@@ -225,7 +225,7 @@ export function SessionList({
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search sessions..."
-            className="w-full pl-8 pr-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-md focus:outline-none focus:border-[var(--accent)]/50 placeholder:text-[var(--text-muted)]"
+            className="w-full pl-8 pr-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-md focus:outline-none focus:border-[var(--accent)]/50 placeholder:text-[var(--text-muted)]"
           />
         </div>
       </div>
@@ -257,7 +257,7 @@ export function SessionList({
                     onMouseEnter={() => handlePreview(session)}
                     onMouseLeave={handlePreviewHide}
                     className={cn(
-                      'mx-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative',
+                      'mx-1.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative',
                       currentSessionId === session.id
                         ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20'
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] border border-transparent'

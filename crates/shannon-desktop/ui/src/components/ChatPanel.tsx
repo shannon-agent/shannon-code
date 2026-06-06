@@ -7,14 +7,12 @@ import { ToolCallDisplay } from './ToolCallDisplay'
 import { DiffViewer } from './DiffViewer'
 import { DiffReviewPanel } from './DiffReviewPanel'
 import { ModeToggle } from './ModeToggle'
-import { Eye, EyeOff, AlignJustify } from 'lucide-react'
+import { Eye, EyeOff, AlignJustify, Sparkles, Bug, Wand2, FlaskConical } from 'lucide-react'
 import { ApprovalModeSelector } from './ApprovalModeSelector'
 import { PermissionDialog } from './PermissionDialog'
 import { Button } from './ui/button'
-import { Shield, CheckCircle, AlertCircle } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
-import { Separator } from './ui/separator'
 import { listen } from '@tauri-apps/api/event'
 import { useState, useCallback, useEffect } from 'react'
 import type { DiffFileInfo, HunkAction } from '../types/tauri-events'
@@ -152,16 +150,63 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
 
       <ScrollArea className="flex-1">
         {messages.length === 0 && !streamingText && activeToolCalls.length === 0 ? (
-          <div className="h-full flex items-center justify-center text-[var(--text-muted)]">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-[var(--accent)] mb-2">Shannon Code</h2>
-              <p className="text-sm">Your AI coding assistant</p>
-              <p className="text-xs mt-4 text-[var(--text-muted)]">
-                Type a message to get started, or use shortcuts:
-              </p>
-              <div className="mt-2 text-xs text-[var(--text-muted)]">
-                <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded">Ctrl+K</kbd> Focus input •
-                <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded ml-2">Ctrl+N</kbd> New session
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center max-w-md px-8">
+              {/* App Icon/Name */}
+              <div className="mb-6">
+                <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">Shannon</h1>
+                <p className="text-[var(--text-muted)]">Ask me anything about your code</p>
+              </div>
+
+              {/* Suggestion Chips */}
+              <div className="grid grid-cols-2 gap-3 mt-8">
+                <Button
+                  variant="outline"
+                  onClick={() => sendMessage('Explain this codebase to me')}
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span className="text-xs">Explain this codebase</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => sendMessage('Find bugs in my code')}
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                >
+                  <Bug className="w-5 h-5" />
+                  <span className="text-xs">Find bugs</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => sendMessage('Help me refactor this code')}
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                >
+                  <Wand2 className="w-5 h-5" />
+                  <span className="text-xs">Refactor</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => sendMessage('Write tests for this code')}
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                >
+                  <FlaskConical className="w-5 h-5" />
+                  <span className="text-xs">Write tests</span>
+                </Button>
+              </div>
+
+              {/* Keyboard shortcuts hint */}
+              <div className="mt-8 pt-6 border-t border-[var(--border)]">
+                <p className="text-xs text-[var(--text-muted)] mb-2">Keyboard shortcuts</p>
+                <div className="flex items-center justify-center gap-4 text-xs text-[var(--text-muted)]">
+                  <div className="flex items-center gap-1">
+                    <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-primary)]">Ctrl+K</kbd>
+                    <span>Focus input</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-primary)]">Ctrl+N</kbd>
+                    <span>New session</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

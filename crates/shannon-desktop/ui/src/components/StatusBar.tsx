@@ -25,13 +25,13 @@ export function StatusBar() {
   return (
     <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-secondary)]/80 border-t border-[var(--border)] text-xs backdrop-blur-sm">
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--bg-input)]">
+        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--bg-input)]" title={model}>
           <Zap className="w-3 h-3 text-[var(--accent)]" />
           <span className="text-[var(--text-secondary)] font-medium truncate max-w-[200px]">
             {model}
           </span>
         </div>
-        <Badge variant="secondary" className="capitalize">{provider}</Badge>
+        <Badge variant="secondary" className="capitalize" title={`Provider: ${provider}`}>{provider}</Badge>
         <ContextUsageIndicator usage={usage} maxTokens={200000} />
       </div>
 
@@ -39,12 +39,12 @@ export function StatusBar() {
         <UsageStats usage={usage} messageCount={messages.length} />
 
         {querying ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" title="Processing your request">
             <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin" />
             <Badge variant="default">Querying</Badge>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" title="Ready to assist">
             <div className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
             <span className="text-[var(--text-muted)]">Ready</span>
           </div>

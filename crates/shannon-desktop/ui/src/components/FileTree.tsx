@@ -103,7 +103,7 @@ function FileTreeNode({
         aria-level={depth + 1}
         aria-label={`${node.name}${isModified ? ' (modified)' : ''}`}
         data-node-path={dataNodePath}
-        className={`flex items-center gap-1.5 py-[3px] pr-2 cursor-pointer rounded-sm transition-colors duration-100 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
+        className={`flex items-center gap-1.5 py-1 pr-2 cursor-pointer rounded-sm transition-all duration-150 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
           isSelected
             ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'
@@ -124,7 +124,7 @@ function FileTreeNode({
         }`} aria-hidden />
         <span className="text-[12px] truncate flex-1">{node.name}</span>
         {isModified && !isDir && (
-          <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] flex-shrink-0" aria-label="modified" />
+          <span className="w-2 h-2 rounded-full bg-[var(--success)] flex-shrink-0" aria-label="modified" />
         )}
       </div>
       {isDir && expanded && node.children && (
@@ -248,7 +248,7 @@ export function FileTree({
   return (
     <div className="flex flex-col h-full" role="tree" aria-label="File tree">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <GitBranch className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden />
           <span className="text-xs font-medium text-[var(--text-secondary)]">Files</span>

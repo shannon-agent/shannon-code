@@ -36,6 +36,7 @@ export function SettingsPanel() {
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [tools, setTools] = useState<ToolInfo[]>([])
+  const [loadingTools, setLoadingTools] = useState(true)
   const [disabledTools, setDisabledTools] = useState<Set<string>>(new Set())
   const { theme, setTheme, themes } = useTheme()
 
@@ -54,7 +55,11 @@ export function SettingsPanel() {
   }
 
   useEffect(() => {
-    getTools().then(setTools).catch(() => {})
+    setLoadingTools(true)
+    getTools()
+      .then(setTools)
+      .catch(() => {})
+      .finally(() => setLoadingTools(false))
   }, [])
 
   const handleToggleTool = useCallback(async (toolName: string, enabled: boolean) => {
@@ -103,12 +108,12 @@ export function SettingsPanel() {
 
   return (
     <div className="p-4" role="region" aria-label="Settings panel">
-      <h2 id="settings-title" className="text-lg font-semibold text-[#c0caf5] mb-4">Settings</h2>
+      <h2 id="settings-title" className="text-lg font-semibold text-[var(--text-primary)] mb-4">Settings</h2>
 
       <div className="space-y-4" aria-labelledby="settings-title">
         {/* API Key */}
         <div>
-          <label htmlFor="api-key-input" className="block text-sm font-medium text-[#a9b1d6] mb-1">
+          <label htmlFor="api-key-input" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
             API Key
           </label>
           <div className="relative">
@@ -118,41 +123,41 @@ export function SettingsPanel() {
               value={showApiKey ? apiKey : redactedKey}
               onChange={(e) => setApiKey(e.target.value)}
               placeholder="sk-ant-..."
-              className="w-full px-3 py-2 pr-20 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+              className="w-full px-3 py-2 pr-20 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
               aria-describedby="api-key-description"
             />
             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
               <button
                 onClick={() => setShowApiKey(!showApiKey)}
-                className="p-1 hover:bg-[#24283b] rounded transition-colors"
+                className="p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
                 aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
                 type="button"
               >
                 {showApiKey ? (
-                  <EyeOff className="w-4 h-4 text-[#565f89]" />
+                  <EyeOff className="w-4 h-4 text-[var(--text-muted)]" />
                 ) : (
-                  <Eye className="w-4 h-4 text-[#565f89]" />
+                  <Eye className="w-4 h-4 text-[var(--text-muted)]" />
                 )}
               </button>
               <button
                 onClick={() => handleSave('api_key', apiKey)}
                 disabled={saving}
-                className="p-1 hover:bg-[#9ece6a]/20 rounded transition-colors disabled:opacity-50"
+                className="p-1 hover:bg-[var(--success)]/20 rounded transition-colors disabled:opacity-50"
                 aria-label="Save API key"
                 type="button"
               >
-                <Save className="w-4 h-4 text-[#9ece6a]" />
+                <Save className="w-4 h-4 text-[var(--success)]" />
               </button>
             </div>
           </div>
-          <p id="api-key-description" className="text-xs text-[#565f89] mt-1">
+          <p id="api-key-description" className="text-xs text-[var(--text-muted)] mt-1">
             Your API key is stored locally and never shared
           </p>
         </div>
 
         {/* Base URL */}
         <div>
-          <label htmlFor="base-url-input" className="block text-sm font-medium text-[#a9b1d6] mb-1">
+          <label htmlFor="base-url-input" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
             Base URL (optional)
           </label>
           <div className="relative">
@@ -162,27 +167,27 @@ export function SettingsPanel() {
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://api.example.com"
-              className="w-full px-3 py-2 pr-10 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+              className="w-full px-3 py-2 pr-10 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
               aria-describedby="base-url-description"
             />
             <button
               onClick={() => handleSave('base_url', baseUrl)}
               disabled={saving}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[#9ece6a]/20 rounded transition-colors disabled:opacity-50"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[var(--success)]/20 rounded transition-colors disabled:opacity-50"
               aria-label="Save base URL"
               type="button"
             >
-              <Save className="w-4 h-4 text-[#9ece6a]" />
+              <Save className="w-4 h-4 text-[var(--success)]" />
             </button>
           </div>
-          <p id="base-url-description" className="text-xs text-[#565f89] mt-1">
+          <p id="base-url-description" className="text-xs text-[var(--text-muted)] mt-1">
             Custom API endpoint URL (leave empty for default)
           </p>
         </div>
 
         {/* Theme Selector */}
         <div>
-          <label htmlFor="theme-select" className="block text-sm font-medium text-[#a9b1d6] mb-1 flex items-center gap-2">
+          <label htmlFor="theme-select" className="block text-sm font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-2">
             <Palette className="w-4 h-4" aria-hidden />
             Theme
           </label>
@@ -190,7 +195,7 @@ export function SettingsPanel() {
             id="theme-select"
             value={theme}
             onChange={(e) => setTheme(e.target.value as any)}
-            className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#a9b1d6] focus:outline-none focus:ring-2 focus:ring-[#7aa2f7] focus:border-transparent"
+            className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
             aria-describedby="theme-description"
           >
             {themes.map((t) => (
@@ -202,7 +207,7 @@ export function SettingsPanel() {
               </option>
             ))}
           </select>
-          <p id="theme-description" className="text-xs text-[#565f89] mt-1">
+          <p id="theme-description" className="text-xs text-[var(--text-muted)] mt-1">
             Choose your preferred color scheme
           </p>
         </div>
@@ -213,7 +218,7 @@ export function SettingsPanel() {
             role="status"
             aria-live="polite"
             className={`text-sm ${
-              saveStatus === 'success' ? 'text-[#9ece6a]' : 'text-[#f7768e]'
+              saveStatus === 'success' ? 'text-[var(--success)]' : 'text-[var(--error)]'
             }`}
           >
             {saveStatus === 'success' ? '✓ Saved successfully' : '✗ Failed to save'}
@@ -221,52 +226,65 @@ export function SettingsPanel() {
         )}
 
         {/* Global Shortcuts Section */}
-        <div className="pt-4 border-t border-[#414868]">
-          <h3 className="text-sm font-semibold text-[#c0caf5] mb-3 flex items-center gap-2">
+        <div className="pt-4 border-t border-[var(--border)]">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
             <Keyboard className="w-4 h-4" aria-hidden />
             Global Shortcuts
           </h3>
           <div className="space-y-2" role="list" aria-label="Keyboard shortcuts">
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
-              <div className="text-sm text-[#a9b1d6]">
+            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
+              <div className="text-sm text-[var(--text-secondary)]">
                 <span className="font-medium">Show/Hide Window</span>
-                <p className="text-xs text-[#565f89]">Toggle Shannon visibility</p>
+                <p className="text-xs text-[var(--text-muted)]">Toggle Shannon visibility</p>
               </div>
-              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
                 Ctrl+Shift+S
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
-              <div className="text-sm text-[#a9b1d6]">
+            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
+              <div className="text-sm text-[var(--text-secondary)]">
                 <span className="font-medium">New Session</span>
-                <p className="text-xs text-[#565f89]">Create a new conversation</p>
+                <p className="text-xs text-[var(--text-muted)]">Create a new conversation</p>
               </div>
-              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
                 Ctrl+Shift+N
               </kbd>
             </div>
-            <div className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]" role="listitem">
-              <div className="text-sm text-[#a9b1d6]">
+            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
+              <div className="text-sm text-[var(--text-secondary)]">
                 <span className="font-medium">Focus Input</span>
-                <p className="text-xs text-[#565f89]">Focus message input field</p>
+                <p className="text-xs text-[var(--text-muted)]">Focus message input field</p>
               </div>
-              <kbd className="px-2 py-1 bg-[#24283b] text-[#7aa2f7] text-xs rounded border border-[#414868]">
+              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
                 Ctrl+Shift+K
               </kbd>
             </div>
           </div>
-          <p className="text-xs text-[#565f89] mt-2" role="note">
+          <p className="text-xs text-[var(--text-muted)] mt-2" role="note">
             Shortcuts work even when Shannon is minimized to tray
           </p>
         </div>
 
         {/* Tools Section */}
-        {tools.length > 0 && (
-          <div className="pt-4 border-t border-[#414868]">
-            <h3 className="text-sm font-semibold text-[#c0caf5] mb-3 flex items-center gap-2">
-              <Wrench className="w-4 h-4" aria-hidden />
-              Tools
-            </h3>
+        <div className="pt-4 border-t border-[var(--border)]">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+            <Wrench className="w-4 h-4" aria-hidden />
+            Tools
+          </h3>
+
+          {loadingTools ? (
+            // Loading skeleton
+            <div className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-4 bg-[var(--bg-secondary)] rounded w-24 mb-2" />
+                  <div className="space-y-1">
+                    <div className="h-10 bg-[var(--bg-primary)] rounded border border-[var(--border)]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : tools.length > 0 ? (
             <div className="space-y-1">
               {Object.entries(
                 tools.reduce<Record<string, ToolInfo[]>>((groups, tool) => {
@@ -276,19 +294,19 @@ export function SettingsPanel() {
                 }, {})
               ).map(([category, categoryTools]) => (
                 <div key={category}>
-                  <div className="text-xs font-medium text-[#565f89] uppercase tracking-wider mb-1 mt-2">{category}</div>
+                  <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">{category}</div>
                   {categoryTools.map(tool => (
-                    <div key={tool.name} className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+                    <div key={tool.name} className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]">
                       <div className="min-w-0 flex-1">
-                        <span className="text-sm text-[#a9b1d6] font-medium">{tool.name}</span>
+                        <span className="text-sm text-[var(--text-secondary)] font-medium">{tool.name}</span>
                         {tool.description && (
-                          <p className="text-xs text-[#565f89] truncate">{tool.description}</p>
+                          <p className="text-xs text-[var(--text-muted)] truncate">{tool.description}</p>
                         )}
                       </div>
                       <button
                         onClick={() => handleToggleTool(tool.name, disabledTools.has(tool.name))}
                         className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ml-2 ${
-                          !disabledTools.has(tool.name) ? 'bg-[#9ece6a]' : 'bg-[#414868]'
+                          !disabledTools.has(tool.name) ? 'bg-[var(--success)]' : 'bg-[#414868]'
                         }`}
                         role="switch"
                         aria-checked={!disabledTools.has(tool.name)}
@@ -305,13 +323,15 @@ export function SettingsPanel() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="text-sm text-[var(--text-muted)] py-4">No tools available</div>
+          )}
+        </div>
 
         {/* About Section */}
-        <div className="pt-4 border-t border-[#414868]">
-          <h3 className="text-sm font-semibold text-[#c0caf5] mb-2">About</h3>
-          <div className="text-xs text-[#565f89] space-y-1">
+        <div className="pt-4 border-t border-[var(--border)]">
+          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">About</h3>
+          <div className="text-xs text-[var(--text-muted)] space-y-1">
             <div>Shannon Desktop v0.1.0</div>
             <div>Rust-based AI code assistant</div>
             <div>
@@ -319,7 +339,7 @@ export function SettingsPanel() {
                 href="https://github.com/shannon-code/shannon"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#7aa2f7] hover:underline"
+                className="text-[var(--accent)] hover:underline"
               >
                 GitHub
               </a>
@@ -328,7 +348,7 @@ export function SettingsPanel() {
                 href="https://docs.shannon-code.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-[#7aa2f7] hover:underline"
+                className="text-[var(--accent)] hover:underline"
               >
                 Documentation
               </a>

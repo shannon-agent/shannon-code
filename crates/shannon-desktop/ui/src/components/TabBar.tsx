@@ -56,7 +56,7 @@ export function TabBar({
           key={session.id}
           onClick={() => handleTabClick(session.id)}
           className={`
-            flex items-center gap-2 px-3 py-2 rounded-t-lg cursor-pointer
+            flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer
             border-t-2 border-x transition-all duration-150
             ${activeSessionId === session.id
               ? 'bg-[#24283b] border-[#7aa2f7] text-[#7aa2f7] min-w-[140px]'
