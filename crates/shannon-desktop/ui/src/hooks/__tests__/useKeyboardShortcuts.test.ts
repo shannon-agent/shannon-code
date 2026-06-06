@@ -163,5 +163,33 @@ describe('useKeyboardShortcuts', () => {
     expect(DEFAULT_SHORTCUTS.some(s => s.key === ',')).toBe(true)
     expect(DEFAULT_SHORTCUTS.some(s => s.key === 'b')).toBe(true)
     expect(DEFAULT_SHORTCUTS.some(s => s.key === 'Escape')).toBe(true)
+    expect(DEFAULT_SHORTCUTS.some(s => s.key === 'o')).toBe(true)
+    expect(DEFAULT_SHORTCUTS.some(s => s.key === '`')).toBe(true)
+    expect(DEFAULT_SHORTCUTS.some(s => s.key === ']')).toBe(true)
+    expect(DEFAULT_SHORTCUTS.some(s => s.key === '[')).toBe(true)
+  })
+
+  it('triggers handler for Ctrl+O view mode shortcut', () => {
+    let triggered = false
+    renderHook(() =>
+      useKeyboardShortcuts([
+        { key: 'o', ctrlKey: true, handler: () => { triggered = true }, description: 'Cycle view mode' }
+      ])
+    )
+    const listener = addSpy.mock.calls.find(c => c[0] === 'keydown')?.[1] as EventListener
+    listener(new KeyboardEvent('keydown', { key: 'o', ctrlKey: true }))
+    expect(triggered).toBe(true)
+  })
+
+  it('triggers handler for Ctrl+] next session shortcut', () => {
+    let triggered = false
+    renderHook(() =>
+      useKeyboardShortcuts([
+        { key: ']', ctrlKey: true, handler: () => { triggered = true }, description: 'Next session' }
+      ])
+    )
+    const listener = addSpy.mock.calls.find(c => c[0] === 'keydown')?.[1] as EventListener
+    listener(new KeyboardEvent('keydown', { key: ']', ctrlKey: true }))
+    expect(triggered).toBe(true)
   })
 })

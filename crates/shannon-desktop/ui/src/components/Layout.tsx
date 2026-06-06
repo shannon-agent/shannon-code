@@ -1,5 +1,5 @@
 // IDE-style layout with sidebar, main content, bottom panel, and right panel
-import { ReactNode, useState, useCallback } from 'react'
+import { ReactNode, useState, useCallback, useEffect, useRef } from 'react'
 import { UpdateBanner } from './UpdateBanner'
 
 interface LayoutProps {
@@ -13,26 +13,92 @@ interface LayoutProps {
   onToggleSidebar?: () => void
 }
 
+const STORAGE_KEY = 'shannon-layout'
+const DEFAULT_SIDEBAR = 220
+const DEFAULT_RIGHT = 320
+const DEFAULT_BOTTOM = 200
+
+function loadLayout(): { sidebar: number; right: number; bottom: number } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return {
+        sidebar: parsed.sidebar ?? DEFAULT_SIDEBAR,
+        right: parsed.right ?? DEFAULT_RIGHT,
+        bottom: parsed.bottom ?? DEFAULT_BOTTOM,
+      }
+    }
+  } catch { /* ignore */ }
+  return { sidebar: DEFAULT_SIDEBAR, right: DEFAULT_RIGHT, bottom: DEFAULT_BOTTOM }
+}
+
+function saveLayout(sizes: { sidebar: number; right: number; bottom: number }) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(sizes))
+  } catch { /* ignore */ }
+}
+
 /**
- * IDE-style layout with:
- * - Left sidebar (240px): session list, file tree
+ * IDE-style layout with resizable panels:
+ * - Left sidebar (resizable): session list, file tree
  * - Tab bar (optional): multi-tab session management
  * - Center (flex): chat messages + input
- * - Bottom panel (collapsible): terminal, tasks
- * - Right panel (320px, collapsible): agents, MCP, settings
+ * - Bottom panel (resizable, collapsible): terminal, tasks
+ * - Right panel (resizable, collapsible): agents, MCP, settings
  */
-export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPanelDefault = 200, sidebarCollapsed: externalSidebarCollapsed, onToggleSidebar: externalToggleSidebar }: LayoutProps) {
-  const [bottomHeight, setBottomHeight] = useState(bottomPanelDefault)
+export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPanelDefault, sidebarCollapsed: externalSidebarCollapsed, onToggleSidebar: externalToggleSidebar }: LayoutProps) {
+  const saved = useRef(loadLayout())
+  const [sidebarWidth, setSidebarWidth] = useState(saved.current.sidebar)
+  const [rightWidth, setRightWidth] = useState(saved.current.right)
+  const [bottomHeight, setBottomHeight] = useState(bottomPanelDefault ?? saved.current.bottom)
   const [bottomCollapsed, setBottomCollapsed] = useState(!bottomPanel)
   const [internalSidebarCollapsed, setInternalSidebarCollapsed] = useState(false)
 
-  // Handle bottom panel collapse state
-  const handleBottomCollapse = useCallback(() => {
-    setBottomCollapsed(prev => !prev)
-  }, [setBottomCollapsed])
-
   const sidebarCollapsed = externalSidebarCollapsed ?? internalSidebarCollapsed
   const toggleSidebar = externalToggleSidebar ?? (() => setInternalSidebarCollapsed(prev => !prev))
+
+  // Debounced save to localStorage
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>()
+  const persistSizes = useCallback((s: { sidebar: number; right: number; bottom: number }) => {
+    clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => saveLayout(s), 500)
+  }, [])
+
+  useEffect(() => () => clearTimeout(saveTimer.current), [])
+
+  const handleBottomCollapse = useCallback(() => {
+    setBottomCollapsed(prev => !prev)
+  }, [])
+
+  const makeDragHandler = useCallback((
+    setter: (v: number) => void,
+    min: number,
+    max: number,
+    direction: 'horizontal' | 'vertical',
+    setterKey: 'sidebar' | 'right' | 'bottom'
+  ) => (e: React.MouseEvent) => {
+    const startPos = direction === 'horizontal' ? e.clientX : e.clientY
+    const startSize = setterKey === 'sidebar' ? sidebarWidth : setterKey === 'right' ? rightWidth : bottomHeight
+    const onMove = (ev: MouseEvent) => {
+      const delta = direction === 'horizontal'
+        ? (setterKey === 'sidebar' ? ev.clientX - startPos : startPos - ev.clientX)
+        : startPos - ev.clientY
+      const newSize = Math.max(min, Math.min(max, startSize + delta))
+      setter(newSize)
+      persistSizes({
+        sidebar: setterKey === 'sidebar' ? newSize : sidebarWidth,
+        right: setterKey === 'right' ? newSize : rightWidth,
+        bottom: setterKey === 'bottom' ? newSize : bottomHeight,
+      })
+    }
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }, [sidebarWidth, rightWidth, bottomHeight, persistSizes])
 
   return (
     <div className="flex h-screen bg-[var(--bg-primary)] flex flex-col">
@@ -42,20 +108,29 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
       <div className="flex flex-1 min-h-0">
       {/* Left Sidebar */}
       {sidebar && !sidebarCollapsed && (
-        <aside className="w-[220px] flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border)] overflow-hidden">
+        <aside style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border)] overflow-hidden">
           {sidebar}
         </aside>
       )}
 
-      {/* Sidebar Toggle Button */}
-      {sidebar && (
+      {/* Sidebar Resize Handle */}
+      {sidebar && !sidebarCollapsed && (
+        <div
+          onMouseDown={makeDragHandler(setSidebarWidth, 140, 400, 'horizontal', 'sidebar')}
+          className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
+          title="Drag to resize sidebar"
+        />
+      )}
+
+      {/* Sidebar Toggle Button (when collapsed) */}
+      {sidebar && sidebarCollapsed && (
         <button
           onClick={toggleSidebar}
           className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
-          title={sidebarCollapsed ? "Expand sidebar (Ctrl+Shift+S)" : "Collapse sidebar (Ctrl+Shift+S)"}
+          title="Expand sidebar (Ctrl+Shift+S)"
         >
           <div className="w-full h-full flex items-center justify-center">
-            <div className={`w-0.5 h-4 bg-[var(--text-muted)]/40 rounded-full transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+            <div className="w-0.5 h-4 bg-[var(--text-muted)]/40 rounded-full rotate-180" />
           </div>
         </button>
       )}
@@ -72,21 +147,9 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
           {/* Bottom panel with drag handle */}
           {bottomPanel && !bottomCollapsed && (
             <div style={{ height: `${bottomHeight}px` }} className="flex-shrink-0 border-t border-[var(--border)] overflow-hidden">
-              <div className="h-1 cursor-row-resize bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors"
-                onMouseDown={(e) => {
-                  const startY = e.clientY
-                  const startH = bottomHeight
-                  const onMove = (ev: MouseEvent) => {
-                    const delta = startY - ev.clientY
-                    setBottomHeight(Math.max(100, Math.min(500, startH + delta)))
-                  }
-                  const onUp = () => {
-                    window.removeEventListener('mousemove', onMove)
-                    window.removeEventListener('mouseup', onUp)
-                  }
-                  window.addEventListener('mousemove', onMove)
-                  window.addEventListener('mouseup', onUp)
-                }}
+              <div
+                onMouseDown={makeDragHandler(setBottomHeight, 100, 500, 'vertical', 'bottom')}
+                className="h-1 cursor-row-resize bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors"
               />
               {bottomPanel}
             </div>
@@ -94,9 +157,18 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
         </div>
       </main>
 
+      {/* Right Panel Resize Handle */}
+      {panel && (
+        <div
+          onMouseDown={makeDragHandler(setRightWidth, 200, 600, 'horizontal', 'right')}
+          className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
+          title="Drag to resize panel"
+        />
+      )}
+
       {/* Right Panel */}
       {panel && (
-        <aside className="w-80 flex-shrink-0 bg-[var(--bg-secondary)] border-l border-[var(--border)] overflow-hidden flex flex-col">
+        <aside style={{ width: `${rightWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)] border-l border-[var(--border)] overflow-hidden flex flex-col">
           {panel}
         </aside>
       )}

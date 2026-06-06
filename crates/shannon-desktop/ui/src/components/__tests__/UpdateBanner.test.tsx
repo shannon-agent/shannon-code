@@ -32,6 +32,11 @@ describe('UpdateBanner', () => {
   beforeEach(() => {
     listeners.clear()
     mockEmit.mockClear()
+    // Restore window.__TAURI__ (global afterEach may clear it)
+    Object.defineProperty(window, '__TAURI__', {
+      value: { emit: mockEmit },
+      writable: true,
+    })
   })
 
   it('renders nothing when no update is available', () => {

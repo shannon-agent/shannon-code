@@ -96,6 +96,62 @@ export const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
     description: 'Toggle sidebar'
   },
   {
+    key: 'o',
+    ctrlKey: true,
+    handler: () => {
+      // Cycle view mode (verbose → normal → summary)
+      window.dispatchEvent(new CustomEvent('shannon:cycle-view-mode'))
+    },
+    description: 'Cycle view mode'
+  },
+  {
+    key: '`',
+    ctrlKey: true,
+    handler: () => {
+      // Toggle terminal panel
+      window.dispatchEvent(new CustomEvent('shannon:toggle-terminal'))
+    },
+    description: 'Toggle terminal'
+  },
+  {
+    key: 'D',
+    ctrlKey: true,
+    shiftKey: true,
+    handler: () => {
+      // Focus diff review
+      window.dispatchEvent(new CustomEvent('shannon:focus-diff'))
+    },
+    description: 'Focus diff review'
+  },
+  {
+    key: 'E',
+    ctrlKey: true,
+    shiftKey: true,
+    handler: () => {
+      // Focus settings / model picker
+      window.dispatchEvent(new CustomEvent('shannon:toggle-settings'))
+    },
+    description: 'Focus settings'
+  },
+  {
+    key: ']',
+    ctrlKey: true,
+    handler: () => {
+      // Next session
+      window.dispatchEvent(new CustomEvent('shannon:next-session'))
+    },
+    description: 'Next session'
+  },
+  {
+    key: '[',
+    ctrlKey: true,
+    handler: () => {
+      // Previous session
+      window.dispatchEvent(new CustomEvent('shannon:prev-session'))
+    },
+    description: 'Previous session'
+  },
+  {
     key: 'P',
     ctrlKey: true,
     shiftKey: true,

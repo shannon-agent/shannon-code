@@ -1,6 +1,6 @@
 // Tests for AgentDashboard component
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { AgentDashboard } from '../AgentDashboard'
 import type { AgentInfo } from '../AgentDashboard'
 
@@ -11,6 +11,8 @@ const mockAgents: AgentInfo[] = [
 ]
 
 describe('AgentDashboard', () => {
+  afterEach(() => cleanup())
+
   it('renders header', () => {
     render(<AgentDashboard agents={[]} />)
     expect(screen.getByText('Agents')).toBeDefined()
@@ -64,7 +66,7 @@ describe('AgentDashboard', () => {
     render(<AgentDashboard agents={mockAgents} onCancel={handleCancel} />)
 
     const cancelButtons = screen.getAllByText('Cancel')
-    expect(cancelButtons).toHaveLength(1) // Only running agent
+    expect(cancelButtons).toHaveLength(1)
 
     fireEvent.click(cancelButtons[0])
     expect(handleCancel).toHaveBeenCalledWith('1')
@@ -104,5 +106,58 @@ describe('AgentDashboard', () => {
     ]
     render(<AgentDashboard agents={agent} />)
     expect(screen.getByText('2m 5s')).toBeDefined()
+  })
+
+  // Filter tabs
+  it('shows filter tabs when agents exist', () => {
+    render(<AgentDashboard agents={mockAgents} />)
+    // "All" tab always shows
+    const allTabs = screen.getAllByText(/All/)
+    expect(allTabs.length).toBeGreaterThan(0)
+    // "Running" tab shows because there's 1 running agent
+    expect(screen.getByText(/Running \(/)).toBeDefined()
+  })
+
+  it('filters agents by running status', () => {
+    render(<AgentDashboard agents={mockAgents} />)
+    fireEvent.click(screen.getByText(/Running \(/))
+    expect(screen.getByText('worker-1')).toBeDefined()
+    expect(screen.queryByText('worker-2')).toBeNull()
+    expect(screen.queryByText('worker-3')).toBeNull()
+  })
+
+  it('filters agents by completed status', () => {
+    render(<AgentDashboard agents={mockAgents} />)
+    fireEvent.click(screen.getByText(/Done \(/))
+    expect(screen.queryByText('worker-1')).toBeNull()
+    expect(screen.getByText('worker-3')).toBeDefined()
+  })
+
+  it('shows all agents again after filtering', () => {
+    render(<AgentDashboard agents={mockAgents} />)
+    fireEvent.click(screen.getByText(/Running \(/))
+    expect(screen.queryByText('worker-2')).toBeNull()
+    // Click "All" tab (first one)
+    const allTabs = screen.getAllByText(/All/)
+    fireEvent.click(allTabs[0])
+    expect(screen.getByText('worker-2')).toBeDefined()
+  })
+
+  it('shows no matching agents when filter has no results', () => {
+    const pendingOnly: AgentInfo[] = [
+      { id: '1', name: 'p1', model: 'haiku', status: 'pending' },
+    ]
+    render(<AgentDashboard agents={pendingOnly} />)
+    fireEvent.click(screen.getByText('Running'))
+    expect(screen.getByText('No matching agents')).toBeDefined()
+  })
+
+  it('shows failed count badge in header', () => {
+    const agents: AgentInfo[] = [
+      ...mockAgents,
+      { id: '7', name: 'worker-7', model: 'sonnet', status: 'failed', task: 'Boom', duration: 1000 },
+    ]
+    render(<AgentDashboard agents={agents} />)
+    expect(screen.getByText('1 failed')).toBeDefined()
   })
 })

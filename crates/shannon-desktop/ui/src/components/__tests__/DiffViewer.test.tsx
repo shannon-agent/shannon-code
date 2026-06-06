@@ -233,4 +233,119 @@ describe('DiffViewer', () => {
       expect(container.querySelector('.opacity-40')).toBeDefined()
     }
   })
+
+  // Inline comment tests
+  it('shows comment button when onComment provided', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const buttons = container.querySelectorAll('[title="Add comment"]')
+    expect(buttons.length).toBeGreaterThan(0)
+  })
+
+  it('does not show comment button without onComment', () => {
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" />
+    )
+    expect(container.querySelector('[title="Add comment"]')).toBeNull()
+  })
+
+  it('opens comment input when comment button clicked', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+    expect(screen.getByPlaceholderText('Comment on this line...')).toBeDefined()
+  })
+
+  it('submits comment on Enter key', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+
+    const input = screen.getByPlaceholderText('Comment on this line...')
+    fireEvent.change(input, { target: { value: 'test comment' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(onComment).toHaveBeenCalledTimes(1)
+    expect(onComment.mock.calls[0][0].text).toBe('test comment')
+    expect(onComment.mock.calls[0][0]).toHaveProperty('lineIndex')
+    expect(onComment.mock.calls[0][0]).toHaveProperty('lineContent')
+    expect(onComment.mock.calls[0][0]).toHaveProperty('lineType')
+  })
+
+  it('closes comment input on Escape', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+    const input = screen.getByPlaceholderText('Comment on this line...')
+    fireEvent.keyDown(input, { key: 'Escape' })
+    expect(screen.queryByPlaceholderText('Comment on this line...')).toBeNull()
+  })
+
+  it('does not submit empty comment', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+    fireEvent.keyDown(screen.getByPlaceholderText('Comment on this line...'), { key: 'Enter' })
+    expect(onComment).not.toHaveBeenCalled()
+  })
+
+  it('displays submitted comment inline', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+
+    const input = screen.getByPlaceholderText('Comment on this line...')
+    fireEvent.change(input, { target: { value: 'looks good' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+
+    expect(screen.getByText('looks good')).toBeDefined()
+  })
+
+  it('submits comment via send button', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+
+    const input = screen.getByPlaceholderText('Comment on this line...')
+    fireEvent.change(input, { target: { value: 'via button' } })
+
+    const sendBtn = container.querySelector('[title="Submit comment"]') as HTMLElement
+    fireEvent.click(sendBtn)
+
+    expect(onComment).toHaveBeenCalledTimes(1)
+    expect(onComment.mock.calls[0][0].text).toBe('via button')
+  })
+
+  it('toggles comment input off when clicked again', () => {
+    const onComment = vi.fn()
+    const { container } = render(
+      <DiffViewer oldContent="old" newContent="new" onComment={onComment} />
+    )
+    const btn = container.querySelector('[title="Add comment"]') as HTMLElement
+    fireEvent.click(btn)
+    expect(screen.getByPlaceholderText('Comment on this line...')).toBeDefined()
+
+    fireEvent.click(btn)
+    expect(screen.queryByPlaceholderText('Comment on this line...')).toBeNull()
+  })
 })

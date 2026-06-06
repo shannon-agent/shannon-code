@@ -1,6 +1,20 @@
 // Test setup with Tauri API mocks
 import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import { afterEach, vi } from 'vitest'
+
+afterEach(() => {
+  cleanup()
+  // Reset window.__TAURI__ that some tests set via Object.defineProperty
+  // (configurable:false prevents delete, so set to undefined instead)
+  if (window.__TAURI__) {
+    try {
+      (window as Record<string, unknown>).__TAURI__ = undefined
+    } catch {
+      // non-writable, ignore
+    }
+  }
+})
 
 // Mock @tauri-apps/api/core invoke
 vi.mock('@tauri-apps/api/core', () => ({

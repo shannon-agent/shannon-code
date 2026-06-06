@@ -1,6 +1,7 @@
 // Enhanced tool execution panel with animated progress, live output, and diff previews
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronDown, ChevronRight, AlertCircle, Loader2, Terminal, FileDiff, Copy, Check } from 'lucide-react'
+import type { ViewMode } from '../types/tauri-events'
 
 interface ToolCallDisplayProps {
   toolName: string
@@ -14,6 +15,7 @@ interface ToolCallDisplayProps {
   stdout?: string
   stderr?: string
   diff?: { old: string; new: string }
+  viewMode?: ViewMode
 }
 
 function getToolColor(toolName: string): string {
@@ -105,9 +107,15 @@ export function ToolCallDisplay({
   progress,
   stdout,
   stderr,
-  diff
+  diff,
+  viewMode = 'normal'
 }: ToolCallDisplayProps) {
-  const [isExpanded, setIsExpanded] = useState(isRunning)
+  const [isExpanded, setIsExpanded] = useState(viewMode === 'verbose' && isRunning)
+
+  // Summary mode: hide completed successful tool calls, show errors and running
+  if (viewMode === 'summary' && !isRunning && !isError) {
+    return null
+  }
   const [showInput, setShowInput] = useState(true)
   const [showOutput, setShowOutput] = useState(false)
   const [showStdout, setShowStdout] = useState(false)
@@ -130,15 +138,15 @@ export function ToolCallDisplay({
     }
   }, [bashCommand])
 
-  // Auto-expand when running, collapse when complete
+  // Auto-expand when running in verbose mode, collapse when complete
   useEffect(() => {
-    if (isRunning) {
+    if (isRunning && viewMode === 'verbose') {
       setIsExpanded(true)
       setShowStdout(true)
-    } else if (!isError) {
+    } else if (!isRunning) {
       setShowStdout(false)
     }
-  }, [isRunning, isError])
+  }, [isRunning, isError, viewMode])
 
   return (
     <div

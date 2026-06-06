@@ -63,10 +63,39 @@ describe('ToolCallDisplay', () => {
     expect(screen.getByText('Error')).toBeDefined()
   })
 
-  it('auto-expands when isRunning is true', () => {
-    const { container } = render(<ToolCallDisplay toolName="bash" toolInput={toolInput} isRunning={true} />)
+  it('auto-expands when isRunning is true in verbose mode', () => {
+    const { container } = render(<ToolCallDisplay toolName="bash" toolInput={toolInput} isRunning={true} viewMode="verbose" />)
     const pre = container.querySelector('pre')
     expect(pre).toBeDefined()
+  })
+
+  it('does not auto-expand when isRunning in normal mode', () => {
+    const { container } = render(<ToolCallDisplay toolName="bash" toolInput={toolInput} isRunning={true} viewMode="normal" />)
+    const pre = container.querySelector('pre')
+    expect(pre).toBeNull()
+  })
+
+  it('hides completed successful tool in summary mode', () => {
+    const { container } = render(
+      <ToolCallDisplay toolName="bash" toolInput={toolInput} output="done" viewMode="summary" />
+    )
+    expect(container.innerHTML).toBe('')
+  })
+
+  it('shows error tool in summary mode', () => {
+    render(
+      <ToolCallDisplay toolName="bash" toolInput={toolInput} output="fail" isError={true} viewMode="summary" />
+    )
+    expect(screen.getByText('bash')).toBeDefined()
+    expect(screen.getByText('Error')).toBeDefined()
+  })
+
+  it('shows running tool in summary mode', () => {
+    render(
+      <ToolCallDisplay toolName="bash" toolInput={toolInput} isRunning={true} viewMode="summary" />
+    )
+    expect(screen.getByText('bash')).toBeDefined()
+    expect(screen.getByText('Running')).toBeDefined()
   })
 
   it('displays animated progress bar when running', () => {

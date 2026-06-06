@@ -1,5 +1,6 @@
 // Task board showing pending, in-progress, and completed tasks
-import { Circle, Clock, CheckCircle2, AlertCircle, ListTodo } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Circle, Clock, CheckCircle2, AlertCircle, ListTodo, RefreshCw } from 'lucide-react'
 import { ScrollArea } from './ui/scroll-area'
 import { Badge } from './ui/badge'
 import { Separator } from './ui/separator'
@@ -13,10 +14,13 @@ export interface TaskItem {
   owner?: string
 }
 
+type TaskFilter = 'all' | 'active' | 'completed' | 'failed'
+
 interface TaskBoardProps {
   tasks: TaskItem[]
   onSelect?: (taskId: string) => void
   selectedId?: string
+  onRefresh?: () => void
 }
 
 const STATUS_CONFIG = {
@@ -25,6 +29,13 @@ const STATUS_CONFIG = {
   completed: { icon: CheckCircle2, color: 'text-[var(--success)]', badge: 'success' as const },
   failed: { icon: AlertCircle, color: 'text-[var(--error)]', badge: 'error' as const },
 }
+
+const FILTER_TABS: { key: TaskFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'active', label: 'Active' },
+  { key: 'completed', label: 'Done' },
+  { key: 'failed', label: 'Failed' },
+]
 
 function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (id: string) => void; isSelected: boolean }) {
   const cfg = STATUS_CONFIG[task.status]
@@ -63,7 +74,9 @@ function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (
   )
 }
 
-export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
+export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardProps) {
+  const [filter, setFilter] = useState<TaskFilter>('all')
+
   const counts = {
     pending: tasks.filter(t => t.status === 'pending').length,
     in_progress: tasks.filter(t => t.status === 'in_progress').length,
@@ -71,10 +84,24 @@ export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
     failed: tasks.filter(t => t.status === 'failed').length,
   }
 
-  const sorted = [...tasks].sort((a, b) => {
-    const order = { in_progress: 0, pending: 1, failed: 2, completed: 3 }
-    return order[a.status] - order[b.status]
-  })
+  const filtered = useMemo(() => {
+    let result = [...tasks]
+    switch (filter) {
+      case 'active':
+        result = result.filter(t => t.status === 'pending' || t.status === 'in_progress')
+        break
+      case 'completed':
+        result = result.filter(t => t.status === 'completed')
+        break
+      case 'failed':
+        result = result.filter(t => t.status === 'failed')
+        break
+    }
+    return result.sort((a, b) => {
+      const order = { in_progress: 0, pending: 1, failed: 2, completed: 3 }
+      return order[a.status] - order[b.status]
+    })
+  }, [tasks, filter])
 
   return (
     <div className="flex flex-col h-full">
@@ -87,16 +114,52 @@ export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
           {counts.in_progress > 0 && <Badge variant="default" className="text-[9px]">{counts.in_progress} active</Badge>}
           {counts.completed > 0 && <Badge variant="success" className="text-[9px]">{counts.completed} done</Badge>}
           {counts.failed > 0 && <Badge variant="error" className="text-[9px]">{counts.failed} failed</Badge>}
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+              title="Refresh tasks"
+            >
+              <RefreshCw className="w-3 h-3" />
+            </button>
+          )}
         </div>
       </div>
 
+      {/* Filter tabs */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-[var(--border)]/50 bg-[var(--bg-secondary)]/30">
+        {FILTER_TABS.map(tab => {
+          const count = tab.key === 'all'
+            ? tasks.length
+            : tab.key === 'active'
+              ? counts.pending + counts.in_progress
+              : counts[tab.key]
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={cn(
+                'px-2 py-0.5 text-[10px] rounded transition-colors',
+                filter === tab.key
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              )}
+            >
+              {tab.label} {count > 0 && `(${count})`}
+            </button>
+          )
+        })}
+      </div>
+
       <ScrollArea className="flex-1">
-        {tasks.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="flex items-center justify-center h-32 p-4">
-            <p className="text-[var(--text-muted)] text-[11px]">No tasks</p>
+            <p className="text-[var(--text-muted)] text-[11px]">
+              {tasks.length === 0 ? 'No tasks' : 'No matching tasks'}
+            </p>
           </div>
         ) : (
-          sorted.map(task => (
+          filtered.map(task => (
             <TaskCard
               key={task.id}
               task={task}

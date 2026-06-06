@@ -7,6 +7,7 @@ import { ToolCallDisplay } from './ToolCallDisplay'
 import { DiffViewer } from './DiffViewer'
 import { DiffReviewPanel } from './DiffReviewPanel'
 import { ModeToggle } from './ModeToggle'
+import { Eye, EyeOff, AlignJustify } from 'lucide-react'
 import { ApprovalModeSelector } from './ApprovalModeSelector'
 import { PermissionDialog } from './PermissionDialog'
 import { Button } from './ui/button'
@@ -27,7 +28,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatPanelProps) {
-  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode, approvalMode, setApprovalMode } = useAppState()
+  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode, approvalMode, setApprovalMode, viewMode, setViewMode } = useAppState()
   const [diffReviewAvailable, setDiffReviewAvailable] = useState(false)
   const [diffFiles, setDiffFiles] = useState<DiffFileInfo[]>([])
   const [showDiffReview, setShowDiffReview] = useState(false)
@@ -178,6 +179,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 isRunning={tc.isRunning}
                 output={tc.result}
                 isError={tc.isError}
+                viewMode={viewMode}
               />
             ))}
 
@@ -207,6 +209,19 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
               onChange={setApprovalMode}
               disabled={isStreaming}
             />
+
+            {/* View Mode Toggle */}
+            <button
+              onClick={() => setViewMode(viewMode === 'verbose' ? 'normal' : viewMode === 'normal' ? 'summary' : 'verbose')}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              title="View mode (Ctrl+O)"
+              aria-label={`View mode: ${viewMode}. Click to cycle.`}
+            >
+              {viewMode === 'verbose' && <Eye className="w-3 h-3" />}
+              {viewMode === 'normal' && <AlignJustify className="w-3 h-3" />}
+              {viewMode === 'summary' && <EyeOff className="w-3 h-3" />}
+              <span className="capitalize">{viewMode}</span>
+            </button>
           </div>
           <span className="text-[10px] text-[var(--text-muted)]">
             {mode === 'plan' ? 'Read-only · no tool execution' : 'Full access · tools enabled'}

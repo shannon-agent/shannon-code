@@ -204,6 +204,13 @@ export async function listTasks(): Promise<TaskItem[]> {
 }
 
 /**
+ * List MCP servers with status and tools
+ */
+export async function listMcpServers(): Promise<import('../types/tauri-events').McpServerInfo[]> {
+  return await invoke('list_mcp_servers')
+}
+
+/**
  * Get file tree for a directory
 export async function getFileTree(path: string): Promise<FileNode> {
   return await invoke('get_file_tree', { path })

@@ -1,8 +1,33 @@
 // Settings panel for API key, base URL, theme, shortcuts, and other configurations
-import { useState, useEffect } from 'react'
-import { Eye, EyeOff, Save, Palette, Keyboard } from 'lucide-react'
-import { configure, getConfig } from '../lib/tauri-api'
+import { useState, useEffect, useCallback } from 'react'
+import { Eye, EyeOff, Save, Palette, Keyboard, Wrench } from 'lucide-react'
+import { configure, getConfig, getTools } from '../lib/tauri-api'
 import { useTheme } from '../context/ThemeContext'
+import type { ToolInfo } from '../types/tauri-events'
+
+function getToolCategory(name: string): string {
+  const prefix = name.split('_')[0]
+  switch (prefix) {
+    case 'bash':
+    case 'shell':
+      return 'Execution'
+    case 'file':
+    case 'read':
+    case 'write':
+    case 'edit':
+      return 'File Operations'
+    case 'search':
+    case 'grep':
+    case 'glob':
+    case 'find':
+      return 'Search'
+    case 'web':
+    case 'fetch':
+      return 'Network'
+    default:
+      return 'Other'
+  }
+}
 
 export function SettingsPanel() {
   const [apiKey, setApiKey] = useState('')
@@ -10,6 +35,8 @@ export function SettingsPanel() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [tools, setTools] = useState<ToolInfo[]>([])
+  const [disabledTools, setDisabledTools] = useState<Set<string>>(new Set())
   const { theme, setTheme, themes } = useTheme()
 
   useEffect(() => {
@@ -25,6 +52,36 @@ export function SettingsPanel() {
       console.error('Failed to load config:', error)
     }
   }
+
+  useEffect(() => {
+    getTools().then(setTools).catch(() => {})
+  }, [])
+
+  const handleToggleTool = useCallback(async (toolName: string, enabled: boolean) => {
+    setDisabledTools(prev => {
+      const next = new Set(prev)
+      if (enabled) {
+        next.delete(toolName)
+      } else {
+        next.add(toolName)
+      }
+      return next
+    })
+    try {
+      await configure({ key: 'disabled_tools', value: JSON.stringify([...disabledTools, ...(!enabled ? [toolName] : [])]) })
+    } catch {
+      // Revert on failure
+      setDisabledTools(prev => {
+        const next = new Set(prev)
+        if (enabled) {
+          next.add(toolName)
+        } else {
+          next.delete(toolName)
+        }
+        return next
+      })
+    }
+  }, [disabledTools])
 
   const handleSave = async (key: string, value: string) => {
     try {
@@ -202,6 +259,54 @@ export function SettingsPanel() {
             Shortcuts work even when Shannon is minimized to tray
           </p>
         </div>
+
+        {/* Tools Section */}
+        {tools.length > 0 && (
+          <div className="pt-4 border-t border-[#414868]">
+            <h3 className="text-sm font-semibold text-[#c0caf5] mb-3 flex items-center gap-2">
+              <Wrench className="w-4 h-4" aria-hidden />
+              Tools
+            </h3>
+            <div className="space-y-1">
+              {Object.entries(
+                tools.reduce<Record<string, ToolInfo[]>>((groups, tool) => {
+                  const cat = getToolCategory(tool.name)
+                  ;(groups[cat] ??= []).push(tool)
+                  return groups
+                }, {})
+              ).map(([category, categoryTools]) => (
+                <div key={category}>
+                  <div className="text-xs font-medium text-[#565f89] uppercase tracking-wider mb-1 mt-2">{category}</div>
+                  {categoryTools.map(tool => (
+                    <div key={tool.name} className="flex items-center justify-between p-2 bg-[#1a1b26] rounded border border-[#414868]">
+                      <div className="min-w-0 flex-1">
+                        <span className="text-sm text-[#a9b1d6] font-medium">{tool.name}</span>
+                        {tool.description && (
+                          <p className="text-xs text-[#565f89] truncate">{tool.description}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleToggleTool(tool.name, disabledTools.has(tool.name))}
+                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ml-2 ${
+                          !disabledTools.has(tool.name) ? 'bg-[#9ece6a]' : 'bg-[#414868]'
+                        }`}
+                        role="switch"
+                        aria-checked={!disabledTools.has(tool.name)}
+                        aria-label={`Toggle ${tool.name}`}
+                      >
+                        <span
+                          className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
+                            !disabledTools.has(tool.name) ? 'translate-x-4' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* About Section */}
         <div className="pt-4 border-t border-[#414868]">

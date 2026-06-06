@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import { ChatPanel } from '../ChatPanel'
 
 // Mock useAppState
@@ -16,6 +16,31 @@ vi.mock('@tauri-apps/api/event', () => ({
 // Mock tauri-api
 vi.mock('../../lib/tauri-api', () => ({
   applyDiff: vi.fn(() => Promise.resolve()),
+}))
+
+// Mock PermissionDialog
+vi.mock('../PermissionDialog', () => ({
+  PermissionDialog: () => null,
+}))
+
+// Mock ModeToggle
+vi.mock('../ModeToggle', () => ({
+  ModeToggle: () => null,
+}))
+
+// Mock ApprovalModeSelector
+vi.mock('../ApprovalModeSelector', () => ({
+  ApprovalModeSelector: () => null,
+}))
+
+// Mock StatusBar
+vi.mock('../StatusBar', () => ({
+  StatusBar: () => null,
+}))
+
+// Mock MessageInput
+vi.mock('../MessageInput', () => ({
+  MessageInput: (_props: unknown) => null,
 }))
 
 const defaultState = {
@@ -35,6 +60,8 @@ const defaultState = {
   respondPermission: vi.fn(),
   approvalMode: 'normal' as const,
   setApprovalMode: vi.fn(),
+  viewMode: 'normal' as const,
+  setViewMode: vi.fn(),
 }
 
 describe('ChatPanel', () => {
@@ -42,12 +69,13 @@ describe('ChatPanel', () => {
     mockUseAppState.mockReturnValue(defaultState)
   })
 
-  it('renders welcome message when no messages', () => {
+  afterEach(() => cleanup())
+
+  it('renders without crashing', () => {
     render(
       <ChatPanel sendMessage={vi.fn()} isStreaming={false} error={null} clearError={vi.fn()} />
     )
-    expect(screen.getByText('Shannon Code')).toBeDefined()
-    expect(screen.getByText('Your AI coding assistant')).toBeDefined()
+    expect(screen.getByTitle('View mode (Ctrl+O)')).toBeDefined()
   })
 
   it('renders messages from state', () => {
@@ -70,6 +98,7 @@ describe('ChatPanel', () => {
       <ChatPanel sendMessage={vi.fn()} isStreaming={false} error="Something went wrong" clearError={vi.fn()} />
     )
     expect(screen.getByText('Something went wrong')).toBeDefined()
+    expect(screen.getByRole('button', { name: /Dismiss/ })).toBeDefined()
   })
 
   it('shows loading spinner when loading', () => {
@@ -78,7 +107,6 @@ describe('ChatPanel', () => {
       <ChatPanel sendMessage={vi.fn()} isStreaming={false} error={null} clearError={vi.fn()} />
     )
     expect(container.querySelector('.animate-spin')).toBeDefined()
-    expect(screen.getByText('Loading Shannon Desktop...')).toBeDefined()
   })
 
   it('shows streaming text as message', () => {
@@ -94,7 +122,24 @@ describe('ChatPanel', () => {
     render(
       <ChatPanel sendMessage={vi.fn()} isStreaming={false} error="Error" clearError={clearError} />
     )
-    fireEvent.click(screen.getByText('Dismiss'))
+    fireEvent.click(screen.getByRole('button', { name: /Dismiss/ }))
     expect(clearError).toHaveBeenCalled()
+  })
+
+  it('renders view mode toggle button', () => {
+    render(
+      <ChatPanel sendMessage={vi.fn()} isStreaming={false} error={null} clearError={vi.fn()} />
+    )
+    expect(screen.getByTitle('View mode (Ctrl+O)')).toBeDefined()
+  })
+
+  it('calls setViewMode when view mode toggle clicked', () => {
+    const setViewMode = vi.fn()
+    mockUseAppState.mockReturnValue({ ...defaultState, setViewMode })
+    render(
+      <ChatPanel sendMessage={vi.fn()} isStreaming={false} error={null} clearError={vi.fn()} />
+    )
+    fireEvent.click(screen.getByTitle('View mode (Ctrl+O)'))
+    expect(setViewMode).toHaveBeenCalled()
   })
 })

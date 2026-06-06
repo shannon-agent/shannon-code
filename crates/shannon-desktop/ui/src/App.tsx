@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { AppStateProvider } from './context/AppState'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { AppStateProvider, useAppState } from './context/AppState'
 import { ThemeProvider } from './context/ThemeContext'
 import { useTheme } from './context/ThemeContext'
 import { useStreaming } from './hooks/useStreaming'
@@ -27,13 +27,15 @@ import {
   deleteSession,
   listAgents,
   listTasks,
-  cancelBackgroundTask
+  cancelBackgroundTask,
+  listMcpServers
 } from './lib/tauri-api'
-import type { SessionInfo } from './types/tauri-events'
+import type { SessionInfo, McpServerInfo } from './types/tauri-events'
 
 function AppContent() {
   const { sendMessage, isStreaming, error, clearError } = useStreaming()
   const { theme, setTheme } = useTheme()
+  const { setViewMode } = useAppState()
   const [currentSessionId, setCurrentSessionId] = useState<string>()
   const [sessions, setSessions] = useState<SessionInfo[]>([])
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
@@ -43,7 +45,13 @@ function AppContent() {
   const [rightPanelTab, setRightPanelTab] = useState<string>('settings')
   const [agents, setAgents] = useState<import('./components/AgentDashboard').AgentInfo[]>([])
   const [tasks, setTasks] = useState<import('./components/TaskBoard').TaskItem[]>([])
+  const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([])
 
+  // Refs for keyboard shortcut handlers (avoid stale closures)
+  const sessionsRef = useRef(sessions)
+  sessionsRef.current = sessions
+  const currentSessionIdRef = useRef(currentSessionId)
+  currentSessionIdRef.current = currentSessionId
   // Register default keyboard shortcuts (dispatches DOM custom events)
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
 
@@ -61,6 +69,7 @@ function AppContent() {
   // Load agents and tasks on mount + listen for updates
   useEffect(() => {
     listAgents().then(setAgents).catch(() => {})
+    listMcpServers().then(setMcpServers).catch(() => {})
     listTasks().then(apiTasks => {
       setTasks(apiTasks.map(t => ({
         id: t.id,
@@ -77,6 +86,7 @@ function AppContent() {
     ;(async () => {
       unlistenAgents = await listen('background-tasks-updated', () => {
         listAgents().then(setAgents).catch(() => {})
+        listMcpServers().then(setMcpServers).catch(() => {})
       })
       unlistenTasks = await listen('background-tasks-updated', () => {
         listTasks().then(apiTasks => {
@@ -106,6 +116,25 @@ function AppContent() {
       'shannon:toggle-sidebar': () => setSidebarCollapsed(prev => !prev),
       'shannon:toggle-settings': () => setSettingsVisible(prev => !prev),
       'shannon:close-dialogs': () => setCommandPaletteOpen(false),
+      'shannon:cycle-view-mode': () => setViewMode(prev => prev === 'verbose' ? 'normal' : prev === 'normal' ? 'summary' : 'verbose'),
+      'shannon:next-session': () => {
+        const s = sessionsRef.current
+        const curId = currentSessionIdRef.current
+        const idx = s.findIndex(x => x.id === curId)
+        if (s.length > 0) {
+          const next = s[(idx + 1) % s.length]
+          handleSessionSelect(next.id)
+        }
+      },
+      'shannon:prev-session': () => {
+        const s = sessionsRef.current
+        const curId = currentSessionIdRef.current
+        const idx = s.findIndex(x => x.id === curId)
+        if (s.length > 0) {
+          const prev = s[(idx - 1 + s.length) % s.length]
+          handleSessionSelect(prev.id)
+        }
+      },
       'global:new-session': () => handleNewSession(),
       'global:focus-input': () => {
         // Dispatch focus input event for MessageInput component
@@ -199,8 +228,23 @@ function AppContent() {
             </TabsList>
             <TabsContent value="settings" className="flex-1 overflow-hidden mt-0"><SettingsPanel /></TabsContent>
             <TabsContent value="agents" className="flex-1 overflow-hidden mt-0"><AgentDashboard agents={agents} onCancel={id => cancelBackgroundTask(id).catch(() => {})} /></TabsContent>
-            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={tasks} /></TabsContent>
-            <TabsContent value="mcp" className="flex-1 overflow-hidden mt-0"><McpBrowser servers={[]} /></TabsContent>
+            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={tasks} onRefresh={() => listTasks().then(apiTasks => {
+              setTasks(apiTasks.map(t => ({
+                id: t.id,
+                subject: t.title,
+                description: t.description,
+                status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
+                owner: t.assignee,
+              })))
+            }).catch(() => {})} /></TabsContent>
+            <TabsContent value="mcp" className="flex-1 overflow-hidden mt-0"><McpBrowser
+                  servers={mcpServers.map(s => ({
+                    name: s.name,
+                    status: s.connected ? 'connected' as const : s.enabled ? 'disconnected' as const : 'disconnected' as const,
+                    tools: s.tools.map(t => ({ name: t.name, description: t.description })),
+                  }))}
+                  onRefresh={() => listMcpServers().then(setMcpServers).catch(() => {})}
+                /></TabsContent>
           </Tabs>
         ) : undefined}
         tabBar={

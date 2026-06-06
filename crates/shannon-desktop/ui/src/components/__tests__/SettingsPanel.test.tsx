@@ -13,7 +13,12 @@ vi.mock('../../lib/tauri-api', () => ({
     base_url: undefined,
     model: 'claude-3-5-sonnet-20241022',
     theme: 'tokyo-night'
-  }))
+  })),
+  getTools: vi.fn(() => Promise.resolve([
+    { name: 'bash', description: 'Run shell commands', enabled: true },
+    { name: 'file_read', description: 'Read file contents', enabled: true },
+    { name: 'search', description: 'Search codebase', enabled: true },
+  ]))
 }))
 
 describe('SettingsPanel', () => {
@@ -78,5 +83,25 @@ describe('SettingsPanel', () => {
     const { container } = render(<SettingsPanel />, { wrapper })
     const title = container.querySelector('.text-\\[\\#c0caf5\\]')
     expect(title).toBeDefined()
+  })
+
+  it('renders tools section with tool names', async () => {
+    render(<SettingsPanel />, { wrapper })
+    expect(await screen.findByText('Tools')).toBeDefined()
+    expect(await screen.findByText('bash')).toBeDefined()
+    expect(await screen.findByText('file_read')).toBeDefined()
+    expect(await screen.findByText('search')).toBeDefined()
+  })
+
+  it('renders tool toggle switches', async () => {
+    render(<SettingsPanel />, { wrapper })
+    const toggle = await screen.findByLabelText('Toggle bash')
+    expect(toggle).toBeDefined()
+    expect(toggle.getAttribute('aria-checked')).toBe('true')
+  })
+
+  it('renders tool descriptions', async () => {
+    render(<SettingsPanel />, { wrapper })
+    expect(await screen.findByText('Run shell commands')).toBeDefined()
   })
 })

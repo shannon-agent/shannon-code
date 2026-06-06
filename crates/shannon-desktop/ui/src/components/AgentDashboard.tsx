@@ -1,5 +1,6 @@
 // Agent dashboard showing active sub-agents, status, and progress
-import { Bot, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Bot, CheckCircle2, XCircle, Loader2, Clock, ChevronDown, ChevronRight, Wrench, Timer } from 'lucide-react'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
@@ -15,7 +16,10 @@ export interface AgentInfo {
   progress?: number
   toolsUsed?: number
   duration?: number
+  outputPreview?: string
 }
+
+type StatusFilter = 'all' | 'running' | 'completed' | 'failed'
 
 interface AgentDashboardProps {
   agents: AgentInfo[]
@@ -29,6 +33,13 @@ const STATUS_CONFIG = {
   pending: { icon: Clock, color: 'text-[var(--text-muted)]', animate: '', badge: 'secondary' as const },
 }
 
+const FILTER_TABS: { key: StatusFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'running', label: 'Running' },
+  { key: 'completed', label: 'Done' },
+  { key: 'failed', label: 'Failed' },
+]
+
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
@@ -36,8 +47,17 @@ function formatDuration(ms: number): string {
 }
 
 export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
+  const [filter, setFilter] = useState<StatusFilter>('all')
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    if (filter === 'all') return agents
+    return agents.filter(a => a.status === filter)
+  }, [agents, filter])
+
   const running = agents.filter(a => a.status === 'running').length
   const completed = agents.filter(a => a.status === 'completed').length
+  const failed = agents.filter(a => a.status === 'failed').length
 
   return (
     <div className="flex flex-col h-full">
@@ -49,19 +69,45 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
         <div className="flex items-center gap-1.5">
           {running > 0 && <Badge variant="default">{running} running</Badge>}
           {completed > 0 && <Badge variant="success">{completed} done</Badge>}
+          {failed > 0 && <Badge variant="error">{failed} failed</Badge>}
         </div>
       </div>
 
+      {/* Filter tabs */}
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-[var(--border)]/50 bg-[var(--bg-secondary)]/30">
+        {FILTER_TABS.map(tab => {
+          const count = tab.key === 'all' ? agents.length : agents.filter(a => a.status === tab.key).length
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
+              className={cn(
+                'px-2 py-0.5 text-[10px] rounded transition-colors',
+                filter === tab.key
+                  ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              )}
+            >
+              {tab.label} {count > 0 && `(${count})`}
+            </button>
+          )
+        })}
+      </div>
+
       <ScrollArea className="flex-1">
-        {agents.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="flex items-center justify-center p-8">
-            <p className="text-[var(--text-muted)] text-[11px]">No active agents</p>
+            <p className="text-[var(--text-muted)] text-[11px]">
+              {agents.length === 0 ? 'No active agents' : 'No matching agents'}
+            </p>
           </div>
         ) : (
           <div className="py-1">
-            {agents.map(agent => {
+            {filtered.map(agent => {
               const cfg = STATUS_CONFIG[agent.status]
               const Icon = cfg.icon
+              const isExpanded = expandedId === agent.id
+              const hasDetails = agent.task || agent.outputPreview
               return (
                 <div
                   key={agent.id}
@@ -71,9 +117,9 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                   )}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', cfg.color, cfg.animate)} />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="text-[12px] font-medium text-[var(--text-secondary)] truncate">
                             {agent.name}
@@ -89,10 +135,19 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                           </p>
                         )}
                       </div>
+                      {hasDetails && (
+                        <button
+                          onClick={() => setExpandedId(isExpanded ? null : agent.id)}
+                          className="flex-shrink-0 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                        >
+                          {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        </button>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       {agent.duration != null && (
-                        <span className="text-[10px] text-[var(--text-muted)]">
+                        <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-0.5">
+                          <Timer className="w-2.5 h-2.5" />
                           {formatDuration(agent.duration)}
                         </span>
                       )}
@@ -108,6 +163,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                       )}
                     </div>
                   </div>
+                  {/* Progress bar */}
                   {agent.status === 'running' && agent.progress != null && (
                     <div className="mt-1.5 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                       <div
@@ -116,15 +172,37 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                       />
                     </div>
                   )}
+                  {/* Quick stats */}
                   {agent.toolsUsed != null && agent.toolsUsed > 0 && (
-                    <span className="text-[10px] text-[var(--text-muted)] mt-1 block">
+                    <span className="text-[10px] text-[var(--text-muted)] mt-1 flex items-center gap-0.5">
+                      <Wrench className="w-2.5 h-2.5" />
                       {agent.toolsUsed} tool{agent.toolsUsed !== 1 ? 's' : ''} used
                     </span>
+                  )}
+                  {/* Expanded details */}
+                  {isExpanded && (
+                    <div className="mt-2 p-2 rounded bg-[var(--bg-primary)] border border-[var(--border)]/50 text-[10px] text-[var(--text-muted)] space-y-1">
+                      {agent.task && (
+                        <div>
+                          <span className="text-[var(--text-secondary)] font-medium">Task:</span> {agent.task}
+                        </div>
+                      )}
+                      {agent.outputPreview && (
+                        <div>
+                          <span className="text-[var(--text-secondary)] font-medium">Output:</span>{' '}
+                          <span className="font-mono whitespace-pre-wrap">{agent.outputPreview}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <span>ID: <span className="font-mono">{agent.id.slice(0, 8)}</span></span>
+                        <span>Model: {agent.model}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
               )
             })}
-            {agents.length > 1 && <Separator />}
+            {filtered.length > 1 && <Separator />}
           </div>
         )}
       </ScrollArea>

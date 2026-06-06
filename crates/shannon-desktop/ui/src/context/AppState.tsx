@@ -19,7 +19,8 @@ import type {
   QueryFailedPayload,
   PermissionRequest,
   ThinkingPayload,
-  ApprovalMode
+  ApprovalMode,
+  ViewMode
 } from '../types/tauri-events'
 import type { AgentMode } from '../components/ModeToggle'
 import { EVENT_NAMES } from '../types/tauri-events'
@@ -51,6 +52,8 @@ interface AppStateContextType {
   respondPermission: (allow: boolean) => void
   approvalMode: ApprovalMode
   setApprovalMode: (mode: ApprovalMode) => void
+  viewMode: ViewMode
+  setViewMode: (mode: ViewMode) => void
 }
 
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined)
@@ -73,6 +76,7 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null)
   const [mode, setMode] = useState<AgentMode>('act')
   const [approvalMode, setApprovalMode] = useState<ApprovalMode>('confirm')
+  const [viewMode, setViewMode] = useState<ViewMode>('normal')
   const { addToast } = useToast()
 
   // Load initial state on mount
@@ -252,7 +256,9 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     setMode,
     respondPermission,
     approvalMode,
-    setApprovalMode: handleSetApprovalMode
+    setApprovalMode: handleSetApprovalMode,
+    viewMode,
+    setViewMode
   }
 
   return (

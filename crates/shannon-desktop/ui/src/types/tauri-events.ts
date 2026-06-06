@@ -186,6 +186,16 @@ export interface BackgroundTaskUpdate {
   completed_at: number | null
 }
 
+export interface McpServerInfo {
+  name: string
+  command: string
+  enabled: boolean
+  connected: boolean
+  tool_count: number
+  tools: ToolInfo[]
+  last_connected: string | null
+}
+
 export interface BackgroundTaskInfo {
   task_id: string
   prompt: string
@@ -194,6 +204,9 @@ export interface BackgroundTaskInfo {
   completed_at: number | null
   output: string
 }
+
+// View mode for controlling agent output verbosity
+export type ViewMode = 'verbose' | 'normal' | 'summary'
 
 // Approval mode for tool execution - matches Rust ApprovalMode enum
 export type ApprovalMode =
