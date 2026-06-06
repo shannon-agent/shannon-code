@@ -1,6 +1,9 @@
 // MCP server browser showing connected servers, tools, and status
 import { useState } from 'react'
 import { Plug, Wrench, Circle, ChevronRight, ChevronDown, RefreshCw } from 'lucide-react'
+import { Button } from './ui/button'
+import { ScrollArea } from './ui/scroll-area'
+import { Badge } from './ui/badge'
 
 export interface McpServer {
   name: string
@@ -36,7 +39,7 @@ function ToolItem({ tool }: { tool: McpTool }) {
 
 function ServerItem({ server }: { server: McpServer }) {
   const [expanded, setExpanded] = useState(true)
-  const statusColor = server.status === 'connected' ? 'bg-[var(--success)]' : server.status === 'error' ? 'bg-[var(--error)]' : 'bg-[var(--text-muted)]'
+  const statusVariant = server.status === 'connected' ? 'success' : server.status === 'error' ? 'error' : 'secondary'
 
   return (
     <div>
@@ -49,7 +52,7 @@ function ServerItem({ server }: { server: McpServer }) {
         ) : (
           <ChevronRight className="w-3 h-3 flex-shrink-0 text-[var(--text-muted)]" />
         )}
-        <Circle className={`w-2 h-2 flex-shrink-0 ${statusColor}`} />
+        <Badge variant={statusVariant} className="w-2 h-2 p-0 rounded-full" />
         <span className="text-[12px] text-[var(--text-secondary)] truncate flex-1">{server.name}</span>
         <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
           {server.tools.length} tool{server.tools.length !== 1 ? 's' : ''}
@@ -77,37 +80,39 @@ export function McpBrowser({ servers, onRefresh }: McpBrowserProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <Plug className="w-3.5 h-3.5 text-[var(--accent)]" />
           <span className="text-xs font-medium text-[var(--text-secondary)]">MCP Servers</span>
-          <span className="text-[10px] text-[var(--text-muted)]">{connected}/{servers.length}</span>
+          <Badge variant="secondary" className="text-[9px]">{connected}/{servers.length}</Badge>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] text-[var(--text-muted)]">{totalTools} tools</span>
           {onRefresh && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onRefresh}
-              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] transition-colors"
+              className="h-6 w-6 p-0"
               title="Refresh servers"
             >
               <RefreshCw className="w-3 h-3" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
-      {/* Server list */}
-      <div className="flex-1 overflow-y-auto py-1">
+      <ScrollArea className="flex-1">
         {servers.length === 0 ? (
-          <div className="flex items-center justify-center h-full p-4">
+          <div className="flex items-center justify-center h-32 p-4">
             <p className="text-[var(--text-muted)] text-[11px]">No MCP servers configured</p>
           </div>
         ) : (
-          servers.map(server => <ServerItem key={server.name} server={server} />)
+          <div className="py-1">
+            {servers.map(server => <ServerItem key={server.name} server={server} />)}
+          </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

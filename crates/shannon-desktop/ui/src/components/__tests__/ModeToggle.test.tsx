@@ -43,8 +43,10 @@ describe('ModeToggle', () => {
     render(<ModeToggle mode="act" onChange={vi.fn()} disabled />)
     const planBtn = screen.getByText('Plan').closest('button')!
     const actBtn = screen.getByText('Act').closest('button')!
-    expect(planBtn.className).toContain('cursor-not-allowed')
-    expect(actBtn.className).toContain('cursor-not-allowed')
+    expect(planBtn).toBeDisabled()
+    expect(actBtn).toBeDisabled()
+    expect(planBtn.className).toContain('disabled:opacity-40')
+    expect(actBtn.className).toContain('disabled:opacity-40')
   })
 
   it('has accessible titles', () => {

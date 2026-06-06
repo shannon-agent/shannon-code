@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { Copy, Check } from 'lucide-react'
 import type { ChatMessage as ChatMessageType } from '../types/tauri-events'
+import { Button } from './ui/button'
 import 'highlight.js/styles/github-dark.css'
 
 interface ChatMessageProps {
@@ -85,16 +86,18 @@ export const ChatMessage = memo(function ChatMessageComponent({ message }: ChatM
                       <div className="relative group/code">
                         <div className="flex items-center justify-between px-4 py-1.5 bg-[var(--bg-secondary)] rounded-t-lg border border-b-0 border-[var(--border)]">
                           <span className="text-xs text-[var(--text-muted)] font-medium">{match[1]}</span>
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleCopy(codeText, blockId)}
-                            className="flex items-center gap-1 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
+                            className="h-5 gap-1 text-[10px] text-[var(--text-muted)] hover:text-[var(--text-secondary)] px-1.5"
                           >
                             {copiedBlock === blockId ? (
                               <><Check className="w-3 h-3" /> Copied</>
                             ) : (
                               <><Copy className="w-3 h-3" /> Copy</>
                             )}
-                          </button>
+                          </Button>
                         </div>
                         <code className={className} {...props}>
                           {children}

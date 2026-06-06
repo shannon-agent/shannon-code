@@ -1,5 +1,7 @@
 // Plan/Act mode toggle — controls whether the agent only plans or also executes
 import { Lightbulb, Zap } from 'lucide-react'
+import { Button } from './ui/button'
+import { cn } from '../lib/utils'
 
 export type AgentMode = 'plan' | 'act'
 
@@ -22,22 +24,25 @@ export function ModeToggle({ mode, onChange, disabled }: ModeToggleProps) {
         const Icon = cfg.icon
         const active = mode === m
         return (
-          <button
+          <Button
             key={m}
+            variant="ghost"
+            size="sm"
             onClick={() => { if (m !== mode) onChange(m) }}
             disabled={disabled}
             title={cfg.description}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-medium transition-all duration-150 ${
+            className={cn(
+              'h-6 gap-1 px-2.5 text-[11px] font-medium',
               active
                 ? m === 'plan'
-                  ? 'bg-[var(--warning)]/15 text-[var(--warning)] shadow-sm'
-                  : 'bg-[var(--accent)]/15 text-[var(--accent)] shadow-sm'
+                  ? 'bg-[var(--warning)]/15 text-[var(--warning)] shadow-sm hover:bg-[var(--warning)]/25 hover:text-[var(--warning)]'
+                  : 'bg-[var(--accent)]/15 text-[var(--accent)] shadow-sm hover:bg-[var(--accent)]/25 hover:text-[var(--accent)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-            } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+            )}
           >
             <Icon className="w-3 h-3" />
             <span>{cfg.label}</span>
-          </button>
+          </Button>
         )
       })}
     </div>

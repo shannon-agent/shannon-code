@@ -16,6 +16,7 @@ import { TerminalPane } from './components/TerminalPane'
 import { AgentDashboard } from './components/AgentDashboard'
 import { TaskBoard } from './components/TaskBoard'
 import { McpBrowser } from './components/McpBrowser'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
 import {
   newSession,
   listSessions,
@@ -32,7 +33,7 @@ function AppContent() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [sidebarVisible, setSidebarVisible] = useState(true)
   const [settingsVisible, setSettingsVisible] = useState(true)
-  const [rightPanelTab, setRightPanelTab] = useState<'settings' | 'agents' | 'tasks' | 'mcp'>('settings')
+  const [rightPanelTab, setRightPanelTab] = useState<string>('settings')
 
   // Register default keyboard shortcuts (dispatches DOM custom events)
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
@@ -114,31 +115,18 @@ function AppContent() {
           />
         ) : undefined}
         panel={settingsVisible ? (
-          <div className="flex flex-col h-full">
-            {/* Panel tabs */}
-            <div className="flex items-center gap-0.5 px-2 py-1 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
-              {(['settings', 'agents', 'tasks', 'mcp'] as const).map(tab => (
-                <button
-                  key={tab}
-                  onClick={() => setRightPanelTab(tab)}
-                  className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${
-                    rightPanelTab === tab
-                      ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                  }`}
-                >
-                  {tab === 'mcp' ? 'MCP' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </button>
-              ))}
-            </div>
-            {/* Panel content */}
-            <div className="flex-1 overflow-hidden">
-              {rightPanelTab === 'settings' && <SettingsPanel />}
-              {rightPanelTab === 'agents' && <AgentDashboard agents={[]} />}
-              {rightPanelTab === 'tasks' && <TaskBoard tasks={[]} />}
-              {rightPanelTab === 'mcp' && <McpBrowser servers={[]} />}
-            </div>
-          </div>
+          <Tabs value={rightPanelTab} onValueChange={setRightPanelTab} className="flex flex-col h-full">
+            <TabsList className="w-full justify-start rounded-none border-b border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-1 h-auto gap-0.5">
+              <TabsTrigger value="settings" className="text-[10px] px-2 py-1">Settings</TabsTrigger>
+              <TabsTrigger value="agents" className="text-[10px] px-2 py-1">Agents</TabsTrigger>
+              <TabsTrigger value="tasks" className="text-[10px] px-2 py-1">Tasks</TabsTrigger>
+              <TabsTrigger value="mcp" className="text-[10px] px-2 py-1">MCP</TabsTrigger>
+            </TabsList>
+            <TabsContent value="settings" className="flex-1 overflow-hidden mt-0"><SettingsPanel /></TabsContent>
+            <TabsContent value="agents" className="flex-1 overflow-hidden mt-0"><AgentDashboard agents={[]} /></TabsContent>
+            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={[]} /></TabsContent>
+            <TabsContent value="mcp" className="flex-1 overflow-hidden mt-0"><McpBrowser servers={[]} /></TabsContent>
+          </Tabs>
         ) : undefined}
         tabBar={
           <TabBar

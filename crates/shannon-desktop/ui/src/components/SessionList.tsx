@@ -3,6 +3,10 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, MessageSquare } from 'lucide-react'
 import { listSessions, newSession, deleteSession } from '../lib/tauri-api'
 import type { SessionInfo } from '../types/tauri-events'
+import { Button } from './ui/button'
+import { ScrollArea } from './ui/scroll-area'
+import { Separator } from './ui/separator'
+import { cn } from '../lib/utils'
 
 interface SessionListProps {
   currentSessionId?: string
@@ -97,19 +101,15 @@ export function SessionList({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-3 border-b border-[var(--border)]">
-        <button
-          onClick={handleNewSession}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--bg-primary)] rounded-lg font-medium text-sm transition-all duration-150 shadow-sm hover:shadow-md"
-        >
+      <div className="p-3">
+        <Button onClick={handleNewSession} className="w-full gap-2">
           <Plus className="w-4 h-4" />
           New Chat
-        </button>
+        </Button>
       </div>
+      <Separator />
 
-      {/* Session List */}
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {loading ? (
           <div className="p-4 text-center text-[var(--text-muted)] text-sm">
             <div className="animate-spin w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto mb-2" />
@@ -124,25 +124,25 @@ export function SessionList({
           <div className="py-1">
             {grouped.map((group) => (
               <div key={group.label}>
-                {/* Group label */}
                 <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
                   {group.label}
                 </div>
-                {/* Session items */}
                 {group.sessions.map((session) => (
                   <div
                     key={session.id}
                     onClick={() => onSessionSelect(session.id)}
-                    className={`mx-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative ${
+                    className={cn(
+                      'mx-1.5 px-2.5 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative',
                       currentSessionId === session.id
                         ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20'
                         : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] border border-transparent'
-                    }`}
+                    )}
                   >
                     <div className="flex items-start gap-2">
-                      <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                      <div className={cn(
+                        'w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
                         currentSessionId === session.id ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40'
-                      }`} />
+                      )} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm truncate leading-tight">
                           {session.title || 'New Conversation'}
@@ -151,13 +151,15 @@ export function SessionList({
                           {session.message_count} msgs
                         </div>
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={(e) => handleDeleteSession(session.id, e)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-[var(--error)]/20 rounded transition-all duration-100"
+                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-[var(--error)]/20"
                         title="Delete session"
                       >
                         <Trash2 className="w-3 h-3 text-[var(--error)]" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -165,7 +167,7 @@ export function SessionList({
             ))}
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   )
 }

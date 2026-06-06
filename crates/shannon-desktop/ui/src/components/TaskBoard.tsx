@@ -1,5 +1,9 @@
 // Task board showing pending, in-progress, and completed tasks
 import { Circle, Clock, CheckCircle2, AlertCircle, ListTodo } from 'lucide-react'
+import { ScrollArea } from './ui/scroll-area'
+import { Badge } from './ui/badge'
+import { Separator } from './ui/separator'
+import { cn } from '../lib/utils'
 
 export interface TaskItem {
   id: string
@@ -16,10 +20,10 @@ interface TaskBoardProps {
 }
 
 const STATUS_CONFIG = {
-  pending: { icon: Circle, color: 'text-[var(--text-muted)]', label: 'Pending' },
-  in_progress: { icon: Clock, color: 'text-[var(--accent)]', label: 'In Progress', pulse: true },
-  completed: { icon: CheckCircle2, color: 'text-[var(--success)]', label: 'Done' },
-  failed: { icon: AlertCircle, color: 'text-[var(--error)]', label: 'Failed' },
+  pending: { icon: Circle, color: 'text-[var(--text-muted)]', badge: 'secondary' as const },
+  in_progress: { icon: Clock, color: 'text-[var(--accent)]', pulse: true, badge: 'default' as const },
+  completed: { icon: CheckCircle2, color: 'text-[var(--success)]', badge: 'success' as const },
+  failed: { icon: AlertCircle, color: 'text-[var(--error)]', badge: 'error' as const },
 }
 
 function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (id: string) => void; isSelected: boolean }) {
@@ -29,25 +33,29 @@ function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (
   return (
     <div
       onClick={() => onSelect?.(task.id)}
-      className={`px-3 py-2 border-b border-[var(--border)]/50 cursor-pointer transition-colors duration-100 ${
+      className={cn(
+        'px-3 py-2 cursor-pointer transition-colors duration-100',
         isSelected
           ? 'bg-[var(--accent)]/10 border-l-2 border-l-[var(--accent)]'
           : task.status === 'in_progress'
             ? 'bg-[var(--bg-secondary)]/50'
             : 'hover:bg-[var(--bg-secondary)]/30'
-      }`}
+      )}
     >
       <div className="flex items-start gap-2">
-        <Icon className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${cfg.color} ${cfg.pulse ? 'animate-pulse' : ''}`} />
+        <Icon className={cn('w-3.5 h-3.5 flex-shrink-0 mt-0.5', cfg.color, cfg.pulse ? 'animate-pulse' : '')} />
         <div className="min-w-0 flex-1">
-          <p className={`text-[12px] truncate ${task.status === 'completed' ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-secondary)]'}`}>
+          <p className={cn(
+            'text-[12px] truncate',
+            task.status === 'completed' ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-secondary)]'
+          )}>
             {task.subject}
           </p>
           {task.description && (
             <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">{task.description}</p>
           )}
           {task.owner && (
-            <span className="text-[10px] text-[var(--accent)]/70 mt-0.5 inline-block">{task.owner}</span>
+            <Badge variant="outline" className="text-[9px] mt-0.5">{task.owner}</Badge>
           )}
         </div>
       </div>
@@ -63,7 +71,6 @@ export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
     failed: tasks.filter(t => t.status === 'failed').length,
   }
 
-  // Sort: in_progress first, then pending, failed, completed
   const sorted = [...tasks].sort((a, b) => {
     const order = { in_progress: 0, pending: 1, failed: 2, completed: 3 }
     return order[a.status] - order[b.status]
@@ -71,23 +78,21 @@ export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
           <ListTodo className="w-3.5 h-3.5 text-[var(--accent)]" />
           <span className="text-xs font-medium text-[var(--text-secondary)]">Tasks</span>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px]">
-          {counts.in_progress > 0 && <span className="text-[var(--accent)]">{counts.in_progress} active</span>}
-          {counts.completed > 0 && <span className="text-[var(--success)]">{counts.completed} done</span>}
-          {counts.failed > 0 && <span className="text-[var(--error)]">{counts.failed} failed</span>}
+        <div className="flex items-center gap-1.5">
+          {counts.in_progress > 0 && <Badge variant="default" className="text-[9px]">{counts.in_progress} active</Badge>}
+          {counts.completed > 0 && <Badge variant="success" className="text-[9px]">{counts.completed} done</Badge>}
+          {counts.failed > 0 && <Badge variant="error" className="text-[9px]">{counts.failed} failed</Badge>}
         </div>
       </div>
 
-      {/* Task list */}
-      <div className="flex-1 overflow-y-auto">
+      <ScrollArea className="flex-1">
         {tasks.length === 0 ? (
-          <div className="flex items-center justify-center h-full p-4">
+          <div className="flex items-center justify-center h-32 p-4">
             <p className="text-[var(--text-muted)] text-[11px]">No tasks</p>
           </div>
         ) : (
@@ -100,18 +105,18 @@ export function TaskBoard({ tasks, onSelect, selectedId }: TaskBoardProps) {
             />
           ))
         )}
-      </div>
+      </ScrollArea>
 
-      {/* Summary footer */}
       {tasks.length > 0 && (
-        <div className="px-3 py-1.5 border-t border-[var(--border)] bg-[var(--bg-secondary)]/50">
-          <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
-            <span>{tasks.length} task{tasks.length !== 1 ? 's' : ''}</span>
-            <div className="flex gap-2">
+        <>
+          <Separator />
+          <div className="px-3 py-1.5 bg-[var(--bg-secondary)]/50">
+            <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+              <span>{tasks.length} task{tasks.length !== 1 ? 's' : ''}</span>
               <span>{counts.pending + counts.in_progress} remaining</span>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

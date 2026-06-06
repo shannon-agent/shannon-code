@@ -1,6 +1,9 @@
 // Multi-line message input with keyboard shortcuts and polished design
 import { useState, useRef, useEffect, KeyboardEvent } from 'react'
 import { Send, Loader2 } from 'lucide-react'
+import { Textarea } from './ui/textarea'
+import { Button } from './ui/button'
+import { cn } from '../lib/utils'
 
 interface MessageInputProps {
   onSend: (message: string) => void
@@ -16,7 +19,6 @@ export function MessageInput({
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Auto-resize textarea with smooth animation
   useEffect(() => {
     const textarea = textareaRef.current
     if (textarea) {
@@ -55,7 +57,7 @@ export function MessageInput({
   return (
     <div className="border-t border-[var(--border)] bg-[var(--bg-secondary)]/50 px-4 py-3 backdrop-blur-sm">
       <div className="relative flex items-end gap-2 bg-[var(--bg-input)] rounded-xl border border-[var(--border)] focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_0_3px_var(--accent)/15] transition-all duration-150">
-        <textarea
+        <Textarea
           ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -63,29 +65,29 @@ export function MessageInput({
           disabled={disabled}
           placeholder={placeholder}
           rows={1}
-          className="flex-1 resize-none bg-transparent text-[var(--text-secondary)] placeholder-[var(--text-muted)] px-4 py-3 pr-2 focus:outline-none disabled:opacity-40 disabled:cursor-not-allowed text-sm leading-relaxed"
+          className="border-0 bg-transparent focus-visible:ring-0 px-4 py-3 pr-2 text-sm leading-relaxed"
           style={{ maxHeight: '200px' }}
         />
 
-        {/* Send button */}
-        <button
+        <Button
           onClick={handleSend}
           disabled={disabled || !text.trim()}
-          className={`flex-shrink-0 m-1.5 p-2 rounded-lg transition-all duration-150 ${
+          size="sm"
+          className={cn(
+            'flex-shrink-0 m-1.5 h-8 w-8 p-0 rounded-lg',
             text.trim() && !disabled
-              ? 'bg-[var(--accent)] text-[var(--bg-primary)] hover:bg-[var(--accent-hover)] shadow-sm'
-              : 'text-[var(--text-muted)] cursor-not-allowed'
-          }`}
+              ? ''
+              : 'bg-transparent text-[var(--text-muted)] hover:bg-transparent hover:text-[var(--text-muted)]'
+          )}
         >
           {disabled ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <Send className="w-4 h-4" />
           )}
-        </button>
+        </Button>
       </div>
 
-      {/* Bottom hints */}
       <div className="flex items-center justify-between mt-1.5 px-1">
         <div className="text-[10px] text-[var(--text-muted)]">
           <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Enter</kbd>
@@ -94,7 +96,7 @@ export function MessageInput({
           {' newline'}
         </div>
         {characterCount > 0 && (
-          <span className={`text-[10px] tabular-nums ${isNearLimit ? 'text-[var(--error)]' : 'text-[var(--text-muted)]'}`}>
+          <span className={cn('text-[10px] tabular-nums', isNearLimit ? 'text-[var(--error)]' : 'text-[var(--text-muted)]')}>
             {characterCount}/{maxLength}
           </span>
         )}

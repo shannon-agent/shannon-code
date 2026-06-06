@@ -7,7 +7,7 @@ description = "Shannon Code desktop application (Tauri)"
 license.workspace = true
 
 [features]
-default = []
+default = ["tauri"]
 tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell"]
 
 [dependencies]
@@ -24,11 +24,11 @@ chrono = { workspace = true }
 futures = { workspace = true }
 tempfile = "3"
 
-tauri = { version = "2", optional = true }
+tauri = { version = "2", optional = true , features = [] }
 tauri-plugin-shell = { version = "2", optional = true }
 
 [build-dependencies]
-tauri-build = { version = "2", optional = true }
+tauri-build = { version = "2", optional = true , features = [] }
 
 [dev-dependencies]
 tokio-test = "0.4"
