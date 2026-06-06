@@ -2,22 +2,14 @@
 import { useState, useCallback, useEffect } from 'react'
 import {
   ChevronRight, ChevronDown, Folder, FolderOpen, File, FileCode,
-  FileText, FileJson, Image, Lock, GitBranch
+  FileText, FileJson, Image, Lock, GitBranch, RefreshCw, Loader2
 } from 'lucide-react'
-
-interface FileNode {
-  name: string
-  path: string
-  type: 'file' | 'directory'
-  children?: FileNode[]
-  modified?: boolean
-  size?: number
-}
+import { getFileTree, getWorkingDirInfo } from '../lib/tauri-api'
+import type { FileNode } from '../lib/tauri-api'
 
 interface FileTreeProps {
   rootPath?: string
   onFileSelect?: (path: string) => void
-  onRefresh?: () => Promise<FileNode[]>
   modifiedFiles?: Set<string>
   selectedFile?: string
 }
@@ -119,24 +111,41 @@ function FileTreeNode({
 export function FileTree({
   rootPath,
   onFileSelect,
-  onRefresh,
   modifiedFiles,
   selectedFile,
 }: FileTreeProps) {
   const [tree, setTree] = useState<FileNode[]>([])
   const [loading, setLoading] = useState(false)
+  const [branch, setBranch] = useState<string>('')
+  const [error, setError] = useState<string | null>(null)
 
   const loadTree = useCallback(async () => {
-    if (onRefresh) {
-      setLoading(true)
-      try {
-        const data = await onRefresh()
-        setTree(data)
-      } finally {
-        setLoading(false)
+    if (!rootPath) return
+    
+    setLoading(true)
+    setError(null)
+    try {
+      const [treeData, dirInfo] = await Promise.all([
+        getFileTree(rootPath),
+        getWorkingDirInfo()
+      ])
+      
+      // Convert single node to array if needed
+      const treeArray = Array.isArray(treeData) ? treeData : [treeData]
+      setTree(treeArray)
+      setBranch(dirInfo.branch)
+      
+      // Update modified files from working dir info
+      if (dirInfo.modified_files.length > 0 && onFileSelect) {
+        // The parent component should handle modifiedFiles prop
       }
+    } catch (err) {
+      console.error('Failed to load file tree:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load file tree')
+    } finally {
+      setLoading(false)
     }
-  }, [onRefresh])
+  }, [rootPath, onFileSelect])
 
   useEffect(() => {
     loadTree()
@@ -149,10 +158,29 @@ export function FileTree({
         <div className="flex items-center gap-2">
           <GitBranch className="w-3.5 h-3.5 text-[var(--accent)]" />
           <span className="text-xs font-medium text-[var(--text-secondary)]">Files</span>
+          {branch && (
+            <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-primary)] px-1.5 py-0.5 rounded">
+              {branch}
+            </span>
+          )}
         </div>
-        {modifiedFiles && modifiedFiles.size > 0 && (
-          <span className="text-[10px] text-[var(--success)]">{modifiedFiles.size} modified</span>
-        )}
+        <div className="flex items-center gap-2">
+          {modifiedFiles && modifiedFiles.size > 0 && (
+            <span className="text-[10px] text-[var(--success)]">{modifiedFiles.size} modified</span>
+          )}
+          <button
+            onClick={loadTree}
+            disabled={loading}
+            className="p-1 hover:bg-[var(--bg-primary)] rounded transition-colors"
+            title="Refresh file tree"
+          >
+            {loading ? (
+              <Loader2 className="w-3.5 h-3.5 text-[var(--text-muted)] animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Tree */}
@@ -160,6 +188,10 @@ export function FileTree({
         {loading ? (
           <div className="p-3 text-center">
             <div className="animate-spin w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto" />
+          </div>
+        ) : error ? (
+          <div className="p-3 text-center text-[var(--error)] text-[11px]">
+            {error}
           </div>
         ) : tree.length === 0 ? (
           <div className="p-3 text-center text-[var(--text-muted)] text-[11px]">
@@ -182,4 +214,4 @@ export function FileTree({
   )
 }
 
-export type { FileNode, FileTreeProps }
+export type { FileTreeProps }

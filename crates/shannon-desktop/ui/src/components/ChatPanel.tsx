@@ -8,6 +8,7 @@ import { DiffViewer } from './DiffViewer'
 import { DiffReviewPanel } from './DiffReviewPanel'
 import { ModeToggle } from './ModeToggle'
 import { Button } from './ui/button'
+import { Shield, CheckCircle, AlertCircle } from 'lucide-react'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
@@ -24,7 +25,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatPanelProps) {
-  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode } = useAppState()
+  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode, approvalMode, setApprovalMode } = useAppState()
   const [diffReviewAvailable, setDiffReviewAvailable] = useState(false)
   const [diffFiles, setDiffFiles] = useState<DiffFileInfo[]>([])
   const [showDiffReview, setShowDiffReview] = useState(false)
@@ -218,7 +219,51 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
 
       <div className="border-t border-[var(--border)]">
         <div className="flex items-center justify-between px-4 pt-2">
-          <ModeToggle mode={mode} onChange={setMode} disabled={isStreaming} />
+          <div className="flex items-center gap-4">
+            <ModeToggle mode={mode} onChange={setMode} disabled={isStreaming} />
+            
+            {/* Approval Mode Selector */}
+            <div className="flex items-center gap-2">
+              <Shield className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setApprovalMode('always')}
+                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
+                    approvalMode === 'always'
+                      ? 'bg-[var(--success)] text-[#1a1b26]'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
+                  }`}
+                  disabled={isStreaming}
+                >
+                  <CheckCircle className="w-3 h-3 inline mr-1" />
+                  Always
+                </button>
+                <button
+                  onClick={() => setApprovalMode('confirm')}
+                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
+                    approvalMode === 'confirm'
+                      ? 'bg-[var(--warning)] text-[#1a1b26]'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
+                  }`}
+                  disabled={isStreaming}
+                >
+                  <AlertCircle className="w-3 h-3 inline mr-1" />
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setApprovalMode('never')}
+                  className={`px-2 py-1 text-[10px] rounded transition-colors ${
+                    approvalMode === 'never'
+                      ? 'bg-[var(--error)] text-white'
+                      : 'text-[var(--text-muted)] hover:bg-[var(--bg-secondary)]'
+                  }`}
+                  disabled={isStreaming}
+                >
+                  Never
+                </button>
+              </div>
+            </div>
+          </div>
           <span className="text-[10px] text-[var(--text-muted)]">
             {mode === 'plan' ? 'Read-only · no tool execution' : 'Full access · tools enabled'}
           </span>

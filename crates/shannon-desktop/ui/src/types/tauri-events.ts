@@ -184,3 +184,11 @@ export interface BackgroundTaskInfo {
   completed_at: number | null
   output: string
 }
+
+// Approval mode for tool execution
+export type ApprovalMode = 'always' | 'confirm' | 'never'
+
+export interface ApprovalModeConfig {
+  mode: ApprovalMode
+ highRiskTools?: string[]  // Tools that always require confirmation
+}

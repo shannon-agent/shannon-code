@@ -1,11 +1,12 @@
 // Diff review panel for reviewing file changes with accept/reject functionality
 import { useState, useCallback, useEffect } from 'react'
-import { X, Check, X as XIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Check, X as XIcon, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { DiffViewer } from './DiffViewer'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
 import { cn } from '../lib/utils'
+import { getFileDiff } from '../lib/tauri-api'
 import type { DiffFileInfo, HunkAction } from '../types/tauri-events'
 
 interface DiffReviewPanelProps {
@@ -18,9 +19,35 @@ export function DiffReviewPanel({ files, onClose, onApplyDiff }: DiffReviewPanel
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [acceptedHunks, setAcceptedHunks] = useState<Map<string, Set<number>>>(new Map())
   const [rejectedHunks, setRejectedHunks] = useState<Map<string, Set<number>>>(new Map())
+  const [diffContent, setDiffContent] = useState<Map<string, { old: string; new: string }>>(new Map())
+  const [loadingDiffs, setLoadingDiffs] = useState<Set<string>>(new Set())
 
   const selectedFile = files[selectedIndex]
   const fileKey = selectedFile?.path || ''
+
+  // Fetch diff content for files
+  useEffect(() => {
+    files.forEach(async (file) => {
+      if (!diffContent.has(file.path) && !loadingDiffs.has(file.path)) {
+        setLoadingDiffs(prev => new Set(prev).add(file.path))
+        try {
+          const diff = await getFileDiff(file.path)
+          setDiffContent(prev => new Map(prev).set(file.path, {
+            old: diff.old_content,
+            new: diff.new_content
+          }))
+        } catch (error) {
+          console.error(`Failed to fetch diff for ${file.path}:`, error)
+        } finally {
+          setLoadingDiffs(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(file.path)
+            return newSet
+          })
+        }
+      }
+    })
+  }, [files, diffContent, loadingDiffs])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -292,13 +319,23 @@ export function DiffReviewPanel({ files, onClose, onApplyDiff }: DiffReviewPanel
 
               {/* Diff content */}
               <div className="p-4">
-                <DiffViewer
-                  oldContent={selectedFile.status === 'added' ? '' : '// Original content'}
-                  newContent={selectedFile.hunks.map(h => h.content).join('\n')}
-                  fileName={selectedFile.path.split('/').pop()}
-                  onAcceptHunk={(hunkIdx) => handleAcceptHunk(hunkIdx)}
-                  onRejectHunk={(hunkIdx) => handleRejectHunk(hunkIdx)}
-                />
+                {loadingDiffs.has(selectedFile.path) ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-[var(--accent)]" />
+                  </div>
+                ) : diffContent.has(selectedFile.path) ? (
+                  <DiffViewer
+                    oldContent={diffContent.get(selectedFile.path)?.old || ''}
+                    newContent={diffContent.get(selectedFile.path)?.new || ''}
+                    fileName={selectedFile.path.split('/').pop()}
+                    onAcceptHunk={(hunkIdx) => handleAcceptHunk(hunkIdx)}
+                    onRejectHunk={(hunkIdx) => handleRejectHunk(hunkIdx)}
+                  />
+                ) : (
+                  <div className="text-center py-8 text-[var(--text-muted)]">
+                    Loading diff...
+                  </div>
+                )}
               </div>
             </div>
           ) : (

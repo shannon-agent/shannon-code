@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { ShieldAlert, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useTauriEvent } from '../hooks/useTauriEvent'
+import { respondPermission } from '../lib/tauri-api'
 import type { PermissionRequest } from '../types/tauri-events'
 import { EVENT_NAMES } from '../types/tauri-events'
 import { Button } from './ui/button'
@@ -10,8 +11,6 @@ import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
 
 interface PermissionDialogProps {
-  onApprove: (requestId: string, always: boolean) => void
-  onDeny: (requestId: string) => void
   request?: PermissionRequest | null
 }
 
@@ -23,13 +22,12 @@ const RISK_VARIANT: Record<string, 'error' | 'warning' | 'default' | 'success'> 
 }
 
 export function PermissionDialog({
-  onApprove,
-  onDeny,
   request: externalRequest
 }: PermissionDialogProps) {
   const [internalRequest, setInternalRequest] = useState<PermissionRequest | null>(null)
   const [alwaysAllow, setAlwaysAllow] = useState(false)
   const [expanded, setExpanded] = useState(true)
+  const [responding, setResponding] = useState(false)
 
   const request = externalRequest ?? internalRequest
 
@@ -44,17 +42,31 @@ export function PermissionDialog({
     }
   )
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
     if (request) {
-      onApprove(request.request_id, alwaysAllow)
-      if (!externalRequest) setInternalRequest(null)
+      setResponding(true)
+      try {
+        await respondPermission(request.request_id, true)
+        if (!externalRequest) setInternalRequest(null)
+      } catch (error) {
+        console.error('Failed to approve permission:', error)
+      } finally {
+        setResponding(false)
+      }
     }
   }
 
-  const handleDeny = () => {
+  const handleDeny = async () => {
     if (request) {
-      onDeny(request.request_id)
-      if (!externalRequest) setInternalRequest(null)
+      setResponding(true)
+      try {
+        await respondPermission(request.request_id, false)
+        if (!externalRequest) setInternalRequest(null)
+      } catch (error) {
+        console.error('Failed to deny permission:', error)
+      } finally {
+        setResponding(false)
+      }
     }
   }
 
@@ -109,11 +121,11 @@ export function PermissionDialog({
                 </label>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="destructive" size="sm" onClick={handleDeny}>
+                  <Button variant="destructive" size="sm" onClick={handleDeny} disabled={responding}>
                     <X className="w-3 h-3 mr-1" />
                     Deny
                   </Button>
-                  <Button variant="success" size="sm" onClick={handleApprove}>
+                  <Button variant="success" size="sm" onClick={handleApprove} disabled={responding}>
                     <Check className="w-3 h-3 mr-1" />
                     Allow
                   </Button>

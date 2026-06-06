@@ -50,6 +50,8 @@ fn main() {
             commands::start_background_task,
             commands::get_background_tasks,
             commands::cancel_background_task,
+            commands::get_file_tree,
+            commands::get_working_dir_info,
         ])
         .setup(|app| {
             let state = commands::AppState::new();

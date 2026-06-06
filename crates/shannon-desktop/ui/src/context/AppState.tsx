@@ -17,7 +17,8 @@ import type {
   QueryCompletedPayload,
   QueryFailedPayload,
   PermissionRequest,
-  ThinkingPayload
+  ThinkingPayload,
+  ApprovalMode
 } from '../types/tauri-events'
 import type { AgentMode } from '../components/ModeToggle'
 import { EVENT_NAMES } from '../types/tauri-events'
@@ -47,6 +48,8 @@ interface AppStateContextType {
   mode: AgentMode
   setMode: (mode: AgentMode) => void
   respondPermission: (allow: boolean) => void
+  approvalMode: ApprovalMode
+  setApprovalMode: (mode: ApprovalMode) => void
 }
 
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined)
@@ -68,6 +71,7 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
   const [usage, setUsage] = useState<{ inputTokens: number; outputTokens: number; costUsd: number } | null>(null)
   const [permissionRequest, setPermissionRequest] = useState<PermissionRequest | null>(null)
   const [mode, setMode] = useState<AgentMode>('act')
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>('confirm')
   const { addToast } = useToast()
 
   // Load initial state on mount
@@ -228,7 +232,9 @@ export function AppStateProvider({ children }: AppStateProviderProps) {
     permissionRequest,
     mode,
     setMode,
-    respondPermission
+    respondPermission,
+    approvalMode,
+    setApprovalMode
   }
 
   return (

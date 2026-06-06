@@ -3,6 +3,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { PermissionDialog } from '../PermissionDialog'
 
+// Mock the tauri-api module
+vi.mock('../../lib/tauri-api', () => ({
+  respondPermission: vi.fn(() => Promise.resolve()),
+}))
+
+import { respondPermission } from '../../lib/tauri-api'
+const mockedRespondPermission = vi.mocked(respondPermission)
+
 describe('PermissionDialog', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -16,34 +24,17 @@ describe('PermissionDialog', () => {
   }
 
   it('does not render when no request', () => {
-    const { container } = render(
-      <PermissionDialog onApprove={vi.fn()} onDeny={vi.fn()} />
-    )
+    const { container } = render(<PermissionDialog />)
     expect(container.firstChild).toBeNull()
   })
 
   it('renders when request is provided', () => {
-    const { container } = render(
-      <PermissionDialog
-        request={mockRequest}
-        onApprove={vi.fn()}
-        onDeny={vi.fn()}
-      />
-    )
-
+    const { container } = render(<PermissionDialog request={mockRequest} />)
     expect(container.textContent).toContain('bash')
   })
 
-  it('calls onApprove when Allow button is clicked', () => {
-    const handleApprove = vi.fn()
-
-    const { container } = render(
-      <PermissionDialog
-        request={mockRequest}
-        onApprove={handleApprove}
-        onDeny={vi.fn()}
-      />
-    )
+  it('calls respondPermission(true) when Allow button is clicked', async () => {
+    const { container } = render(<PermissionDialog request={mockRequest} />)
 
     const allowButton = Array.from(container.querySelectorAll('button')).find(btn =>
       btn.textContent?.includes('Allow')
@@ -53,20 +44,14 @@ describe('PermissionDialog', () => {
 
     if (allowButton) {
       fireEvent.click(allowButton)
-      expect(handleApprove).toHaveBeenCalledWith('req-123', false)
+      await vi.waitFor(() => {
+        expect(mockedRespondPermission).toHaveBeenCalledWith('req-123', true)
+      })
     }
   })
 
-  it('calls onDeny when Deny button is clicked', () => {
-    const handleDeny = vi.fn()
-
-    const { container } = render(
-      <PermissionDialog
-        request={mockRequest}
-        onApprove={vi.fn()}
-        onDeny={handleDeny}
-      />
-    )
+  it('calls respondPermission(false) when Deny button is clicked', async () => {
+    const { container } = render(<PermissionDialog request={mockRequest} />)
 
     const denyButton = Array.from(container.querySelectorAll('button')).find(btn =>
       btn.textContent?.includes('Deny')
@@ -76,18 +61,14 @@ describe('PermissionDialog', () => {
 
     if (denyButton) {
       fireEvent.click(denyButton)
-      expect(handleDeny).toHaveBeenCalledWith('req-123')
+      await vi.waitFor(() => {
+        expect(mockedRespondPermission).toHaveBeenCalledWith('req-123', false)
+      })
     }
   })
 
   it('toggles always allow checkbox', () => {
-    const { container } = render(
-      <PermissionDialog
-        request={mockRequest}
-        onApprove={vi.fn()}
-        onDeny={vi.fn()}
-      />
-    )
+    const { container } = render(<PermissionDialog request={mockRequest} />)
 
     const checkbox = container.querySelector('input[type="checkbox"]')
     expect(checkbox).toBeDefined()
@@ -99,30 +80,6 @@ describe('PermissionDialog', () => {
     }
   })
 
-  it('passes always allow state to onApprove', () => {
-    const handleApprove = vi.fn()
-
-    const { container } = render(
-      <PermissionDialog
-        request={mockRequest}
-        onApprove={handleApprove}
-        onDeny={vi.fn()}
-      />
-    )
-
-    const checkbox = container.querySelector('input[type="checkbox"]')
-    const allowButton = Array.from(container.querySelectorAll('button')).find(btn =>
-      btn.textContent?.includes('Allow')
-    )
-
-    if (checkbox && allowButton) {
-      fireEvent.click(checkbox)
-      fireEvent.click(allowButton)
-
-      expect(handleApprove).toHaveBeenCalledWith('req-123', true)
-    }
-  })
-
   it('displays tool input as JSON', () => {
     const requestWithJson = {
       tool: 'bash',
@@ -131,14 +88,7 @@ describe('PermissionDialog', () => {
       request_id: 'req-json'
     }
 
-    const { container } = render(
-      <PermissionDialog
-        request={requestWithJson}
-        onApprove={vi.fn()}
-        onDeny={vi.fn()}
-      />
-    )
-
+    const { container } = render(<PermissionDialog request={requestWithJson} />)
     expect(container.textContent).toContain('command')
     expect(container.textContent).toContain('ls -la')
   })
@@ -151,14 +101,7 @@ describe('PermissionDialog', () => {
       request_id: 'req-456'
     }
 
-    const { container } = render(
-      <PermissionDialog
-        request={criticalRequest}
-        onApprove={vi.fn()}
-        onDeny={vi.fn()}
-      />
-    )
-
+    const { container } = render(<PermissionDialog request={criticalRequest} />)
     expect(container.textContent).toContain('critical')
   })
 })

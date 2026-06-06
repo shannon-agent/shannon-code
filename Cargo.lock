@@ -5576,6 +5576,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shannon-core",
+ "shannon-tools",
  "shannon-types",
  "tauri",
  "tauri-build",

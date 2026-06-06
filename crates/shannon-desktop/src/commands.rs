@@ -10,6 +10,7 @@ use shannon_core::permissions::PermissionManager;
 use shannon_core::query_engine::{QueryContext, QueryEngine, QueryEvent};
 use shannon_core::state::StateManager;
 use shannon_core::tools::ToolRegistry;
+use shannon_tools::register_default_tools;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::Emitter;
@@ -156,13 +157,18 @@ impl AppState {
             .clone()
             .unwrap_or_else(|| "anthropic".into());
 
+        // Initialize tool registry with default tools
+        let mut tool_registry = ToolRegistry::new();
+        let _agent_context =
+            register_default_tools(&mut tool_registry).expect("Failed to register default tools");
+
         Self {
             messages: Arc::new(Mutex::new(Vec::new())),
             querying: Arc::new(Mutex::new(false)),
             model: Arc::new(Mutex::new(model)),
             provider: Arc::new(Mutex::new(provider)),
             client_config: Arc::new(RwLock::new(client_config)),
-            tools: Arc::new(ToolRegistry::new()),
+            tools: Arc::new(tool_registry),
             permissions: Arc::new(RwLock::new(PermissionManager::new())),
             state_manager: Arc::new(StateManager::new()),
             qe_config: Arc::new(RwLock::new(
@@ -275,18 +281,12 @@ pub async fn send_message(
     // Build the query engine
     let client_config = state.client_config.read().await.clone();
     let client = LlmClient::new(client_config);
-    let _tools = state.tools.clone();
-    let permissions = PermissionManager::new();
+    let tools = state.tools.clone();
+    let permissions = PermissionManager::new(); // TODO: Use shared permissions when Clone is available
     let _state_mgr = state.state_manager.clone();
-    let qe_config = state.qe_config.read().await.clone();
+    let _qe_config = state.qe_config.read().await.clone();
 
-    let engine = QueryEngine::new(
-        client,
-        ToolRegistry::new(),
-        permissions,
-        StateManager::new(),
-        qe_config,
-    );
+    let engine = QueryEngine::with_defaults_arc(client, tools, permissions, StateManager::new());
 
     // Create query context
     let model = state.model.lock().await.clone();
@@ -642,41 +642,16 @@ pub async fn cancel_query(
 
 /// List available tools.
 #[tauri::command]
-pub async fn list_tools() -> Result<Vec<ToolInfo>, String> {
-    // MVP: return known built-in tools. Dynamic enumeration via ToolRegistry
-    // requires a public iteration API (Phase 2).
-    Ok(vec![
-        ToolInfo {
-            name: "bash".into(),
-            description: "Execute shell commands".into(),
+pub async fn list_tools(state: tauri::State<'_, AppState>) -> Result<Vec<ToolInfo>, String> {
+    let tools = state.tools.list_tools_info();
+    Ok(tools
+        .into_iter()
+        .map(|t| ToolInfo {
+            name: t.name,
+            description: t.description,
             enabled: true,
-        },
-        ToolInfo {
-            name: "read".into(),
-            description: "Read file contents".into(),
-            enabled: true,
-        },
-        ToolInfo {
-            name: "write".into(),
-            description: "Write file contents".into(),
-            enabled: true,
-        },
-        ToolInfo {
-            name: "edit".into(),
-            description: "Edit files with precise matching".into(),
-            enabled: true,
-        },
-        ToolInfo {
-            name: "grep".into(),
-            description: "Search file contents by pattern".into(),
-            enabled: true,
-        },
-        ToolInfo {
-            name: "glob".into(),
-            description: "Find files by glob pattern".into(),
-            enabled: true,
-        },
-    ])
+        })
+        .collect())
 }
 
 /// Update configuration.
@@ -1337,6 +1312,30 @@ pub struct FileDiff {
     pub language: String,
 }
 
+/// A node in the file tree.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileTreeNode {
+    pub name: String,
+    pub path: String,
+    #[serde(rename = "type")]
+    pub node_type: String, // "file" or "directory"
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<FileTreeNode>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub modified: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size: Option<u64>,
+}
+
+/// Working directory info.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkingDirInfo {
+    pub root: String,
+    pub branch: String,
+    pub modified_files: Vec<String>,
+    pub status: String, // "clean", "dirty", "merge-conflict"
+}
+
 /// Get the diff for a file (working tree vs last committed, or old vs new content).
 #[tauri::command]
 pub async fn get_file_diff(path: String) -> Result<FileDiff, String> {
@@ -1948,20 +1947,72 @@ pub async fn start_background_task(
     // Emit background tasks updated event
     let _ = app_handle.emit(event_names::BACKGROUND_TASKS_UPDATED, ());
 
-    // In a real implementation, this would spawn an async task to process the prompt
-    // For now, we'll simulate completion after a delay
+    // Execute the prompt in a real async background task
     let tasks_arc = state.background_tasks.clone();
     let app_handle_clone = app_handle.clone();
     let task_id_clone = task_id.clone();
+    let client_config = state.client_config.read().await.clone();
+    let tools = state.tools.clone();
+    let _qe_config = state.qe_config.read().await.clone();
+    let model = state.model.lock().await.clone();
 
     tokio::spawn(async move {
-        tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
+        // Build query engine for this task
+        let client = LlmClient::new(client_config);
+        let permissions = PermissionManager::new(); // TODO: Use shared permissions when Clone is available
+        let engine =
+            QueryEngine::with_defaults_arc(client, tools, permissions, StateManager::new());
 
+        let query_id = uuid::Uuid::new_v4();
+        let _qid_str = query_id.to_string();
+
+        let context = QueryContext {
+            query_id,
+            session_id: uuid::Uuid::new_v4(),
+            user_message: prompt.clone(),
+            metadata: shannon_core::query_engine::QueryMetadata {
+                timestamp: chrono::Utc::now(),
+                tools_allowed: true,
+                max_tokens: None,
+                model,
+                temperature: None,
+                top_p: None,
+            },
+        };
+
+        let mut final_output = String::new();
+
+        // Process the query and collect output
+        let stream = engine.process_query(context, None).await;
+        use futures::StreamExt;
+        let mut pin_stream = std::pin::pin!(stream);
+
+        while let Some(event_result) = pin_stream.next().await {
+            match event_result {
+                Ok(event) => match event {
+                    QueryEvent::Text { content, .. } => {
+                        final_output.push_str(&content);
+                    }
+                    QueryEvent::Completed { .. } => break,
+                    QueryEvent::Failed { error, .. } => {
+                        final_output = format!("Task failed: {}", error);
+                        break;
+                    }
+                    _ => {}
+                },
+                Err(e) => {
+                    final_output = format!("Task error: {}", e);
+                    break;
+                }
+            }
+        }
+
+        // Update task with results
         let mut tasks = tasks_arc.lock().await;
         if let Some(task) = tasks.iter_mut().find(|t| t.id == task_id_clone) {
             task.status = "completed".into();
             task.completed_at = Some(chrono_timestamp());
-            task.output = format!("Task completed: {}", prompt);
+            task.output = final_output.clone();
         }
 
         // Emit update event
@@ -1971,7 +2022,7 @@ pub async fn start_background_task(
                 task_id: task_id_clone.clone(),
                 status: "completed".into(),
                 prompt,
-                output: format!("Task completed: {}", task_id_clone),
+                output: final_output,
                 started_at: now,
                 completed_at: Some(chrono_timestamp()),
             },
@@ -2037,6 +2088,115 @@ pub async fn cancel_background_task(
     } else {
         Err("Task not found".into())
     }
+}
+
+/// Recursively read a directory and return a file tree.
+#[tauri::command]
+pub async fn get_file_tree(path: String) -> Result<Vec<FileTreeNode>, String> {
+    use std::fs;
+    let root = std::path::Path::new(&path);
+    if !root.is_dir() {
+        return Err("Path is not a directory".into());
+    }
+    fn build_tree(dir: &std::path::Path) -> Result<Vec<FileTreeNode>, String> {
+        let mut entries: Vec<std::fs::DirEntry> = fs::read_dir(dir)
+            .map_err(|e| format!("Cannot read dir: {e}"))?
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                let name = e.file_name().to_string_lossy().to_string();
+                !name.starts_with('.') && name != "target" && name != "node_modules"
+            })
+            .collect();
+        entries.sort_by(|a, b| {
+            let a_is_dir = a.file_type().map(|t| t.is_dir()).unwrap_or(false);
+            let b_is_dir = b.file_type().map(|t| t.is_dir()).unwrap_or(false);
+            b_is_dir.cmp(&a_is_dir).then_with(|| {
+                a.file_name()
+                    .to_string_lossy()
+                    .cmp(&b.file_name().to_string_lossy())
+            })
+        });
+        let mut nodes = Vec::new();
+        for entry in entries {
+            let name = entry.file_name().to_string_lossy().to_string();
+            let entry_path = entry.path().to_string_lossy().to_string();
+            let metadata = entry
+                .metadata()
+                .map_err(|e| format!("Metadata error: {e}"))?;
+            if metadata.is_dir() {
+                let children = build_tree(&entry.path())?;
+                nodes.push(FileTreeNode {
+                    name,
+                    path: entry_path,
+                    node_type: "directory".into(),
+                    children,
+                    modified: None,
+                    size: None,
+                });
+            } else {
+                nodes.push(FileTreeNode {
+                    name,
+                    path: entry_path,
+                    node_type: "file".into(),
+                    children: Vec::new(),
+                    modified: None,
+                    size: Some(metadata.len()),
+                });
+            }
+        }
+        Ok(nodes)
+    }
+    build_tree(root)
+}
+
+/// Get working directory info including git branch and modified files.
+#[tauri::command]
+pub async fn get_working_dir_info() -> Result<WorkingDirInfo, String> {
+    use std::process::Command;
+    let cwd = std::env::current_dir().map_err(|e| format!("Cannot determine CWD: {e}"))?;
+    let root = cwd.to_string_lossy().to_string();
+    let branch = Command::new("git")
+        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+        .current_dir(&cwd)
+        .output()
+        .ok()
+        .and_then(|o| if o.status.success() { Some(o) } else { None })
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_else(|| "unknown".into());
+    let modified: Vec<String> = Command::new("git")
+        .args(["status", "--porcelain"])
+        .current_dir(&cwd)
+        .output()
+        .ok()
+        .and_then(|o| if o.status.success() { Some(o) } else { None })
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .lines()
+                .filter_map(|line| line.get(3..).map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
+    let has_conflicts = Command::new("git")
+        .args(["diff", "--name-only", "--diff-filter=U"])
+        .current_dir(&cwd)
+        .output()
+        .ok()
+        .and_then(|o| if o.status.success() { Some(o) } else { None })
+        .map(|o| !o.stdout.is_empty())
+        .unwrap_or(false);
+    let status = if has_conflicts {
+        "merge-conflict".into()
+    } else if !modified.is_empty() {
+        "dirty".into()
+    } else {
+        "clean".into()
+    };
+    Ok(WorkingDirInfo {
+        root,
+        branch,
+        modified_files: modified,
+        status,
+    })
 }
 
 #[cfg(test)]

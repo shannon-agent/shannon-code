@@ -1,6 +1,6 @@
 // Multi-line message input with keyboard shortcuts, file drag-drop, and polished design
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react'
-import { Send, Loader2, Paperclip, X } from 'lucide-react'
+import { Send, Loader2, Paperclip, X, Image as ImageIcon } from 'lucide-react'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import { cn } from '../lib/utils'
@@ -9,6 +9,7 @@ interface FileAttachment {
   name: string
   path: string
   size: number
+  preview?: string  // Data URL for image preview
 }
 
 interface MessageInputProps {
@@ -51,16 +52,35 @@ export function MessageInput({
     setIsDragging(false)
 
     const files = Array.from(e.dataTransfer.files)
-    const newAttachments: FileAttachment[] = files
-      .filter(file => file.type.startsWith('image/') || file.type.startsWith('text/') || file.type.startsWith('application/'))
-      .map(file => ({
+    const processedAttachments = files.map(file => {
+      const attachment: FileAttachment = {
         name: file.name,
-        path: (file as any).path || file.name, // Tauri provides file.path
+        path: (file as any).path || file.name,
         size: file.size
-      }))
+      }
+      
+      // Generate preview for images
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const preview = e.target?.result as string
+          setAttachments(prev => prev.map(a => 
+            a.path === attachment.path ? { ...a, preview } : a
+          ))
+        }
+        reader.readAsDataURL(file)
+      }
+      
+      return attachment
+    })
 
-    if (newAttachments.length > 0) {
-      setAttachments(prev => [...prev, ...newAttachments])
+    const validAttachments = processedAttachments.filter(file => {
+      const fileType = files.find(f => f.name === file.name)?.type || ''
+      return fileType.startsWith('image/') || fileType.startsWith('text/') || fileType.startsWith('application/')
+    })
+
+    if (validAttachments.length > 0) {
+      setAttachments(prev => [...prev, ...validAttachments])
     }
   }, [])
 
@@ -120,7 +140,17 @@ export function MessageInput({
               key={index}
               className="flex items-center gap-2 px-3 py-1.5 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg group"
             >
-              <Paperclip className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              {attachment.preview ? (
+                <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0">
+                  <img 
+                    src={attachment.preview} 
+                    alt={attachment.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <Paperclip className="w-3.5 h-3.5 text-[var(--text-muted)] flex-shrink-0" />
+              )}
               <span className="text-sm text-[var(--text-secondary)] truncate max-w-[150px]">
                 {attachment.name}
               </span>
@@ -153,12 +183,28 @@ export function MessageInput({
           className="hidden"
           onChange={(e) => {
             const files = Array.from(e.target.files || [])
-            const newAttachments: FileAttachment[] = files.map(file => ({
-              name: file.name,
-              path: (file as any).path || file.name,
-              size: file.size
-            }))
-            setAttachments(prev => [...prev, ...newAttachments])
+            const processedAttachments = files.map(file => {
+              const attachment: FileAttachment = {
+                name: file.name,
+                path: (file as any).path || file.name,
+                size: file.size
+              }
+              
+              // Generate preview for images
+              if (file.type.startsWith('image/')) {
+                const reader = new FileReader()
+                reader.onload = (ev) => {
+                  const preview = ev.target?.result as string
+                  setAttachments(prev => prev.map(a => 
+                    a.path === attachment.path ? { ...a, preview } : a
+                  ))
+                }
+                reader.readAsDataURL(file)
+              }
+              
+              return attachment
+            })
+            setAttachments(prev => [...prev, ...processedAttachments])
           }}
         />
         <button

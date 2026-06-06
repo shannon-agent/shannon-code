@@ -1,7 +1,8 @@
 // Plugin browser for managing MCP servers
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Search, RefreshCw, PlayCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
 import { PluginCard } from './PluginCard'
+import { useTauriEvent } from '../hooks/useTauriEvent'
 
 interface Plugin {
   name: string
@@ -55,13 +56,23 @@ export function PluginBrowser({
   })
   const [testingConnection, setTestingConnection] = useState<string | null>(null)
   const [testResults, setTestResults] = useState<Record<string, boolean>>({})
+  
+  // Listen to MCP server connection events
+  useTauriEvent<{ server_name: string; connected: boolean }>('mcp-server-connected', (payload) => {
+    setTestResults(prev => ({ ...prev, [payload.server_name]: true }))
+  })
+
+  useTauriEvent<{ server_name: string; error?: string }>('mcp-server-disconnected', (payload) => {
+    setTestResults(prev => ({ ...prev, [payload.server_name]: false }))
+  })
 
   // Filter plugins by search query
-  const filteredPlugins = plugins.filter(plugin =>
-    plugin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const safePlugins = plugins || []
+  const filteredPlugins = safePlugins.filter(plugin =>
+    plugin.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     plugin.tools?.some(tool =>
-      tool.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tool.description.toLowerCase().includes(searchQuery.toLowerCase())
+      tool.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tool.description?.toLowerCase().includes(searchQuery.toLowerCase())
     )
   )
 

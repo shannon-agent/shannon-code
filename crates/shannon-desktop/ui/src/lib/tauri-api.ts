@@ -181,3 +181,35 @@ export async function getBackgroundTasks(): Promise<import('../types/tauri-event
 export async function cancelBackgroundTask(id: string): Promise<boolean> {
   return await invoke('cancel_background_task', { id })
 }
+
+/**
+ * Get file tree for a directory
+ */
+export async function getFileTree(path: string): Promise<FileNode> {
+  return await invoke('get_file_tree', { path })
+}
+
+/**
+ * Get working directory info (modified files, current branch, etc.)
+ */
+export async function getWorkingDirInfo(): Promise<WorkingDirInfo> {
+  return await invoke('get_working_dir_info')
+}
+
+// File tree node type
+export interface FileNode {
+  name: string
+  path: string
+  type: 'file' | 'directory'
+  children?: FileNode[]
+  modified?: boolean
+  size?: number
+}
+
+// Working directory info type
+export interface WorkingDirInfo {
+  root: string
+  branch: string
+  modified_files: string[]
+  status: 'clean' | 'dirty' | 'merge-conflict'
+}

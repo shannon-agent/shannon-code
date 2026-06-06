@@ -13,6 +13,7 @@ tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell", "dep:tauri-pl
 [dependencies]
 shannon-core = { path = "../shannon-core" }
 shannon-types = { path = "../shannon-types" }
+shannon-tools = { path = "../shannon-tools" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

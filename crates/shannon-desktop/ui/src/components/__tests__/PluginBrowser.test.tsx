@@ -10,7 +10,11 @@ const mockPlugins = [
     enabled: true,
     connected: true,
     toolCount: 5,
-    tools: ['read_file', 'write_file', 'list_directory']
+    tools: [
+      { name: 'read_file', description: 'Read file contents' },
+      { name: 'write_file', description: 'Write file contents' },
+      { name: 'list_directory', description: 'List directory contents' },
+    ]
   },
   {
     name: 'database',
@@ -18,7 +22,11 @@ const mockPlugins = [
     enabled: false,
     connected: false,
     toolCount: 3,
-    tools: ['query', 'execute', 'schema']
+    tools: [
+      { name: 'query', description: 'Run SQL query' },
+      { name: 'execute', description: 'Execute SQL' },
+      { name: 'schema', description: 'Get schema info' },
+    ]
   }
 ]
 

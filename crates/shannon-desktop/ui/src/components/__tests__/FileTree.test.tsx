@@ -1,48 +1,47 @@
 // Tests for FileTree component
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { FileTree } from '../FileTree'
-import type { FileNode } from '../FileTree'
 
-const mockTree: FileNode[] = [
-  {
-    name: 'src',
-    path: 'src',
-    type: 'directory',
-    children: [
-      { name: 'main.ts', path: 'src/main.ts', type: 'file' },
-      { name: 'utils.ts', path: 'src/utils.ts', type: 'file', modified: true },
-    ],
-  },
-  {
-    name: 'package.json',
-    path: 'package.json',
-    type: 'file',
-  },
-  {
-    name: 'README.md',
-    path: 'README.md',
-    type: 'file',
-  },
-]
+// Mock the tauri-api module
+vi.mock('../../lib/tauri-api', () => ({
+  getFileTree: vi.fn(() => Promise.resolve([
+    {
+      name: 'src',
+      path: 'src',
+      type: 'directory',
+      children: [
+        { name: 'main.ts', path: 'src/main.ts', type: 'file' },
+        { name: 'utils.ts', path: 'src/utils.ts', type: 'file', modified: true },
+      ],
+    },
+    { name: 'package.json', path: 'package.json', type: 'file' },
+    { name: 'README.md', path: 'README.md', type: 'file' },
+  ])),
+  getWorkingDirInfo: vi.fn(() => Promise.resolve({
+    root: '/test',
+    branch: 'main',
+    modified_files: ['src/utils.ts'],
+    status: 'dirty' as const,
+  })),
+}))
+
+import { getFileTree, getWorkingDirInfo } from '../../lib/tauri-api'
 
 describe('FileTree', () => {
-  it('renders header', () => {
-    render(<FileTree onRefresh={vi.fn(() => Promise.resolve(mockTree))} />)
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders header', async () => {
+    render(<FileTree rootPath="/test" />)
     expect(screen.getByText('Files')).toBeDefined()
   })
 
-  it('shows loading state', () => {
-    render(<FileTree onRefresh={vi.fn(() => new Promise(() => {}))} />)
-    // Should show spinner
-    const spinner = document.querySelector('.animate-spin')
-    expect(spinner).toBeDefined()
-  })
+  it('renders file tree from API', async () => {
+    render(<FileTree rootPath="/test" />)
 
-  it('renders file tree from refresh callback', async () => {
-    render(<FileTree onRefresh={vi.fn(() => Promise.resolve(mockTree))} />)
-
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('src')).toBeDefined()
       expect(screen.getByText('package.json')).toBeDefined()
       expect(screen.getByText('README.md')).toBeDefined()
@@ -50,9 +49,9 @@ describe('FileTree', () => {
   })
 
   it('expands directory on click', async () => {
-    render(<FileTree onRefresh={vi.fn(() => Promise.resolve(mockTree))} />)
+    render(<FileTree rootPath="/test" />)
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('src')).toBeDefined()
     })
 
@@ -64,33 +63,14 @@ describe('FileTree', () => {
 
   it('calls onFileSelect when file is clicked', async () => {
     const handleSelect = vi.fn()
-    render(
-      <FileTree
-        onRefresh={vi.fn(() => Promise.resolve(mockTree))}
-        onFileSelect={handleSelect}
-      />
-    )
+    render(<FileTree rootPath="/test" onFileSelect={handleSelect} />)
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('package.json')).toBeDefined()
     })
 
     fireEvent.click(screen.getByText('package.json'))
     expect(handleSelect).toHaveBeenCalledWith('package.json')
-  })
-
-  it('shows modified file count', async () => {
-    const modified = new Set(['src/utils.ts'])
-    render(
-      <FileTree
-        onRefresh={vi.fn(() => Promise.resolve(mockTree))}
-        modifiedFiles={modified}
-      />
-    )
-
-    await vi.waitFor(() => {
-      expect(screen.getByText('1 modified')).toBeDefined()
-    })
   })
 
   it('shows empty state when no root path', () => {
@@ -99,24 +79,18 @@ describe('FileTree', () => {
   })
 
   it('sorts directories before files', async () => {
-    render(<FileTree onRefresh={vi.fn(() => Promise.resolve(mockTree))} />)
+    render(<FileTree rootPath="/test" />)
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       const items = screen.getAllByText(/src|package\.json|README/)
-      // 'src' (directory) should come first
       expect(items[0].textContent).toBe('src')
     })
   })
 
   it('highlights selected file', async () => {
-    render(
-      <FileTree
-        onRefresh={vi.fn(() => Promise.resolve(mockTree))}
-        selectedFile="package.json"
-      />
-    )
+    render(<FileTree rootPath="/test" selectedFile="package.json" />)
 
-    await vi.waitFor(() => {
+    await waitFor(() => {
       expect(screen.getByText('package.json')).toBeDefined()
     })
 

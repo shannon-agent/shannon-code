@@ -18,7 +18,7 @@ describe('MessageInput', () => {
     fireEvent.change(input, { target: { value: 'Test message' } })
     fireEvent.keyDown(input, { key: 'Enter', shiftKey: false })
 
-    expect(handleSend).toHaveBeenCalledWith('Test message')
+    expect(handleSend).toHaveBeenCalledWith('Test message', undefined)
   })
 
   it('does not send with empty message', () => {
