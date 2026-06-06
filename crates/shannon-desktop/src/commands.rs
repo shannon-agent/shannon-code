@@ -1160,7 +1160,19 @@ pub struct FileDiff {
 pub async fn get_file_diff(path: String) -> Result<FileDiff, String> {
     use std::process::Command;
 
+    // Validate path is within CWD to prevent path traversal
     let file_path = std::path::Path::new(&path);
+    let canonical = file_path
+        .canonicalize()
+        .map_err(|e| format!("Invalid path: {e}"))?;
+    let cwd = std::env::current_dir()
+        .map_err(|e| format!("Cannot determine CWD: {e}"))?
+        .canonicalize()
+        .map_err(|e| format!("Cannot canonicalize CWD: {e}"))?;
+    if !canonical.starts_with(&cwd) {
+        return Err("Path outside workspace".to_string());
+    }
+
     let file_name = file_path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())

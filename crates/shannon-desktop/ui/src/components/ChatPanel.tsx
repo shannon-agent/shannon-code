@@ -27,7 +27,11 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
     if (diffMatch) {
       const diffContent = diffMatch[1]
       const fileMatch = diffContent.match(/^---\s+a\/(.+?)\n\+\+\+\s+b\/(.+?)\n/)
-      const fileName = fileMatch ? fileMatch[2] : undefined
+      const rawName = fileMatch ? fileMatch[2] : undefined
+      // Sanitize: reject path traversal, show only basename
+      const fileName = rawName && !rawName.includes('..') && !rawName.includes('\0')
+        ? rawName.split('/').pop()
+        : undefined
       const lines = diffContent.split('\n')
       const oldLines: string[] = []
       const newLines: string[] = []

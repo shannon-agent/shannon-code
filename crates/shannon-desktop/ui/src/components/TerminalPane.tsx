@@ -109,7 +109,8 @@ export function TerminalPane({ workingDir, onRunCommand }: TerminalPaneProps) {
         setLines(prev => [...prev, { text: `(command queued: ${cmd})`, type: 'system' }])
       }
     } catch (err) {
-      setLines(prev => [...prev, { text: String(err), type: 'error' }])
+      const msg = err instanceof Error ? err.message : String(err)
+      setLines(prev => [...prev, { text: msg.length > 500 ? msg.slice(0, 500) + '...' : msg, type: 'error' }])
     } finally {
       setRunning(false)
     }
