@@ -52,7 +52,7 @@ describe('WelcomePage', () => {
 
   it('shows 3 progress dots', () => {
     const { container } = render(<WelcomePage onComplete={vi.fn()} />)
-    const dots = container.querySelectorAll('.rounded-full.w-1\\.5')
+    const dots = container.querySelectorAll('.rounded-full.w-2')
     expect(dots.length).toBe(3)
   })
 

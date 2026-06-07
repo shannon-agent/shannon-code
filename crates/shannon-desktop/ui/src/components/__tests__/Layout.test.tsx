@@ -104,7 +104,7 @@ describe('Layout', () => {
         <div>Main</div>
       </Layout>
     )
-    const borders = container.querySelectorAll('.border-\\[var\\(--border\\)\\]')
+    const borders = container.querySelectorAll('[class*="border-\\[var\\(--border\\)"]')
     expect(borders.length).toBeGreaterThanOrEqual(2)
   })
 })

@@ -190,10 +190,10 @@ export function MessageInput({
 
       <div
         className={cn(
-          'relative flex items-end gap-2 bg-[var(--bg-input)] rounded-lg border transition-all duration-150',
+          'relative flex items-end gap-2 rounded-2xl bg-[var(--glass-bg)] backdrop-blur-xl border transition-all duration-150',
           isDragging
             ? 'border-[var(--accent)] bg-[var(--accent)]/5'
-            : 'border-[var(--border)] focus-within:border-[var(--accent)]/50 focus-within:shadow-[0_0_0_3px_var(--accent)]/15'
+            : 'border-[var(--glass-border)] focus-within:border-[var(--accent)]/40 focus-within:shadow-[0_0_0_4px_var(--accent)]/12'
         )}
         role="search"
         aria-label="Compose message"
@@ -259,9 +259,9 @@ export function MessageInput({
           disabled={disabled || (!text.trim() && attachments.length === 0)}
           size="sm"
           className={cn(
-            'flex-shrink-0 m-1.5 h-8 w-8 p-0 rounded-lg',
+            'flex-shrink-0 m-1.5 h-8 w-8 p-0 rounded-full',
             (text.trim() || attachments.length > 0) && !disabled
-              ? ''
+              ? 'bg-gradient-to-b from-[var(--accent)] to-[var(--accent-hover)]'
               : 'bg-transparent text-[var(--text-muted)] hover:bg-transparent hover:text-[var(--text-muted)]'
           )}
           aria-label="Send message"
@@ -295,9 +295,9 @@ export function MessageInput({
           className="text-[10px] text-[var(--text-muted)]"
           aria-hidden
         >
-          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Enter</kbd>
+          <kbd className="px-1 py-0.5 rounded bg-[var(--glass-bg)] border border-[var(--glass-border)]/50 text-[var(--text-muted)]">Enter</kbd>
           {' send '}
-          <kbd className="px-1 py-0.5 rounded bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]">Shift+Enter</kbd>
+          <kbd className="px-1 py-0.5 rounded bg-[var(--glass-bg)] border border-[var(--glass-border)]/50 text-[var(--text-muted)]">Shift+Enter</kbd>
           {' newline'}
         </div>
         {characterCount > 0 && (

@@ -49,8 +49,8 @@ export const ChatMessage = memo(function ChatMessageComponent({ message }: ChatM
   return (
     <div className={`group flex gap-3 px-4 py-3 transition-colors duration-150 ${
       isUser
-        ? 'bg-[var(--user-bg)]'
-        : 'bg-transparent hover:bg-[var(--bg-secondary)]/30'
+        ? 'justify-end'
+        : 'justify-start'
     }`}>
       {/* Avatar */}
       <div
@@ -64,7 +64,14 @@ export const ChatMessage = memo(function ChatMessageComponent({ message }: ChatM
       </div>
 
       {/* Message Content */}
-      <div className="flex-1 min-w-0">
+      <div className={`flex-1 min-w-0 ${
+        isUser ? 'max-w-[85%]' : 'max-w-[90%]'
+      }`}>
+        <div className={`${
+          isUser
+            ? 'bg-[var(--accent)]/12 rounded-2xl px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+            : 'bg-[var(--bg-secondary)]/60 rounded-2xl px-4 py-3 shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+        }`}>
         <div className="flex items-center gap-2 mb-1.5">
           <span className={`text-sm font-medium ${isUser ? 'text-[var(--accent)]' : 'text-[var(--success)]'}`}>
             {isUser ? 'You' : 'Shannon'}
@@ -190,6 +197,7 @@ export const ChatMessage = memo(function ChatMessageComponent({ message }: ChatM
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   )

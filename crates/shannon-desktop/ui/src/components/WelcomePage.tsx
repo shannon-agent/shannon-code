@@ -32,11 +32,13 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
 
   return (
     <div className="flex flex-col items-center justify-center h-full bg-[var(--bg-primary)] p-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-10">
         {/* Branding */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">
-            Shannon Code
+          <h1 className="text-3xl font-bold">
+            <span className="bg-gradient-to-r from-[var(--accent)] to-[var(--purple)] bg-clip-text text-transparent">
+              Shannon Code
+            </span>
           </h1>
           <p className="text-[var(--text-muted)] text-sm">
             Your AI coding assistant. Let's get started.
@@ -44,7 +46,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
         </div>
 
         {/* Step content */}
-        <div className="bg-[var(--bg-secondary)] rounded-lg p-6 space-y-4 border border-[var(--border)]">
+        <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-6 space-y-4 border border-[var(--glass-border)]">
           {STEPS.map((step, i) => {
             const Icon = step.icon
             const isActive = i === currentStep
@@ -61,7 +63,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
                 <div>
                   <h3 className="text-sm font-medium text-[var(--text-secondary)]">{step.title}</h3>
                   {isActive && (
-                    <p className="text-[12px] text-[var(--text-muted)] mt-1 leading-relaxed">
+                    <p className="text-[12px] text-[var(--text-muted)] mt-1 leading-relaxed animate-message-in">
                       {step.description}
                     </p>
                   )}
@@ -76,7 +78,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
           {STEPS.map((_, i) => (
             <div
               key={i}
-              className={`w-1.5 h-1.5 rounded-full transition-colors duration-[var(--duration-normal)] ${i === currentStep ? 'bg-[var(--accent)]' : i < currentStep ? 'bg-[var(--success)]' : 'bg-[var(--border)]'}`}
+              className={`w-2 h-2 rounded-full transition-colors duration-[var(--duration-normal)] ${i === currentStep ? 'bg-[var(--accent)]' : i < currentStep ? 'bg-[var(--success)]' : 'bg-[var(--border)]'}`}
             />
           ))}
         </div>
@@ -100,7 +102,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
                 setCurrentStep(i => i + 1)
               }
             }}
-            className="gap-1.5 text-xs"
+            className="gap-1.5 text-xs rounded-full px-6"
           >
             {isLast ? 'Get Started' : 'Next'}
             <ArrowRight className="w-3 h-3" />

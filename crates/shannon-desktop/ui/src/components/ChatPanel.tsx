@@ -148,13 +148,15 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
         </div>
       )}
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1 px-4 py-4">
         {messages.length === 0 && !streamingText && activeToolCalls.length === 0 ? (
           <div className="h-full flex items-center justify-center">
-            <div className="text-center max-w-md px-8">
+            <div className="text-center max-w-md px-8 py-12 animate-fade-in">
               {/* App Icon/Name */}
-              <div className="mb-6">
-                <h1 className="text-4xl font-bold text-[var(--text-primary)] mb-2">Shannon</h1>
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold mb-2">
+                  <span className="bg-gradient-to-r from-[var(--accent)] to-[var(--purple)] bg-clip-text text-transparent">Shannon</span>
+                </h1>
                 <p className="text-[var(--text-muted)]">Ask me anything about your code</p>
               </div>
 
@@ -163,7 +165,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Explain this codebase to me')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Sparkles className="w-5 h-5" />
                   <span className="text-xs">Explain this codebase</span>
@@ -171,7 +173,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Find bugs in my code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Bug className="w-5 h-5" />
                   <span className="text-xs">Find bugs</span>
@@ -179,7 +181,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Help me refactor this code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Wand2 className="w-5 h-5" />
                   <span className="text-xs">Refactor</span>
@@ -187,7 +189,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Write tests for this code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <FlaskConical className="w-5 h-5" />
                   <span className="text-xs">Write tests</span>
@@ -195,7 +197,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
               </div>
 
               {/* Keyboard shortcuts hint */}
-              <div className="mt-8 pt-6 border-t border-[var(--border)]">
+              <div className="mt-8 pt-6 border-t border-[var(--glass-border)]">
                 <p className="text-xs text-[var(--text-muted)] mb-2">Keyboard shortcuts</p>
                 <div className="flex items-center justify-center gap-4 text-xs text-[var(--text-muted)]">
                   <div className="flex items-center gap-1">
@@ -211,7 +213,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
             </div>
           </div>
         ) : (
-          <div className="space-y-0">
+          <div className="space-y-3">
             {messages.map((message, index) => (
               renderMessageContent(message, index)
             ))}

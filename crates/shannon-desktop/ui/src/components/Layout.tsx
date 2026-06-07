@@ -108,7 +108,7 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
       <div className="flex flex-1 min-h-0">
       {/* Left Sidebar */}
       {sidebar && !sidebarCollapsed && (
-        <aside style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)] border-r border-[var(--border)] overflow-hidden">
+        <aside style={{ width: `${sidebarWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)]/70 backdrop-blur-xl backdrop-saturate-150 border-r border-[var(--border)]/30 overflow-hidden">
           {sidebar}
         </aside>
       )}
@@ -117,7 +117,7 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
       {sidebar && !sidebarCollapsed && (
         <div
           onMouseDown={makeDragHandler(setSidebarWidth, 140, 400, 'horizontal', 'sidebar')}
-          className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
+          className="w-1 hover:w-1.5 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-all cursor-col-resize flex-shrink-0"
           title="Drag to resize sidebar"
         />
       )}
@@ -126,7 +126,7 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
       {sidebar && sidebarCollapsed && (
         <button
           onClick={toggleSidebar}
-          className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
+          className="w-1 hover:w-1.5 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-all cursor-col-resize flex-shrink-0"
           title="Expand sidebar (Ctrl+Shift+S)"
         >
           <div className="w-full h-full flex items-center justify-center">
@@ -146,7 +146,7 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
 
           {/* Bottom panel with drag handle */}
           {bottomPanel && !bottomCollapsed && (
-            <div style={{ height: `${bottomHeight}px` }} className="flex-shrink-0 border-t border-[var(--border)] overflow-hidden">
+            <div style={{ height: `${bottomHeight}px` }} className="flex-shrink-0 border-t border-[var(--border)]/30 overflow-hidden backdrop-blur-xl">
               <div
                 onMouseDown={makeDragHandler(setBottomHeight, 100, 500, 'vertical', 'bottom')}
                 className="h-1 cursor-row-resize bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors"
@@ -161,14 +161,14 @@ export function Layout({ sidebar, tabBar, children, panel, bottomPanel, bottomPa
       {panel && (
         <div
           onMouseDown={makeDragHandler(setRightWidth, 200, 600, 'horizontal', 'right')}
-          className="w-1 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-colors cursor-col-resize flex-shrink-0"
+          className="w-1 hover:w-1.5 bg-[var(--border)]/30 hover:bg-[var(--accent)]/30 transition-all cursor-col-resize flex-shrink-0"
           title="Drag to resize panel"
         />
       )}
 
       {/* Right Panel */}
       {panel && (
-        <aside style={{ width: `${rightWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)] border-l border-[var(--border)] overflow-hidden flex flex-col">
+        <aside style={{ width: `${rightWidth}px` }} className="flex-shrink-0 bg-[var(--bg-secondary)]/70 backdrop-blur-xl backdrop-saturate-150 border-l border-[var(--border)]/30 overflow-hidden flex flex-col">
           {panel}
         </aside>
       )}
