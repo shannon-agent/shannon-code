@@ -4,6 +4,12 @@ import { Eye, EyeOff, Save, Palette, Keyboard, Wrench } from 'lucide-react'
 import { configure, getConfig, getTools } from '../lib/tauri-api'
 import { useTheme } from '../context/ThemeContext'
 import type { ToolInfo } from '../types/tauri-events'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from './ui/select'
+import { Switch } from './ui/switch'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from './ui/accordion'
+import { Skeleton } from './ui/skeleton'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip'
+import { Kbd } from './ui/kbd'
 
 function getToolCategory(name: string): string {
   const prefix = name.split('_')[0]
@@ -108,254 +114,274 @@ export function SettingsPanel() {
 
   return (
     <div className="p-4" role="region" aria-label="Settings panel">
-      <h2 id="settings-title" className="text-lg font-semibold text-[var(--text-primary)] mb-4">Settings</h2>
+      <h2 id="settings-title" className="text-lg font-semibold text-foreground mb-4">Settings</h2>
 
-      <div className="space-y-4" aria-labelledby="settings-title">
-        {/* API Key */}
-        <div>
-          <label htmlFor="api-key-input" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-            API Key
-          </label>
-          <div className="relative">
-            <input
-              id="api-key-input"
-              type={showApiKey ? 'text' : 'password'}
-              value={showApiKey ? apiKey : redactedKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-ant-..."
-              className="w-full px-3 py-2 pr-20 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-              aria-describedby="api-key-description"
-            />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <button
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="p-1 hover:bg-[var(--bg-secondary)] rounded transition-colors"
-                aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
-                type="button"
-              >
-                {showApiKey ? (
-                  <EyeOff className="w-4 h-4 text-[var(--text-muted)]" />
-                ) : (
-                  <Eye className="w-4 h-4 text-[var(--text-muted)]" />
-                )}
-              </button>
-              <button
-                onClick={() => handleSave('api_key', apiKey)}
-                disabled={saving}
-                className="p-1 hover:bg-[var(--success)]/20 rounded transition-colors disabled:opacity-50"
-                aria-label="Save API key"
-                type="button"
-              >
-                <Save className="w-4 h-4 text-[var(--success)]" />
-              </button>
-            </div>
-          </div>
-          <p id="api-key-description" className="text-xs text-[var(--text-muted)] mt-1">
-            Your API key is stored locally and never shared
-          </p>
+      {/* Save Status */}
+      {saveStatus !== 'idle' && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`text-sm mb-4 ${
+            saveStatus === 'success' ? 'text-success' : 'text-destructive'
+          }`}
+        >
+          {saveStatus === 'success' ? 'Saved successfully' : 'Failed to save'}
         </div>
+      )}
+
+      <Accordion type="multiple" defaultValue={['api', 'base-url', 'theme', 'shortcuts', 'tools', 'about']} className="w-full" aria-labelledby="settings-title">
+        {/* API Key */}
+        <AccordionItem value="api">
+          <AccordionTrigger>
+            <span id="settings-title" className="text-sm font-medium">API Key</span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              <div className="relative">
+                <input
+                  id="api-key-input"
+                  type={showApiKey ? 'text' : 'password'}
+                  value={showApiKey ? apiKey : redactedKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="sk-ant-..."
+                  className="w-full px-3 py-2 pr-20 bg-background border border-border rounded-lg text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  aria-describedby="api-key-description"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="p-1 hover:bg-secondary rounded transition-colors"
+                    aria-label={showApiKey ? 'Hide API key' : 'Show API key'}
+                    type="button"
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => handleSave('api_key', apiKey)}
+                          disabled={saving}
+                          className="p-1 hover:bg-success/20 rounded transition-colors disabled:opacity-50"
+                          aria-label="Save API key"
+                          type="button"
+                        >
+                          <Save className="w-4 h-4 text-success" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>Save API key</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
+              <p id="api-key-description" className="text-xs text-muted-foreground">
+                Your API key is stored locally and never shared
+              </p>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
         {/* Base URL */}
-        <div>
-          <label htmlFor="base-url-input" className="block text-sm font-medium text-[var(--text-secondary)] mb-1">
-            Base URL (optional)
-          </label>
-          <div className="relative">
-            <input
-              id="base-url-input"
-              type="text"
-              value={baseUrl}
-              onChange={(e) => setBaseUrl(e.target.value)}
-              placeholder="https://api.example.com"
-              className="w-full px-3 py-2 pr-10 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] placeholder-[#565f89] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-              aria-describedby="base-url-description"
-            />
-            <button
-              onClick={() => handleSave('base_url', baseUrl)}
-              disabled={saving}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-[var(--success)]/20 rounded transition-colors disabled:opacity-50"
-              aria-label="Save base URL"
-              type="button"
-            >
-              <Save className="w-4 h-4 text-[var(--success)]" />
-            </button>
-          </div>
-          <p id="base-url-description" className="text-xs text-[var(--text-muted)] mt-1">
-            Custom API endpoint URL (leave empty for default)
-          </p>
-        </div>
+        <AccordionItem value="base-url">
+          <AccordionTrigger>
+            <span className="text-sm font-medium">Base URL (optional)</span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              <div className="relative">
+                <input
+                  id="base-url-input"
+                  type="text"
+                  value={baseUrl}
+                  onChange={(e) => setBaseUrl(e.target.value)}
+                  placeholder="https://api.example.com"
+                  className="w-full px-3 py-2 pr-10 bg-background border border-border rounded-lg text-secondary-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+                  aria-describedby="base-url-description"
+                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() => handleSave('base_url', baseUrl)}
+                        disabled={saving}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-success/20 rounded transition-colors disabled:opacity-50"
+                        aria-label="Save base URL"
+                        type="button"
+                      >
+                        <Save className="w-4 h-4 text-success" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>Save base URL</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <p id="base-url-description" className="text-xs text-muted-foreground">
+                Custom API endpoint URL (leave empty for default)
+              </p>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
         {/* Theme Selector */}
-        <div>
-          <label htmlFor="theme-select" className="block text-sm font-medium text-[var(--text-secondary)] mb-1 flex items-center gap-2">
-            <Palette className="w-4 h-4" aria-hidden />
-            Theme
-          </label>
-          <select
-            id="theme-select"
-            value={theme}
-            onChange={(e) => setTheme(e.target.value as any)}
-            className="w-full px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-secondary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent"
-            aria-describedby="theme-description"
-          >
-            {themes.map((t) => (
-              <option key={t} value={t}>
-                {t === 'tokyo-night' && 'Tokyo Night'}
-                {t === 'tokyo-night-light' && 'Tokyo Night Light'}
-                {t === 'catppuccin' && 'Catppuccin Mocha'}
-                {t === 'nord' && 'Nord'}
-              </option>
-            ))}
-          </select>
-          <p id="theme-description" className="text-xs text-[var(--text-muted)] mt-1">
-            Choose your preferred color scheme
-          </p>
-        </div>
-
-        {/* Save Status */}
-        {saveStatus !== 'idle' && (
-          <div
-            role="status"
-            aria-live="polite"
-            className={`text-sm ${
-              saveStatus === 'success' ? 'text-[var(--success)]' : 'text-[var(--error)]'
-            }`}
-          >
-            {saveStatus === 'success' ? '✓ Saved successfully' : '✗ Failed to save'}
-          </div>
-        )}
+        <AccordionItem value="theme">
+          <AccordionTrigger>
+            <span className="text-sm font-medium flex items-center gap-2">
+              <Palette className="w-4 h-4" aria-hidden />
+              Theme
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2">
+              <Select value={theme} onValueChange={(v) => setTheme(v as any)}>
+                <SelectTrigger aria-describedby="theme-description">
+                  <SelectValue placeholder="Select theme" />
+                </SelectTrigger>
+                <SelectContent>
+                  {themes.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t === 'tokyo-night' && 'Tokyo Night'}
+                      {t === 'tokyo-night-light' && 'Tokyo Night Light'}
+                      {t === 'catppuccin' && 'Catppuccin Mocha'}
+                      {t === 'nord' && 'Nord'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p id="theme-description" className="text-xs text-muted-foreground">
+                Choose your preferred color scheme
+              </p>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
 
         {/* Global Shortcuts Section */}
-        <div className="pt-4 border-t border-[var(--border)]">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <Keyboard className="w-4 h-4" aria-hidden />
-            Global Shortcuts
-          </h3>
-          <div className="space-y-2" role="list" aria-label="Keyboard shortcuts">
-            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
-              <div className="text-sm text-[var(--text-secondary)]">
-                <span className="font-medium">Show/Hide Window</span>
-                <p className="text-xs text-[var(--text-muted)]">Toggle Shannon visibility</p>
+        <AccordionItem value="shortcuts">
+          <AccordionTrigger>
+            <span className="text-sm font-medium flex items-center gap-2">
+              <Keyboard className="w-4 h-4" aria-hidden />
+              Global Shortcuts
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="space-y-2" role="list" aria-label="Keyboard shortcuts">
+              <div className="flex items-center justify-between p-2 bg-background rounded border border-border" role="listitem">
+                <div className="text-sm text-secondary-foreground">
+                  <span className="font-medium">Show/Hide Window</span>
+                  <p className="text-xs text-muted-foreground">Toggle Shannon visibility</p>
+                </div>
+                <Kbd>Ctrl+Shift+S</Kbd>
               </div>
-              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
-                Ctrl+Shift+S
-              </kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
-              <div className="text-sm text-[var(--text-secondary)]">
-                <span className="font-medium">New Session</span>
-                <p className="text-xs text-[var(--text-muted)]">Create a new conversation</p>
+              <div className="flex items-center justify-between p-2 bg-background rounded border border-border" role="listitem">
+                <div className="text-sm text-secondary-foreground">
+                  <span className="font-medium">New Session</span>
+                  <p className="text-xs text-muted-foreground">Create a new conversation</p>
+                </div>
+                <Kbd>Ctrl+Shift+N</Kbd>
               </div>
-              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
-                Ctrl+Shift+N
-              </kbd>
-            </div>
-            <div className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]" role="listitem">
-              <div className="text-sm text-[var(--text-secondary)]">
-                <span className="font-medium">Focus Input</span>
-                <p className="text-xs text-[var(--text-muted)]">Focus message input field</p>
+              <div className="flex items-center justify-between p-2 bg-background rounded border border-border" role="listitem">
+                <div className="text-sm text-secondary-foreground">
+                  <span className="font-medium">Focus Input</span>
+                  <p className="text-xs text-muted-foreground">Focus message input field</p>
+                </div>
+                <Kbd>Ctrl+Shift+K</Kbd>
               </div>
-              <kbd className="px-2 py-1 bg-[var(--bg-secondary)] text-[var(--accent)] text-xs rounded border border-[var(--border)]">
-                Ctrl+Shift+K
-              </kbd>
             </div>
-          </div>
-          <p className="text-xs text-[var(--text-muted)] mt-2" role="note">
-            Shortcuts work even when Shannon is minimized to tray
-          </p>
-        </div>
+            <p className="text-xs text-muted-foreground mt-2" role="note">
+              Shortcuts work even when Shannon is minimized to tray
+            </p>
+          </AccordionContent>
+        </AccordionItem>
 
         {/* Tools Section */}
-        <div className="pt-4 border-t border-[var(--border)]">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-            <Wrench className="w-4 h-4" aria-hidden />
-            Tools
-          </h3>
-
-          {loadingTools ? (
-            // Loading skeleton
-            <div className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-4 bg-[var(--bg-secondary)] rounded w-24 mb-2" />
-                  <div className="space-y-1">
-                    <div className="h-10 bg-[var(--bg-primary)] rounded border border-[var(--border)]" />
+        <AccordionItem value="tools">
+          <AccordionTrigger>
+            <span className="text-sm font-medium flex items-center gap-2">
+              <Wrench className="w-4 h-4" aria-hidden />
+              Tools
+            </span>
+          </AccordionTrigger>
+          <AccordionContent>
+            {loadingTools ? (
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full border border-border" />
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : tools.length > 0 ? (
-            <div className="space-y-1">
-              {Object.entries(
-                tools.reduce<Record<string, ToolInfo[]>>((groups, tool) => {
-                  const cat = getToolCategory(tool.name)
-                  ;(groups[cat] ??= []).push(tool)
-                  return groups
-                }, {})
-              ).map(([category, categoryTools]) => (
-                <div key={category}>
-                  <div className="text-xs font-medium text-[var(--text-muted)] uppercase tracking-wider mb-1 mt-2">{category}</div>
-                  {categoryTools.map(tool => (
-                    <div key={tool.name} className="flex items-center justify-between p-2 bg-[var(--bg-primary)] rounded border border-[var(--border)]">
-                      <div className="min-w-0 flex-1">
-                        <span className="text-sm text-[var(--text-secondary)] font-medium">{tool.name}</span>
-                        {tool.description && (
-                          <p className="text-xs text-[var(--text-muted)] truncate">{tool.description}</p>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleToggleTool(tool.name, disabledTools.has(tool.name))}
-                        className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 ml-2 ${
-                          !disabledTools.has(tool.name) ? 'bg-[var(--success)]' : 'bg-[#414868]'
-                        }`}
-                        role="switch"
-                        aria-checked={!disabledTools.has(tool.name)}
-                        aria-label={`Toggle ${tool.name}`}
-                      >
-                        <span
-                          className={`inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform ${
-                            !disabledTools.has(tool.name) ? 'translate-x-4' : 'translate-x-1'
-                          }`}
+                ))}
+              </div>
+            ) : tools.length > 0 ? (
+              <div className="space-y-1">
+                {Object.entries(
+                  tools.reduce<Record<string, ToolInfo[]>>((groups, tool) => {
+                    const cat = getToolCategory(tool.name)
+                    ;(groups[cat] ??= []).push(tool)
+                    return groups
+                  }, {})
+                ).map(([category, categoryTools]) => (
+                  <div key={category}>
+                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1 mt-2">{category}</div>
+                    {categoryTools.map(tool => (
+                      <div key={tool.name} className="flex items-center justify-between p-2 bg-background rounded border border-border">
+                        <div className="min-w-0 flex-1">
+                          <span className="text-sm text-secondary-foreground font-medium">{tool.name}</span>
+                          {tool.description && (
+                            <p className="text-xs text-muted-foreground truncate">{tool.description}</p>
+                          )}
+                        </div>
+                        <Switch
+                          checked={!disabledTools.has(tool.name)}
+                          onCheckedChange={(checked) => handleToggleTool(tool.name, !checked)}
+                          aria-label={`Toggle ${tool.name}`}
+                          className="ml-2"
                         />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-sm text-[var(--text-muted)] py-4">No tools available</div>
-          )}
-        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground py-4">No tools available</div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
 
         {/* About Section */}
-        <div className="pt-4 border-t border-[var(--border)]">
-          <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-2">About</h3>
-          <div className="text-xs text-[var(--text-muted)] space-y-1">
-            <div>Shannon Desktop v0.1.0</div>
-            <div>Rust-based AI code assistant</div>
-            <div>
-              <a
-                href="https://github.com/shannon-code/shannon"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline"
-              >
-                GitHub
-              </a>
-              {' • '}
-              <a
-                href="https://docs.shannon-code.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[var(--accent)] hover:underline"
-              >
-                Documentation
-              </a>
+        <AccordionItem value="about">
+          <AccordionTrigger>
+            <span className="text-sm font-medium">About</span>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>Shannon Desktop v0.1.0</div>
+              <div>Rust-based AI code assistant</div>
+              <div>
+                <a
+                  href="https://github.com/shannon-code/shannon"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  GitHub
+                </a>
+                {' \u00b7 '}
+                <a
+                  href="https://docs.shannon-code.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline"
+                >
+                  Documentation
+                </a>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   )
 }

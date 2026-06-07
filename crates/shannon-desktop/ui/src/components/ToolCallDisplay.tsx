@@ -2,6 +2,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { ChevronDown, ChevronRight, AlertCircle, Loader2, Terminal, FileDiff, Copy, Check } from 'lucide-react'
 import type { ViewMode } from '../types/tauri-events'
+import { Badge } from './ui/badge'
+import { Card, CardContent } from './ui/card'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible'
+import { cn } from '../lib/utils'
 
 interface ToolCallDisplayProps {
   toolName: string
@@ -18,42 +22,42 @@ interface ToolCallDisplayProps {
   viewMode?: ViewMode
 }
 
-function getToolColor(toolName: string): string {
+function getToolBadgeVariant(toolName: string): 'default' | 'success' | 'warning' | 'error' | 'secondary' {
   const toolType = toolName.split('_')[0]
   switch (toolType) {
     case 'bash':
     case 'shell':
-      return 'bg-[var(--error)] text-[var(--bg-primary)]' // red
+      return 'error'
     case 'file':
     case 'read':
     case 'write':
-      return 'bg-[var(--warning)] text-[var(--bg-primary)]' // yellow
+      return 'warning'
     case 'search':
     case 'grep':
-      return 'bg-[var(--accent)] text-[var(--bg-primary)]' // blue
+      return 'default'
     case 'web':
     case 'fetch':
-      return 'bg-[var(--purple)] text-[var(--bg-primary)]' // purple
+      return 'secondary'
     default:
-      return 'bg-[var(--success)] text-[var(--bg-primary)]' // green
+      return 'success'
   }
 }
 
-function getStatusBadge(
+function getStatusBadgeVariant(
   isRunning: boolean,
   isCancelled: boolean,
   isError: boolean
-): { color: string; label: string } {
+): { variant: 'default' | 'success' | 'warning' | 'error'; label: string } {
   if (isRunning) {
-    return { color: 'bg-[var(--accent)] text-[var(--bg-primary)]', label: 'Running' }
+    return { variant: 'default', label: 'Running' }
   }
   if (isCancelled) {
-    return { color: 'bg-[var(--warning)] text-[var(--bg-primary)]', label: 'Cancelled' }
+    return { variant: 'warning', label: 'Cancelled' }
   }
   if (isError) {
-    return { color: 'bg-[var(--error)] text-[var(--bg-primary)]', label: 'Error' }
+    return { variant: 'error', label: 'Error' }
   }
-  return { color: 'bg-[var(--success)] text-[var(--bg-primary)]', label: 'Success' }
+  return { variant: 'success', label: 'Success' }
 }
 
 function formatDiff(diff: { old: string; new: string }): JSX.Element {
@@ -68,24 +72,24 @@ function formatDiff(diff: { old: string; new: string }): JSX.Element {
 
     if (oldLine === newLine) {
       lines.push(
-        <div key={i} className="text-[var(--text-secondary)]">
-          <span className="text-[var(--text-muted)] mr-2 select-none"> </span>
+        <div key={i} className="text-secondary-foreground">
+          <span className="text-muted-foreground mr-2 select-none"> </span>
           {oldLine || ' '}
         </div>
       )
     } else {
       if (oldLine) {
         lines.push(
-          <div key={`${i}-old`} className="bg-[var(--error)]/20 text-[var(--error)]">
-            <span className="text-[var(--error)] mr-2 select-none">-</span>
+          <div key={`${i}-old`} className="bg-destructive/20 text-destructive">
+            <span className="text-destructive mr-2 select-none">-</span>
             {oldLine}
           </div>
         )
       }
       if (newLine) {
         lines.push(
-          <div key={`${i}-new`} className="bg-[var(--success)]/20 text-[var(--success)]">
-            <span className="text-[var(--success)] mr-2 select-none">+</span>
+          <div key={`${i}-new`} className="bg-success/20 text-success">
+            <span className="text-success mr-2 select-none">+</span>
             {newLine}
           </div>
         )
@@ -122,7 +126,7 @@ export function ToolCallDisplay({
   const [showDiff, setShowDiff] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  const statusBadge = getStatusBadge(isRunning, isCancelled, isError)
+  const statusInfo = getStatusBadgeVariant(isRunning, isCancelled, isError)
   const hasFileEdit = toolName.includes('edit') || toolName.includes('write')
   const hasBash = toolName.includes('bash') || toolName.includes('shell')
 
@@ -149,169 +153,162 @@ export function ToolCallDisplay({
   }, [isRunning, isError, viewMode])
 
   return (
-    <div
-      className={`mx-4 my-2 rounded-lg border transition-all ${
-        isError
-          ? 'border-[var(--error)] bg-[var(--error)]/10'
-          : 'border-[var(--border)] bg-[var(--bg-secondary)]'
-      }`}
-    >
-      {/* Tool Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-[var(--bg-primary)] transition-colors"
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${toolName} details`}
-      >
-        {isRunning ? (
-          <Loader2 className="w-4 h-4 text-[var(--accent)] animate-spin" />
-        ) : isExpanded ? (
-          <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />
-        ) : (
-          <ChevronRight className="w-4 h-4 text-[var(--text-muted)]" />
-        )}
+    <Card className={cn(
+      'mx-4 my-2 transition-all',
+      isError
+        ? 'border-destructive bg-destructive/5'
+        : 'border-border bg-card'
+    )}>
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        {/* Tool Header */}
+        <CollapsibleTrigger className="w-full px-4 py-2 flex items-center gap-2 text-left hover:bg-secondary transition-colors rounded-t-lg">
+          {isRunning ? (
+            <Loader2 className="w-4 h-4 text-primary animate-spin" />
+          ) : isExpanded ? (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          )}
 
-        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getToolColor(toolName)}`}>
-          {toolName}
-        </span>
+          <Badge variant={getToolBadgeVariant(toolName)}>{toolName}</Badge>
+          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 
-        <span className={`px-2 py-0.5 rounded text-xs font-semibold ${statusBadge.color}`}>
-          {statusBadge.label}
-        </span>
-
-        {hasBash && (
-          <Terminal className="w-4 h-4 text-[var(--text-muted)]" aria-label="Bash command" />
-        )}
-        {bashCommand && !isRunning && (
-          <button
-            onClick={(e) => { e.stopPropagation(); handleCopyCommand() }}
-            className="ml-auto px-2 py-0.5 text-xs text-[var(--text-muted)] hover:text-[var(--accent)] flex items-center gap-1 transition-colors"
-            aria-label="Copy command to clipboard"
-          >
-            {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        )}
-        {hasFileEdit && diff && (
-          <FileDiff className="w-4 h-4 text-[var(--text-muted)]" aria-label="File edit with diff" />
-        )}
-
-        {isError && (
-          <AlertCircle className="w-4 h-4 text-[var(--error)]" aria-label="Error occurred" />
-        )}
-
-        {duration && (
-          <span className="ml-auto text-xs text-[var(--text-muted)]" aria-label={`Duration: ${duration}ms`}>
-            {duration}ms
-          </span>
-        )}
-      </button>
-
-      {/* Animated Progress Bar for Running Tools */}
-      {isRunning && (
-        <div className="px-4 pb-2">
-          <div className="w-full bg-[var(--bg-primary)] rounded-full h-1 overflow-hidden">
-            <div
-              className="bg-[var(--accent)] h-full animate-pulse transition-all duration-300"
-              style={{ width: progress ? `${progress}%` : '100%' }}
-              role="progressbar"
-              aria-valuenow={progress ?? 100}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Tool execution progress"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Tool Details */}
-      {isExpanded && (
-        <div className="px-4 pb-4">
-          {/* Input Section */}
-          <div className="mb-2">
+          {hasBash && (
+            <Terminal className="w-4 h-4 text-muted-foreground" aria-label="Bash command" />
+          )}
+          {bashCommand && !isRunning && (
             <button
-              onClick={() => setShowInput(!showInput)}
-              className="text-xs text-[var(--accent)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
-              aria-label={`${showInput ? 'Hide' : 'Show'} tool input`}
+              onClick={(e) => { e.stopPropagation(); handleCopyCommand() }}
+              className="ml-auto px-2 py-0.5 text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+              aria-label="Copy command to clipboard"
             >
-              {showInput ? '▼' : '▶'} Input
+              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copied ? 'Copied' : 'Copy'}
             </button>
-            {showInput && (
-              <pre className="mt-2 text-xs text-[var(--text-secondary)] bg-[var(--bg-primary)] p-3 rounded overflow-x-auto">
-                <code>{JSON.stringify(toolInput, null, 2)}</code>
-              </pre>
-            )}
+          )}
+          {hasFileEdit && diff && (
+            <FileDiff className="w-4 h-4 text-muted-foreground" aria-label="File edit with diff" />
+          )}
+
+          {isError && (
+            <AlertCircle className="w-4 h-4 text-destructive" aria-label="Error occurred" />
+          )}
+
+          {duration && (
+            <span className="ml-auto text-xs text-muted-foreground" aria-label={`Duration: ${duration}ms`}>
+              {duration}ms
+            </span>
+          )}
+        </CollapsibleTrigger>
+
+        {/* Animated Progress Bar for Running Tools */}
+        {isRunning && (
+          <div className="px-4 pb-2">
+            <div className="w-full bg-secondary rounded-full h-1 overflow-hidden">
+              <div
+                className="bg-primary h-full animate-pulse transition-all duration-300"
+                style={{ width: progress ? `${progress}%` : '100%' }}
+                role="progressbar"
+                aria-valuenow={progress ?? 100}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Tool execution progress"
+              />
+            </div>
           </div>
+        )}
 
-          {/* Bash Output Section */}
-          {(stdout || stderr) && hasBash && (
+        {/* Tool Details */}
+        <CollapsibleContent>
+          <CardContent className="pt-0 pb-4 px-4">
+            {/* Input Section */}
             <div className="mb-2">
               <button
-                onClick={() => setShowStdout(!showStdout)}
-                className="text-xs text-[var(--accent)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
-                aria-label={`${showStdout ? 'Hide' : 'Show'} bash output`}
+                onClick={() => setShowInput(!showInput)}
+                className="text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1"
+                aria-label={`${showInput ? 'Hide' : 'Show'} tool input`}
               >
-                {showStdout ? '▼' : '▶'} Terminal Output
+                {showInput ? '▼' : '▶'} Input
               </button>
-              {showStdout && (
-                <div className="mt-2 space-y-1">
-                  {stdout && (
-                    <pre className="text-xs text-[var(--text-secondary)] bg-[var(--bg-primary)] p-3 rounded overflow-x-auto font-mono">
-                      <code>{stdout}</code>
-                    </pre>
-                  )}
-                  {stderr && (
-                    <pre className="text-xs text-[var(--error)] bg-[var(--error)]/10 p-3 rounded overflow-x-auto font-mono">
-                      <code>{stderr}</code>
-                    </pre>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Diff Preview Section */}
-          {diff && hasFileEdit && (
-            <div className="mb-2">
-              <button
-                onClick={() => setShowDiff(!showDiff)}
-                className="text-xs text-[var(--accent)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
-                aria-label={`${showDiff ? 'Hide' : 'Show'} file diff`}
-              >
-                {showDiff ? '▼' : '▶'} File Diff
-              </button>
-              {showDiff && (
-                <div className="mt-2 p-3 bg-[var(--bg-primary)] rounded overflow-x-auto">
-                  {formatDiff(diff)}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* General Output Section */}
-          {output && !stdout && (
-            <div>
-              <button
-                onClick={() => setShowOutput(!showOutput)}
-                className="text-xs text-[var(--accent)] hover:text-[var(--text-primary)] transition-colors flex items-center gap-1"
-                aria-label={`${showOutput ? 'Hide' : 'Show'} ${isError ? 'error' : 'output'}`}
-              >
-                {showOutput ? '▼' : '▶'} {isError ? 'Error' : 'Output'}
-              </button>
-              {showOutput && (
-                <pre
-                  className={`mt-2 text-xs p-3 rounded overflow-x-auto font-mono ${
-                    isError
-                      ? 'text-[var(--error)] bg-[var(--error)]/10'
-                      : 'text-[var(--text-secondary)] bg-[var(--bg-primary)]'
-                  }`}
-                >
-                  <code>{output}</code>
+              {showInput && (
+                <pre className="mt-2 text-xs text-secondary-foreground bg-secondary p-3 rounded overflow-x-auto">
+                  <code>{JSON.stringify(toolInput, null, 2)}</code>
                 </pre>
               )}
             </div>
-          )}
-        </div>
-      )}
-    </div>
+
+            {/* Bash Output Section */}
+            {(stdout || stderr) && hasBash && (
+              <div className="mb-2">
+                <button
+                  onClick={() => setShowStdout(!showStdout)}
+                  className="text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1"
+                  aria-label={`${showStdout ? 'Hide' : 'Show'} bash output`}
+                >
+                  {showStdout ? '▼' : '▶'} Terminal Output
+                </button>
+                {showStdout && (
+                  <div className="mt-2 space-y-1">
+                    {stdout && (
+                      <pre className="text-xs text-secondary-foreground bg-secondary p-3 rounded overflow-x-auto font-mono">
+                        <code>{stdout}</code>
+                      </pre>
+                    )}
+                    {stderr && (
+                      <pre className="text-xs text-destructive bg-destructive/10 p-3 rounded overflow-x-auto font-mono">
+                        <code>{stderr}</code>
+                      </pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Diff Preview Section */}
+            {diff && hasFileEdit && (
+              <div className="mb-2">
+                <button
+                  onClick={() => setShowDiff(!showDiff)}
+                  className="text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1"
+                  aria-label={`${showDiff ? 'Hide' : 'Show'} file diff`}
+                >
+                  {showDiff ? '▼' : '▶'} File Diff
+                </button>
+                {showDiff && (
+                  <div className="mt-2 p-3 bg-secondary rounded overflow-x-auto">
+                    {formatDiff(diff)}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* General Output Section */}
+            {output && !stdout && (
+              <div>
+                <button
+                  onClick={() => setShowOutput(!showOutput)}
+                  className="text-xs text-primary hover:text-foreground transition-colors flex items-center gap-1"
+                  aria-label={`${showOutput ? 'Hide' : 'Show'} ${isError ? 'error' : 'output'}`}
+                >
+                  {showOutput ? '▼' : '▶'} {isError ? 'Error' : 'Output'}
+                </button>
+                {showOutput && (
+                  <pre
+                    className={cn(
+                      'mt-2 text-xs p-3 rounded overflow-x-auto font-mono',
+                      isError
+                        ? 'text-destructive bg-destructive/10'
+                        : 'text-secondary-foreground bg-secondary'
+                    )}
+                  >
+                    <code>{output}</code>
+                  </pre>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   )
 }

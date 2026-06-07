@@ -44,11 +44,11 @@ function parseAnsi(text: string): AnsiSegment[] {
         flush()
         const code = cleaned.slice(i, endIdx + 1)
         switch (code) {
-          case '\x1b[31m': currentClass = 'text-[var(--error)]'; break
-          case '\x1b[32m': currentClass = 'text-[var(--success)]'; break
-          case '\x1b[33m': currentClass = 'text-[var(--warning)]'; break
-          case '\x1b[34m': currentClass = 'text-[var(--accent)]'; break
-          case '\x1b[36m': currentClass = 'text-[var(--info)]'; break
+          case '\x1b[31m': currentClass = 'text-destructive'; break
+          case '\x1b[32m': currentClass = 'text-success'; break
+          case '\x1b[33m': currentClass = 'text-warning'; break
+          case '\x1b[34m': currentClass = 'text-primary'; break
+          case '\x1b[36m': currentClass = 'text-info'; break
           case '\x1b[1m': currentClass = 'font-bold'; break
           case '\x1b[2m': currentClass = 'opacity-60'; break
           case '\x1b[0m': currentClass = ''; break
@@ -148,27 +148,27 @@ export function TerminalPane({ workingDir, onRunCommand }: TerminalPaneProps) {
 
   const lineColor = (type: TerminalLine['type']) => {
     switch (type) {
-      case 'input': return 'text-[var(--accent)]'
-      case 'error': return 'text-[var(--error)]'
-      case 'system': return 'text-[var(--text-muted)]'
-      default: return 'text-[var(--text-secondary)]'
+      case 'input': return 'text-primary'
+      case 'error': return 'text-destructive'
+      case 'system': return 'text-muted-foreground'
+      default: return 'text-secondary-foreground'
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-primary)]">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-secondary border-b border-border">
         <div className="flex items-center gap-2">
-          <Terminal className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="text-xs font-medium text-[var(--text-secondary)]">Terminal</span>
+          <Terminal className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-secondary-foreground">Terminal</span>
           {workingDir && (
-            <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[200px]">{workingDir}</span>
+            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">{workingDir}</span>
           )}
         </div>
         <button
           onClick={clear}
-          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-primary)] transition-colors"
+          className="p-1 rounded text-muted-foreground hover:text-secondary-foreground hover:bg-background transition-colors"
           title="Clear terminal"
         >
           <Trash2 className="w-3 h-3" />
@@ -187,13 +187,13 @@ export function TerminalPane({ workingDir, onRunCommand }: TerminalPaneProps) {
           </div>
         ))}
         {running && (
-          <div className="text-[var(--accent)] animate-pulse">...</div>
+          <div className="text-primary animate-pulse">...</div>
         )}
       </div>
 
       {/* Input */}
-      <div className="flex items-center gap-2 px-3 py-2 border-t border-[var(--border)] bg-[var(--bg-secondary)]/50">
-        <span className="text-[var(--success)] text-xs font-bold">$</span>
+      <div className="flex items-center gap-2 px-3 py-2 border-t border-border bg-secondary/50">
+        <span className="text-success text-xs font-bold">$</span>
         <input
           ref={inputRef}
           type="text"
@@ -202,15 +202,15 @@ export function TerminalPane({ workingDir, onRunCommand }: TerminalPaneProps) {
           onKeyDown={handleKeyDown}
           disabled={running}
           placeholder="Enter command..."
-          className="flex-1 bg-transparent text-[var(--text-secondary)] text-xs font-mono placeholder-[var(--text-muted)] focus:outline-none disabled:opacity-40"
+          className="flex-1 bg-transparent text-secondary-foreground text-xs font-mono placeholder:text-muted-foreground focus:outline-none disabled:opacity-40"
         />
         <button
           onClick={() => { if (input.trim() && !running) { runCommand(input.trim()); setInput('') } }}
           disabled={!input.trim() || running}
           className={`p-1 rounded transition-colors ${
             input.trim() && !running
-              ? 'text-[var(--accent)] hover:bg-[var(--accent)]/10'
-              : 'text-[var(--text-muted)] cursor-not-allowed'
+              ? 'text-primary hover:bg-primary/10'
+              : 'text-muted-foreground cursor-not-allowed'
           }`}
         >
           <Send className="w-3 h-3" />

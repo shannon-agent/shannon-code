@@ -24,7 +24,8 @@ describe('WelcomePage', () => {
   it('advances to next step on Next click', () => {
     render(<WelcomePage onComplete={vi.fn()} />)
     fireEvent.click(screen.getByText('Next'))
-    expect(screen.getByText(/Ctrl\+Enter to send/)).toBeDefined()
+    // Keyboard shortcuts step shows Kbd elements - check for the text within the Kbd
+    expect(screen.getByText('Ctrl+Enter')).toBeDefined()
   })
 
   it('shows check icon for completed steps', () => {

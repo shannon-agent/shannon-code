@@ -1,6 +1,12 @@
 // Skill browser for browsing and using available skills
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Search, Code, Book, Terminal, Zap, ExternalLink, X } from 'lucide-react'
+import { Search, Book, Terminal, Zap, X } from 'lucide-react'
+import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Badge } from './ui/badge'
+import { Empty } from './ui/empty'
+import { Spinner } from './ui/spinner'
+import { Kbd } from './ui/kbd'
 
 interface Skill {
   name: string
@@ -27,13 +33,7 @@ interface SkillBrowserProps {
 
 /**
  * Skill browser for browsing and using available skills
- * - List available skills from .shannon/skills/ and .claude/commands/ directories
- * - Each skill shows: name, description, trigger command (e.g. /commit, /help)
- * - Search/filter skills by name or description
- * - Categories or tags if available
- * - Clicking a skill inserts its trigger into the message input
- * - Skill detail view shows description, parameters, usage examples
- * - Tokyo Night styling
+ * - Uses shadcn Card, Badge, Empty, Spinner, Kbd
  * - Full keyboard navigation and accessibility support
  */
 export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
@@ -90,9 +90,8 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
     try {
       if (window.__TAURI__) {
         const result = await window.__TAURI__.invoke('list_skills')
-        setSkills(result)
+        setSkills(result as Skill[])
       } else {
-        // Fallback mock data for development
         setSkills([
           {
             name: 'commit',
@@ -129,9 +128,8 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
     try {
       if (window.__TAURI__) {
         const result = await window.__TAURI__.invoke('get_skill_detail', { name: skillName })
-        setSkillDetail(result)
+        setSkillDetail(result as SkillDetail)
       } else {
-        // Fallback mock detail
         setSkillDetail({
           name: skillName,
           description: `Detailed description for ${skillName} skill`,
@@ -190,23 +188,20 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
       >
         {/* Header with back button */}
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleBack}
-            className="p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+            className="p-2"
             aria-label="Back to skill list"
-            type="button"
           >
             <X size={18} />
-          </button>
+          </Button>
           <div className="flex-1">
-            <h2 id="skill-detail-title" className="text-[var(--text-primary)] text-lg font-semibold">Skill Details</h2>
+            <h2 id="skill-detail-title" className="text-foreground text-lg font-semibold">Skill Details</h2>
             <div className="flex items-center gap-2 mt-1">
-              <code className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--accent)] text-sm rounded">
-                {skillDetail.trigger}
-              </code>
-              <span className="text-[var(--text-muted)] text-sm">
-                from {skillDetail.source}
-              </span>
+              <Kbd>{skillDetail.trigger}</Kbd>
+              <Badge variant="secondary">from {skillDetail.source}</Badge>
             </div>
           </div>
         </div>
@@ -214,55 +209,61 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
         {/* Skill detail content */}
         <div className="space-y-4" aria-labelledby="skill-detail-title">
           {/* Description */}
-          <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg">
-            <h3 className="text-[var(--text-primary)] font-semibold mb-2">Description</h3>
-            <p className="text-[var(--text-secondary)]">{skillDetail.description}</p>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Description</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-secondary-foreground">{skillDetail.description}</p>
+            </CardContent>
+          </Card>
 
           {/* Parameters */}
           {skillDetail.parameters.length > 0 && (
-            <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg">
-              <h3 className="text-[var(--text-primary)] font-semibold mb-2">Parameters</h3>
-              <div className="flex flex-wrap gap-2" role="list" aria-label="Skill parameters">
-                {skillDetail.parameters.map((param) => (
-                  <code
-                    key={param}
-                    className="px-2 py-1 bg-[var(--bg-primary)] text-[var(--purple)] text-sm rounded border border-[var(--border)]"
-                    role="listitem"
-                  >
-                    {param}
-                  </code>
-                ))}
-              </div>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Parameters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2" role="list" aria-label="Skill parameters">
+                  {skillDetail.parameters.map((param) => (
+                    <Badge key={param} variant="outline" role="listitem">
+                      {param}
+                    </Badge>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Usage content */}
-          <div className="p-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg">
-            <h3 className="text-[var(--text-primary)] font-semibold mb-2">Usage</h3>
-            <pre className="text-sm text-[var(--text-secondary)] bg-[var(--bg-primary)] p-3 rounded overflow-x-auto" tabIndex={0}>
-              <code>{skillDetail.content}</code>
-            </pre>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Usage</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-sm text-secondary-foreground bg-background p-3 rounded overflow-x-auto" tabIndex={0}>
+                <code>{skillDetail.content}</code>
+              </pre>
+            </CardContent>
+          </Card>
 
           {/* Insert trigger button */}
           <div className="flex gap-2">
-            <button
+            <Button
               onClick={() => handleInsertTrigger(skillDetail.trigger)}
-              className="flex-1 px-4 py-2 bg-[var(--accent)] text-[#1a1b26] rounded-lg hover:bg-[var(--accent)]/80 transition-colors font-medium"
+              className="flex-1"
               aria-label={`Insert ${skillDetail.trigger} trigger`}
-              type="button"
             >
               Insert Trigger
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
               onClick={handleBack}
-              className="px-4 py-2 bg-[#414868] text-[var(--text-primary)] rounded-lg hover:bg-[#565f89] transition-colors"
               aria-label="Back to skill list"
-              type="button"
             >
               Back
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -279,36 +280,37 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Terminal className="text-[var(--accent)]" size={20} aria-hidden />
+          <Terminal className="text-primary" size={20} aria-hidden />
           <div>
-            <h2 id="skill-browser-title" className="text-[var(--text-primary)] text-lg font-semibold">Skill Browser</h2>
-            <p className="text-[var(--text-muted)] text-sm">
+            <h2 id="skill-browser-title" className="text-foreground text-lg font-semibold">Skill Browser</h2>
+            <p className="text-muted-foreground text-sm">
               Browse and use available skills
             </p>
           </div>
         </div>
         {onClose && (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="p-2 rounded-lg bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+            className="p-2"
             aria-label="Close skill browser"
-            type="button"
           >
             <X size={18} />
-          </button>
+          </Button>
         )}
       </div>
 
       {/* Search bar */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" size={18} aria-hidden />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} aria-hidden />
         <input
           ref={searchInputRef}
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search skills by name or description..."
-          className="w-full pl-10 pr-4 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder-[#565f89] focus:outline-none focus:border-[var(--accent)]"
+          className="w-full pl-10 pr-4 py-2 bg-secondary border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-ring"
           aria-label="Search skills"
           aria-describedby="search-instructions"
         />
@@ -320,18 +322,19 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
       <>
         {/* Loading state */}
         {loading && (
-          <div className="text-center py-8 text-[var(--text-muted)]" role="status">
-            Loading skills...
+          <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground" role="status">
+            <Spinner />
+            <span>Loading skills...</span>
           </div>
         )}
 
         {/* Error state */}
         {error && (
           <div
-            className="p-4 bg-[var(--error)]/10 border border-[#f7768e] rounded-lg"
+            className="p-4 bg-destructive/10 border border-destructive rounded-lg"
             role="alert"
           >
-            <p className="text-[var(--error)]">Error: {error}</p>
+            <p className="text-destructive">Error: {error}</p>
           </div>
         )}
 
@@ -339,49 +342,51 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
         {!loading && !error && (
           <div className="space-y-4" role="list" aria-label="Available skills">
             {Object.keys(skillsByCategory).length === 0 ? (
-              <div className="text-center py-8 text-[var(--text-muted)]" role="status">
-                {searchQuery ? 'No matching skills found' : 'No skills available'}
-              </div>
+              <Empty
+                icon={<Terminal className="w-8 h-8" />}
+                title={searchQuery ? 'No matching skills found' : 'No skills available'}
+                description="Skills from .shannon/skills/ and .claude/commands/ will appear here"
+              />
             ) : (
               Object.entries(skillsByCategory).map(([category, categorySkills]) => (
                 <div key={category} className="space-y-2" role="group">
                   <div className="flex items-center gap-2">
-                    <Book className="text-[var(--cyan)]" size={16} aria-hidden />
-                    <h3 className="text-[var(--text-primary)] font-semibold capitalize">{category}</h3>
-                    <span className="text-[var(--text-muted)] text-sm" aria-label={`${categorySkills.length} skills in ${category}`}>
-                      ({categorySkills.length})
-                    </span>
+                    <Book className="text-cyan" size={16} aria-hidden />
+                    <h3 className="text-foreground font-semibold capitalize">{category}</h3>
+                    <Badge variant="secondary">
+                      {categorySkills.length}
+                    </Badge>
                   </div>
                   <div className="space-y-2 ml-6">
                     {categorySkills.map((skill, index) => (
-                      <div
+                      <Card
                         key={skill.name}
                         onClick={() => handleSkillClick(skill)}
                         tabIndex={focusedIndex === index ? 0 : -1}
                         role="listitem"
                         aria-label={`${skill.name}: ${skill.description}, trigger: ${skill.trigger}`}
-                        className={`p-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg hover:border-[#565f89] transition-colors duration-150 cursor-pointer outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
-                          focusedIndex === index ? 'ring-1 ring-[var(--accent)]' : ''
+                        className={`cursor-pointer transition-colors hover:border-muted-foreground ${
+                          focusedIndex === index ? 'ring-1 ring-ring' : ''
                         }`}
                       >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-[var(--text-primary)] font-medium">{skill.name}</h4>
-                              <span className="text-[var(--text-muted)] text-xs">from {skill.source}</span>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-foreground font-medium">{skill.name}</h4>
+                                <Badge variant="outline">{skill.source}</Badge>
+                              </div>
+                              <p className="text-secondary-foreground text-sm mt-1 line-clamp-2">
+                                {skill.description}
+                              </p>
+                              <div className="mt-2">
+                                <Kbd>{skill.trigger}</Kbd>
+                              </div>
                             </div>
-                            <p className="text-[var(--text-secondary)] text-sm mt-1 line-clamp-2">
-                              {skill.description}
-                            </p>
-                            <div className="mt-2">
-                              <code className="text-xs px-2 py-1 bg-[var(--bg-primary)] text-[var(--accent)] rounded">
-                                {skill.trigger}
-                              </code>
-                            </div>
+                            <Zap className="text-muted-foreground flex-shrink-0" size={16} aria-hidden />
                           </div>
-                          <Zap className="text-[var(--text-muted)] flex-shrink-0" size={16} aria-hidden />
-                        </div>
-                      </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 </div>
@@ -394,7 +399,7 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
       {/* Stats footer */}
       {!loading && !error && skills.length > 0 && (
         <div
-          className="flex items-center gap-4 text-sm text-[var(--text-muted)] pt-2 border-t border-[#2a2f44]"
+          className="flex items-center gap-4 text-sm text-muted-foreground pt-2 border-t border-border"
           role="status"
           aria-label={`Showing ${skills.length} skills in ${Object.keys(skillsByCategory).length} categories`}
         >

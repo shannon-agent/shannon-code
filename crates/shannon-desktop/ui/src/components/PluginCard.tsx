@@ -1,6 +1,10 @@
 // Plugin card component for MCP server display
-import { Check, X, ChevronDown, ChevronUp, Package, PlayCircle, RefreshCw, AlertCircle } from 'lucide-react'
+import { Check, X, ChevronDown, ChevronUp, Package, PlayCircle, RefreshCw } from 'lucide-react'
 import { useState } from 'react'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './ui/card'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
+import { Separator } from './ui/separator'
 
 interface Plugin {
   name: string
@@ -23,14 +27,7 @@ interface PluginCardProps {
 }
 
 /**
- * MCP server plugin card with Tokyo Night styling
- * - Server name, status badge, tool count, last connected timestamp
- * - Expandable tools list showing name + description for each tool
- * - Server health indicator (green/red/yellow dot)
- * - Enable/disable toggle switch
- * - Test Connection button
- * - Restart server button
- * - Remove button with confirmation
+ * MCP server plugin card using shadcn Card and Badge
  */
 export function PluginCard({ plugin, onToggle, onRemove, onTestConnection, onRestart, testingConnection, testResult }: PluginCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -78,187 +75,170 @@ export function PluginCard({ plugin, onToggle, onRemove, onTestConnection, onRes
   const healthStatus = getHealthStatus()
 
   const healthColor = {
-    healthy: 'bg-[#41a6b5]',
-    unhealthy: 'bg-[#f7768e]',
-    testing: 'bg-[#e0af68]',
-    unknown: 'bg-[#565f89]'
+    healthy: 'bg-success',
+    unhealthy: 'bg-destructive',
+    testing: 'bg-warning',
+    unknown: 'bg-muted-foreground'
   }[healthStatus]
 
   return (
-    <div className="bg-[#1f2335] border border-[#414868] rounded-lg overflow-hidden transition-all hover:border-[#565f89]">
-      {/* Header */}
-      <div className="p-4">
+    <Card className="overflow-hidden transition-all">
+      <CardHeader className="p-4 pb-2">
         <div className="flex items-start justify-between gap-3">
           {/* Left: Icon + Info */}
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className={`
               p-2 rounded-lg flex-shrink-0
-              ${plugin.connected ? 'bg-[#41a6b5]/20' : 'bg-[#f7768e]/20'}
+              ${plugin.connected ? 'bg-success/20' : 'bg-destructive/20'}
             `}>
               <Package
                 size={20}
-                className={plugin.connected ? 'text-[#41a6b5]' : 'text-[#f7768e]'}
+                className={plugin.connected ? 'text-success' : 'text-destructive'}
               />
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-[#c0caf5] font-semibold truncate">{plugin.name}</h3>
+                <CardTitle className="truncate text-base">{plugin.name}</CardTitle>
                 {/* Server health indicator */}
                 <div className={`w-2 h-2 rounded-full ${healthColor}`} title={healthStatus} />
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`
-                  px-2 py-0.5 rounded text-xs font-medium
-                  ${plugin.connected
-                    ? 'bg-[#41a6b5]/20 text-[#41a6b5]'
-                    : 'bg-[#f7768e]/20 text-[#f7768e]'
-                  }
-                `}>
-                  {plugin.connected ? 'Connected' : 'Disconnected'}
-                </span>
-                <span className="text-[#565f89] text-xs">
-                  {plugin.toolCount} tools
-                </span>
-                {/* Last connected timestamp */}
-                {plugin.lastConnected && (
-                  <span className="text-[#565f89] text-xs flex items-center gap-1">
-                    <Clock size={10} />
-                    {formatTimestamp(plugin.lastConnected)}
+              <CardDescription className="mt-1">
+                <div className="flex items-center gap-2">
+                  <Badge variant={plugin.connected ? 'success' : 'error'}>
+                    {plugin.connected ? 'Connected' : 'Disconnected'}
+                  </Badge>
+                  <span className="text-xs">
+                    {plugin.toolCount} tools
                   </span>
-                )}
-              </div>
+                  {/* Last connected timestamp */}
+                  {plugin.lastConnected && (
+                    <span className="text-xs flex items-center gap-1">
+                      {formatTimestamp(plugin.lastConnected)}
+                    </span>
+                  )}
+                </div>
+              </CardDescription>
             </div>
           </div>
 
           {/* Right: Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Test Connection Button */}
             {onTestConnection && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onTestConnection}
                 disabled={testingConnection}
-                className={`
-                  p-2 rounded-lg transition-colors
-                  ${testingConnection
-                    ? 'bg-[#e0af68]/20 text-[#e0af68] animate-pulse'
-                    : 'bg-[#24283b] text-[#565f89] hover:text-[#7aa2f7] hover:bg-[#24283b]/80'
-                  }
-                `}
+                className="h-8 w-8 p-0"
                 aria-label={`Test connection to ${plugin.name}`}
                 title="Test connection"
               >
-                <PlayCircle size={16} />
-              </button>
+                <PlayCircle size={16} className={testingConnection ? 'animate-pulse text-warning' : ''} />
+              </Button>
             )}
 
             {/* Restart Server Button */}
             {onRestart && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={onRestart}
-                className="p-2 rounded-lg bg-[#24283b] text-[#565f89] hover:text-[#41a6b5] hover:bg-[#24283b]/80 transition-colors"
+                className="h-8 w-8 p-0"
                 aria-label={`Restart ${plugin.name}`}
                 title="Restart server"
               >
                 <RefreshCw size={16} />
-              </button>
+              </Button>
             )}
 
             {/* Enable/Disable Toggle */}
             {onToggle && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleToggle}
-                className={`
-                  p-2 rounded-lg transition-colors
-                  ${plugin.enabled
-                    ? 'bg-[#41a6b5]/20 text-[#41a6b5] hover:bg-[#41a6b5]/30'
-                    : 'bg-[#565f89]/20 text-[#565f89] hover:bg-[#565f89]/30'
-                  }
-                `}
+                className={`h-8 w-8 p-0 ${plugin.enabled ? 'text-success' : 'text-muted-foreground'}`}
                 aria-label={`${plugin.enabled ? 'Disable' : 'Enable'} ${plugin.name}`}
               >
                 {plugin.enabled ? <Check size={16} /> : <X size={16} />}
-              </button>
+              </Button>
             )}
 
             {/* Expand/Collapse Button */}
             {plugin.tools && plugin.tools.length > 0 && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2 rounded-lg bg-[#24283b] text-[#565f89] hover:text-[#c0caf5] transition-colors"
+                className="h-8 w-8 p-0"
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} tools list`}
               >
                 {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
+              </Button>
             )}
 
             {/* Remove Button */}
             {onRemove && (
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleRemove}
-                className={`
-                  p-2 rounded-lg transition-colors
-                  ${showConfirm
-                    ? 'bg-[#f7768e]/20 text-[#f7768e] hover:bg-[#f7768e]/30'
-                    : 'bg-[#565f89]/20 text-[#565f89] hover:bg-[#f7768e]/20 hover:text-[#f7768e]'
-                  }
-                `}
+                className={`h-8 w-8 p-0 ${showConfirm ? 'text-destructive' : 'text-muted-foreground hover:text-destructive'}`}
                 aria-label={`Remove ${plugin.name}`}
               >
                 <X size={16} />
-              </button>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Confirmation Dialog */}
         {showConfirm && (
-          <div className="mt-3 p-3 bg-[#f7768e]/10 border border-[#f7768e] rounded-lg">
-            <p className="text-sm text-[#c0caf5] mb-2">
+          <div className="mt-3 p-3 bg-destructive/10 border border-destructive rounded-lg">
+            <p className="text-sm text-foreground mb-2">
               Remove {plugin.name}? This cannot be undone.
             </p>
             <div className="flex gap-2">
-              <button
-                onClick={handleRemove}
-                className="px-3 py-1 bg-[#f7768e] text-[#1a1b26] rounded hover:bg-[#f7768e]/80 transition-colors text-sm font-medium"
-              >
+              <Button variant="destructive" size="sm" onClick={handleRemove}>
                 Remove
-              </button>
-              <button
-                onClick={handleCancelRemove}
-                className="px-3 py-1 bg-[#24283b] text-[#c0caf5] rounded hover:bg-[#2a2f44] transition-colors text-sm"
-              >
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleCancelRemove}>
                 Cancel
-              </button>
+              </Button>
             </div>
           </div>
         )}
-      </div>
+      </CardHeader>
 
       {/* Expandable Tools List */}
       {isExpanded && plugin.tools && plugin.tools.length > 0 && (
-        <div className="px-4 pb-4 border-t border-[#2a2f44] pt-3">
-          <h4 className="text-xs font-semibold text-[#565f89] mb-2">Tools ({plugin.tools.length})</h4>
-          <div className="space-y-2">
-            {plugin.tools.map((tool) => (
-              <div
-                key={tool.name}
-                className="p-2 rounded bg-[#1a1b26] hover:bg-[#24283b] transition-colors"
-              >
-                <div className="text-sm text-[#c0caf5] font-medium">{tool.name}</div>
-                <div className="text-xs text-[#565f89] mt-1">{tool.description}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <>
+          <Separator />
+          <CardContent className="px-4 pt-3 pb-2">
+            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Tools ({plugin.tools.length})</h4>
+            <div className="space-y-2">
+              {plugin.tools.map((tool) => (
+                <div
+                  key={tool.name}
+                  className="p-2 rounded bg-background hover:bg-secondary transition-colors"
+                >
+                  <div className="text-sm text-foreground font-medium">{tool.name}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{tool.description}</div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </>
       )}
 
       {/* Command Info */}
-      <div className="px-4 pb-3">
-        <code className="text-xs text-[#565f89] bg-[#1a1b26] px-2 py-1 rounded">
+      <CardFooter className="px-4 pb-3 pt-2">
+        <code className="text-xs text-muted-foreground bg-background px-2 py-1 rounded">
           {plugin.command}
         </code>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   )
 }

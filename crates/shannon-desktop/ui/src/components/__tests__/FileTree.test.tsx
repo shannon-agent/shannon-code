@@ -95,6 +95,6 @@ describe('FileTree', () => {
     })
 
     const fileEl = screen.getByText('package.json').closest('div')
-    expect(fileEl?.className).toContain('accent')
+    expect(fileEl?.className).toContain('primary')
   })
 })

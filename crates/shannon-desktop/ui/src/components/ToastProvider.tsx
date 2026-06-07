@@ -1,12 +1,11 @@
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
-import { Toast, ToastVariant } from './ui/toast'
+// Thin wrapper around Sonner for toast notifications
+import { ReactNode, useCallback } from 'react'
+import { toast } from 'sonner'
+import { Toaster } from './ui/sonner'
 
-interface ToastItem {
-  id: string
-  message: string
-  variant: ToastVariant
-  timestamp: number
-}
+export { toast }
+
+export type ToastVariant = 'success' | 'error' | 'info' | 'warning'
 
 interface ToastContextType {
   addToast: (message: string, variant: ToastVariant) => void
@@ -15,6 +14,9 @@ interface ToastContextType {
 const noopToast: ToastContextType = {
   addToast: () => {}
 }
+
+// Keep a context for backward compatibility with useToast consumers
+import { createContext, useContext } from 'react'
 
 const ToastContext = createContext<ToastContextType>(noopToast)
 
@@ -26,52 +28,23 @@ interface ToastProviderProps {
   children: ReactNode
 }
 
-const AUTO_DISMISS_MS = 4000
-const MAX_VISIBLE_TOASTS = 3
+const VARIANT_TO_METHOD: Record<ToastVariant, typeof toast.success> = {
+  success: toast.success,
+  error: toast.error,
+  info: toast.info,
+  warning: toast.warning,
+}
 
 export function ToastProvider({ children }: ToastProviderProps) {
-  const [toasts, setToasts] = useState<ToastItem[]>([])
-
   const addToast = useCallback((message: string, variant: ToastVariant) => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    setToasts(prev => {
-      const newToast: ToastItem = { id, message, variant, timestamp: Date.now() }
-      const updated = [...prev, newToast]
-      // Keep only the most recent MAX_VISIBLE_TOASTS toasts
-      return updated.slice(-MAX_VISIBLE_TOASTS)
-    })
+    const method = VARIANT_TO_METHOD[variant] ?? toast
+    method(message)
   }, [])
-
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }, [])
-
-  // Auto-dismiss toasts after AUTO_DISMISS_MS
-  useEffect(() => {
-    const now = Date.now()
-    const expiredToasts = toasts.filter(toast => now - toast.timestamp > AUTO_DISMISS_MS)
-
-    if (expiredToasts.length > 0) {
-      expiredToasts.forEach(toast => removeToast(toast.id))
-    }
-  }, [toasts, removeToast])
 
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      {/* Toast container - positioned bottom-right */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
-        {toasts.map(toast => (
-          <div key={toast.id} className="pointer-events-auto">
-            <Toast
-              id={toast.id}
-              message={toast.message}
-              variant={toast.variant}
-              onClose={removeToast}
-            />
-          </div>
-        ))}
-      </div>
+      <Toaster />
     </ToastContext.Provider>
   )
 }

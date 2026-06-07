@@ -1,5 +1,7 @@
 // Usage statistics display — tokens, cost, and session metrics
 import { DollarSign, Cpu, MessageSquare, TrendingUp } from 'lucide-react'
+import { Card, CardContent } from './ui/card'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip'
 
 interface UsageData {
   inputTokens: number
@@ -32,69 +34,77 @@ function formatDuration(ms: number): string {
 export function UsageStats({ usage, messageCount, sessionDuration }: UsageStatsProps) {
   if (!usage) {
     return (
-      <div className="flex items-center gap-3 px-3 py-1.5 text-[10px] text-[var(--text-muted)]">
-        <span>No usage data yet</span>
-      </div>
+      <Card className="border-0 shadow-none bg-transparent">
+        <CardContent className="flex items-center gap-3 px-3 py-1.5">
+          <span className="text-[10px] text-muted-foreground">No usage data yet</span>
+        </CardContent>
+      </Card>
     )
   }
 
   const totalTokens = usage.inputTokens + usage.outputTokens
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1.5">
-      {/* Tokens */}
-      <div className="flex items-center gap-1 text-[10px]">
-        <Cpu className="w-3 h-3 text-[var(--accent)]" />
-        <span className="text-[var(--text-secondary)]">{formatTokens(totalTokens)}</span>
-        <span className="text-[var(--text-muted)]">tokens</span>
-      </div>
-
-      {/* Cost */}
-      <div className="flex items-center gap-1 text-[10px]">
-        <DollarSign className="w-3 h-3 text-[var(--success)]" />
-        <span className="text-[var(--text-secondary)]">{formatCost(usage.costUsd)}</span>
-      </div>
-
-      {/* Messages */}
-      {messageCount != null && (
+    <Card className="border-0 shadow-none bg-transparent">
+      <CardContent className="flex items-center gap-3 px-3 py-1.5 p-0">
+        {/* Tokens */}
         <div className="flex items-center gap-1 text-[10px]">
-          <MessageSquare className="w-3 h-3 text-[var(--warning)]" />
-          <span className="text-[var(--text-secondary)]">{messageCount}</span>
+          <Cpu className="w-3 h-3 text-primary" />
+          <span className="text-secondary-foreground">{formatTokens(totalTokens)}</span>
+          <span className="text-muted-foreground">tokens</span>
         </div>
-      )}
 
-      {/* Duration */}
-      {sessionDuration != null && (
+        {/* Cost */}
         <div className="flex items-center gap-1 text-[10px]">
-          <TrendingUp className="w-3 h-3 text-[var(--text-muted)]" />
-          <span className="text-[var(--text-secondary)]">{formatDuration(sessionDuration)}</span>
+          <DollarSign className="w-3 h-3 text-success" />
+          <span className="text-secondary-foreground">{formatCost(usage.costUsd)}</span>
         </div>
-      )}
 
-      {/* Token breakdown on hover */}
-      <div className="group relative">
-        <span className="text-[10px] text-[var(--text-muted)] cursor-help">details</span>
-        <div className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-10 bg-[var(--bg-secondary)] border border-[var(--border)] rounded shadow-lg p-2 min-w-[140px]">
-          <div className="text-[10px] space-y-1">
-            <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Input tokens</span>
-              <span className="text-[var(--text-secondary)]">{usage.inputTokens.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Output tokens</span>
-              <span className="text-[var(--text-secondary)]">{usage.outputTokens.toLocaleString()}</span>
-            </div>
-            <div className="border-t border-[var(--border)] pt-1 flex justify-between">
-              <span className="text-[var(--text-muted)]">Total</span>
-              <span className="text-[var(--accent)]">{totalTokens.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-[var(--text-muted)]">Cost</span>
-              <span className="text-[var(--success)]">{formatCost(usage.costUsd)}</span>
-            </div>
+        {/* Messages */}
+        {messageCount != null && (
+          <div className="flex items-center gap-1 text-[10px]">
+            <MessageSquare className="w-3 h-3 text-warning" />
+            <span className="text-secondary-foreground">{messageCount}</span>
           </div>
-        </div>
-      </div>
-    </div>
+        )}
+
+        {/* Duration */}
+        {sessionDuration != null && (
+          <div className="flex items-center gap-1 text-[10px]">
+            <TrendingUp className="w-3 h-3 text-muted-foreground" />
+            <span className="text-secondary-foreground">{formatDuration(sessionDuration)}</span>
+          </div>
+        )}
+
+        {/* Token breakdown via Tooltip */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="text-[10px] text-muted-foreground cursor-help">details</span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="bg-secondary text-foreground p-3 min-w-[160px]">
+              <div className="text-[10px] space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Input tokens</span>
+                  <span className="text-secondary-foreground">{usage.inputTokens.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Output tokens</span>
+                  <span className="text-secondary-foreground">{usage.outputTokens.toLocaleString()}</span>
+                </div>
+                <div className="border-t border-border pt-1 flex justify-between">
+                  <span className="text-muted-foreground">Total</span>
+                  <span className="text-primary">{totalTokens.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Cost</span>
+                  <span className="text-success">{formatCost(usage.costUsd)}</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </CardContent>
+    </Card>
   )
 }

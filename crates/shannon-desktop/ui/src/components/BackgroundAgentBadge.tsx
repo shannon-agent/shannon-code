@@ -1,13 +1,15 @@
 // Floating badge for background tasks
 import { useState, useEffect, useCallback } from 'react'
-import { Brain, X, Loader2 } from 'lucide-react'
-import { listen } from '@tauri-apps/api/event'
+import { Brain, X } from 'lucide-react'
 import { getBackgroundTasks, cancelBackgroundTask } from '../lib/tauri-api'
 import { useTauriEvent } from '../hooks/useTauriEvent'
 import type { BackgroundTaskInfo } from '../types/tauri-events'
 import { EVENT_NAMES } from '../types/tauri-events'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from './ui/card'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip'
+import { Spinner } from './ui/spinner'
 import { cn } from '../lib/utils'
 
 export function BackgroundAgentBadge() {
@@ -26,18 +28,18 @@ export function BackgroundAgentBadge() {
 
   // Listen for task updates
   useTauriEvent(EVENT_NAMES.BACKGROUND_TASKS_UPDATED, loadTasks)
-  useTauriEvent(EVENT_NAMES.BACKGROUND_TASK_UPDATE, (update) => {
+  useTauriEvent<{ task_id: string; status: string; output?: string; completed_at?: number }>(EVENT_NAMES.BACKGROUND_TASK_UPDATE, (update) => {
     // Update single task in the list
-    setTasks(prev => prev.map(task => 
-      task.task_id === update.task_id 
-        ? { 
-            ...task, 
-            status: update.status,
-            output: update.output,
-            completed_at: update.completed_at 
-          }
-        : task
-    ))
+    setTasks(prev => prev.map(task => {
+      if (task.task_id !== update.task_id) return task
+      const updated: BackgroundTaskInfo = {
+        ...task,
+        status: update.status,
+        output: update.output ?? task.output,
+        completed_at: update.completed_at ?? task.completed_at,
+      }
+      return updated
+    }))
   })
 
   const handleCancelTask = async (taskId: string) => {
@@ -55,12 +57,11 @@ export function BackgroundAgentBadge() {
   }
 
   const runningTasks = tasks.filter(t => t.status === 'running')
-  const completedTasks = tasks.filter(t => t.status === 'completed' || t.status === 'failed')
   const hasTasks = tasks.length > 0
 
   if (!hasTasks) return null
 
-  const getTaskStatus = (task: BackgroundTaskInfo) => {
+  const getTaskStatus = (task: BackgroundTaskInfo): 'warning' | 'success' | 'error' | 'default' => {
     switch (task.status) {
       case 'running': return 'warning'
       case 'completed': return 'success'
@@ -71,56 +72,66 @@ export function BackgroundAgentBadge() {
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          'fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all',
-          runningTasks.length > 0
-            ? 'bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 animate-pulse'
-            : 'bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]'
-        )}
-        title={`${tasks.length} background task${tasks.length > 1 ? 's' : ''}`}
-      >
-        <Brain className="w-4 h-4" />
-        <span className="text-sm font-medium">{tasks.length}</span>
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsOpen(true)}
+              className={cn(
+                'fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg transition-all',
+                runningTasks.length > 0
+                  ? 'bg-primary text-white hover:bg-primary/90 animate-pulse'
+                  : 'bg-secondary text-secondary-foreground hover:bg-background'
+              )}
+            >
+              <Brain className="w-4 h-4" />
+              <Badge variant={runningTasks.length > 0 ? 'default' : 'secondary'} className="text-xs">
+                {tasks.length}
+              </Badge>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {tasks.length} background task{tasks.length > 1 ? 's' : ''}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
           onClick={() => setIsOpen(false)}
         >
-          <div
-            className="bg-[var(--bg-primary)] rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-hidden"
+          <Card
+            className="max-w-md w-full max-h-[80vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+            <CardHeader className="p-4 border-b border-border flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-base">
                 Background Tasks ({tasks.length})
-              </h3>
+              </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="h-7 w-7 p-0">
                 <X className="w-4 h-4" />
               </Button>
-            </div>
-            <div className="overflow-y-auto max-h-[60vh]">
+            </CardHeader>
+            <CardContent className="p-0 overflow-y-auto max-h-[60vh]">
               {tasks.length === 0 ? (
-                <div className="p-8 text-center text-[var(--text-muted)]">
+                <div className="p-8 text-center text-muted-foreground">
                   No background tasks
                 </div>
               ) : (
                 tasks.map((task) => (
                   <div
                     key={task.task_id}
-                    className="p-4 border-b border-[var(--border)] last:border-b-0"
+                    className="p-4 border-b border-border last:border-b-0"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <p className="text-sm text-[var(--text-primary)] line-clamp-2">
+                        <p className="text-sm text-foreground line-clamp-2">
                           {task.prompt}
                         </p>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           Started {new Date(task.started_at).toLocaleTimeString()}
-                          {task.completed_at && ` • Completed ${new Date(task.completed_at).toLocaleTimeString()}`}
+                          {task.completed_at && ` \u00b7 Completed ${new Date(task.completed_at).toLocaleTimeString()}`}
                         </p>
                       </div>
                       <Badge variant={getTaskStatus(task)} className="ml-2">
@@ -128,7 +139,7 @@ export function BackgroundAgentBadge() {
                       </Badge>
                     </div>
                     {task.output && (
-                      <div className="mt-2 p-2 bg-[var(--bg-secondary)] rounded text-xs text-[var(--text-muted)] font-mono max-h-32 overflow-auto">
+                      <div className="mt-2 p-2 bg-secondary rounded text-xs text-muted-foreground font-mono max-h-32 overflow-auto">
                         {task.output}
                       </div>
                     )}
@@ -143,7 +154,7 @@ export function BackgroundAgentBadge() {
                         >
                           {cancelling === task.task_id ? (
                             <>
-                              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              <Spinner className="w-3 h-3 mr-1" />
                               Cancelling...
                             </>
                           ) : (
@@ -155,8 +166,8 @@ export function BackgroundAgentBadge() {
                   </div>
                 ))
               )}
-            </div>
-            <div className="p-4 border-t border-[var(--border)] flex justify-end">
+            </CardContent>
+            <CardFooter className="p-4 border-t border-border flex justify-end">
               <Button
                 onClick={() => setIsOpen(false)}
                 variant="secondary"
@@ -164,8 +175,8 @@ export function BackgroundAgentBadge() {
               >
                 Close
               </Button>
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </>

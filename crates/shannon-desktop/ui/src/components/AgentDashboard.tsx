@@ -27,10 +27,10 @@ interface AgentDashboardProps {
 }
 
 const STATUS_CONFIG = {
-  running: { icon: Loader2, color: 'text-[var(--accent)]', animate: 'animate-spin', badge: 'default' as const },
-  completed: { icon: CheckCircle2, color: 'text-[var(--success)]', animate: '', badge: 'success' as const },
-  failed: { icon: XCircle, color: 'text-[var(--error)]', animate: '', badge: 'error' as const },
-  pending: { icon: Clock, color: 'text-[var(--text-muted)]', animate: '', badge: 'secondary' as const },
+  running: { icon: Loader2, color: 'text-primary', animate: 'animate-spin', badge: 'default' as const },
+  completed: { icon: CheckCircle2, color: 'text-success', animate: '', badge: 'success' as const },
+  failed: { icon: XCircle, color: 'text-destructive', animate: '', badge: 'error' as const },
+  pending: { icon: Clock, color: 'text-muted-foreground', animate: '', badge: 'secondary' as const },
 }
 
 const FILTER_TABS: { key: StatusFilter; label: string }[] = [
@@ -61,10 +61,10 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-secondary border-b border-border">
         <div className="flex items-center gap-2">
-          <Bot className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="text-xs font-medium text-[var(--text-secondary)]">Agents</span>
+          <Bot className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-secondary-foreground">Agents</span>
         </div>
         <div className="flex items-center gap-1.5">
           {running > 0 && <Badge variant="default">{running} running</Badge>}
@@ -74,7 +74,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-[var(--border)]/50 bg-[var(--bg-secondary)]/30">
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/50 bg-secondary/30">
         {FILTER_TABS.map(tab => {
           const count = tab.key === 'all' ? agents.length : agents.filter(a => a.status === tab.key).length
           return (
@@ -84,8 +84,8 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
               className={cn(
                 'px-2 py-0.5 text-[10px] rounded transition-colors',
                 filter === tab.key
-                  ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-secondary-foreground'
               )}
             >
               {tab.label} {count > 0 && `(${count})`}
@@ -97,7 +97,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
       <ScrollArea className="flex-1">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center p-8">
-            <p className="text-[var(--text-muted)] text-[11px]">
+            <p className="text-muted-foreground text-[11px]">
               {agents.length === 0 ? 'No active agents' : 'No matching agents'}
             </p>
           </div>
@@ -113,7 +113,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                   key={agent.id}
                   className={cn(
                     'px-3 py-2',
-                    agent.status === 'running' ? 'bg-[var(--accent)]/5' : ''
+                    agent.status === 'running' ? 'bg-primary/5' : ''
                   )}
                 >
                   <div className="flex items-center justify-between">
@@ -121,16 +121,16 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                       <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', cfg.color, cfg.animate)} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-medium text-[var(--text-secondary)] truncate">
+                          <span className="text-[12px] font-medium text-secondary-foreground truncate">
                             {agent.name}
                           </span>
                           <Badge variant={cfg.badge} className="text-[9px]">{agent.status}</Badge>
-                          <span className="text-[10px] text-[var(--text-muted)] flex-shrink-0">
+                          <span className="text-[10px] text-muted-foreground flex-shrink-0">
                             {agent.model}
                           </span>
                         </div>
                         {agent.task && (
-                          <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {agent.task}
                           </p>
                         )}
@@ -138,7 +138,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                       {hasDetails && (
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : agent.id)}
-                          className="flex-shrink-0 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                          className="flex-shrink-0 p-0.5 text-muted-foreground hover:text-secondary-foreground"
                         >
                           {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         </button>
@@ -146,7 +146,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-2">
                       {agent.duration != null && (
-                        <span className="text-[10px] text-[var(--text-muted)] flex items-center gap-0.5">
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
                           <Timer className="w-2.5 h-2.5" />
                           {formatDuration(agent.duration)}
                         </span>
@@ -156,7 +156,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                           variant="ghost"
                           size="sm"
                           onClick={() => onCancel(agent.id)}
-                          className="h-5 text-[10px] text-[var(--error)] hover:text-[var(--error)] hover:bg-[var(--error)]/10 px-1.5"
+                          className="h-5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10 px-1.5"
                         >
                           Cancel
                         </Button>
@@ -165,31 +165,31 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                   </div>
                   {/* Progress bar */}
                   {agent.status === 'running' && agent.progress != null && (
-                    <div className="mt-1.5 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-1 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[var(--accent)] rounded-full transition-all duration-300"
+                        className="h-full bg-primary rounded-full transition-all duration-300"
                         style={{ width: `${Math.min(100, agent.progress)}%` }}
                       />
                     </div>
                   )}
                   {/* Quick stats */}
                   {agent.toolsUsed != null && agent.toolsUsed > 0 && (
-                    <span className="text-[10px] text-[var(--text-muted)] mt-1 flex items-center gap-0.5">
+                    <span className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
                       <Wrench className="w-2.5 h-2.5" />
                       {agent.toolsUsed} tool{agent.toolsUsed !== 1 ? 's' : ''} used
                     </span>
                   )}
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="mt-2 p-2 rounded bg-[var(--bg-primary)] border border-[var(--border)]/50 text-[10px] text-[var(--text-muted)] space-y-1">
+                    <div className="mt-2 p-2 rounded bg-background border border-border/50 text-[10px] text-muted-foreground space-y-1">
                       {agent.task && (
                         <div>
-                          <span className="text-[var(--text-secondary)] font-medium">Task:</span> {agent.task}
+                          <span className="text-secondary-foreground font-medium">Task:</span> {agent.task}
                         </div>
                       )}
                       {agent.outputPreview && (
                         <div>
-                          <span className="text-[var(--text-secondary)] font-medium">Output:</span>{' '}
+                          <span className="text-secondary-foreground font-medium">Output:</span>{' '}
                           <span className="font-mono whitespace-pre-wrap">{agent.outputPreview}</span>
                         </div>
                       )}

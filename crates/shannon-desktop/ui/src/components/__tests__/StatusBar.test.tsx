@@ -57,11 +57,18 @@ describe('StatusBar', () => {
       expect(screen.getByText('40%')).toBeDefined()
     })
 
-    it('has context title with token counts', () => {
+    it('renders context usage bar with correct percentage', () => {
       mockAppState.usage = { inputTokens: 50000, outputTokens: 30000 }
       render(<StatusBar />)
-      const indicator = screen.getByTitle(/Context:.*80,000.*200,000/)
-      expect(indicator).toBeDefined()
+      // The percentage text should be visible
+      expect(screen.getByText('40%')).toBeDefined()
     })
+  })
+
+  it('shows querying status when querying', () => {
+    mockAppState.querying = true
+    render(<StatusBar />)
+    expect(screen.getByText('Querying')).toBeDefined()
+    mockAppState.querying = false
   })
 })

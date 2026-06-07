@@ -1,7 +1,9 @@
 // Diff viewer with unified and split views, syntax highlighting, and hunk actions
 import { useState, useMemo, useRef, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, Check, X, Columns2, Rows3, MessageSquare, Send } from 'lucide-react'
-
+import { Check, X, Columns2, Rows3, MessageSquare, Send } from 'lucide-react'
+import { Card, CardHeader, CardContent } from './ui/card'
+import { Badge } from './ui/badge'
+import { Button } from './ui/button'
 type ViewMode = 'unified' | 'split'
 
 interface DiffLine {
@@ -227,242 +229,252 @@ export function DiffViewer({
 
   const lineClass = (type: DiffLine['type']) => {
     switch (type) {
-      case 'added': return 'bg-[var(--success)]/10 text-[var(--text-primary)]'
-      case 'removed': return 'bg-[var(--error)]/10 text-[var(--text-primary)]'
-      default: return 'text-[var(--text-muted)]'
+      case 'added': return 'bg-success/10 text-foreground'
+      case 'removed': return 'bg-destructive/10 text-foreground'
+      default: return 'text-muted-foreground'
     }
   }
 
   const gutterSign = (type: DiffLine['type']) => {
     switch (type) {
-      case 'added': return <span className="text-[var(--success)]">+</span>
-      case 'removed': return <span className="text-[var(--error)]">-</span>
-      default: return <span className="text-[var(--text-muted)]/40"> </span>
+      case 'added': return <span className="text-success">+</span>
+      case 'removed': return <span className="text-destructive">-</span>
+      default: return <span className="text-muted-foreground/40"> </span>
     }
   }
 
   return (
-    <div className="my-2 rounded-lg border border-[var(--border)] overflow-hidden bg-[var(--bg-primary)]">
+    <Card className="my-2 overflow-hidden">
       {/* Empty state for identical files */}
       {!hasChanges && (
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-[var(--text-muted)]">
-          <Check className="w-12 h-12 text-[var(--success)] mb-4" />
-          <h3 className="text-lg font-medium text-[var(--text-primary)] mb-2">Files are identical</h3>
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-muted-foreground">
+          <Check className="w-12 h-12 text-success mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">Files are identical</h3>
           <p className="text-sm">No changes detected between versions</p>
         </div>
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <CardHeader className="flex flex-row items-center justify-between px-3 py-2 bg-secondary border-b border-border space-y-0">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[300px]">
-            {fileName || 'diff'}
-          </span>
-          <span className="text-xs text-[var(--text-muted)]">{lang}</span>
+          <Badge variant="outline">{fileName || 'diff'}</Badge>
+          <span className="text-xs text-muted-foreground">{lang}</span>
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-[var(--success)]">+{stats.added}</span>
-            <span className="text-[var(--text-muted)]">/</span>
-            <span className="text-[var(--error)]">-{stats.removed}</span>
+            <span className="text-success">+{stats.added}</span>
+            <span className="text-muted-foreground">/</span>
+            <span className="text-destructive">-{stats.removed}</span>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button
+          <Button
+            variant={mode === 'unified' ? 'secondary' : 'ghost'}
+            size="icon"
             onClick={() => setMode('unified')}
-            className={`p-1 rounded transition-colors ${mode === 'unified' ? 'bg-[var(--accent)]/20 text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
             title="Unified view"
+            className="h-6 w-6"
           >
             <Rows3 className="w-3.5 h-3.5" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant={mode === 'split' ? 'secondary' : 'ghost'}
+            size="icon"
             onClick={() => setMode('split')}
-            className={`p-1 rounded transition-colors ${mode === 'split' ? 'bg-[var(--accent)]/20 text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'}`}
             title="Split view"
+            className="h-6 w-6"
           >
             <Columns2 className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
-      </div>
+      </CardHeader>
 
       {/* Diff content */}
       {mode === 'unified' ? (
-        <div className="overflow-x-auto text-[12px] font-mono leading-[20px]">
-          {hunks.map((hunk, hunkIdx) => {
-            const resolved = acceptedHunks.has(hunkIdx) || rejectedHunks.has(hunkIdx)
-            return (
-              <div key={hunkIdx} className={resolved ? 'opacity-40' : ''}>
-                {/* Hunk actions */}
-                {(onAcceptHunk || onRejectHunk) && !resolved && hunks.length > 1 && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-[var(--bg-secondary)]/50 border-y border-[var(--border)]/50">
-                    <button
-                      onClick={() => handleAccept(hunkIdx)}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[var(--success)]/10 text-[var(--success)] hover:bg-[var(--success)]/20 transition-colors"
-                    >
-                      <Check className="w-3 h-3" /> Accept
-                    </button>
-                    <button
-                      onClick={() => handleReject(hunkIdx)}
-                      className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] bg-[var(--error)]/10 text-[var(--error)] hover:bg-[var(--error)]/20 transition-colors"
-                    >
-                      <X className="w-3 h-3" /> Reject
-                    </button>
-                    <span className="text-[10px] text-[var(--text-muted)]">Hunk {hunkIdx + 1}/{hunks.length}</span>
-                  </div>
-                )}
-                {hunk.lines.map((line, lineIdx) => {
-                  const globalIdx = hunk.startIndex + lineIdx
-                  return (
-                    <div key={lineIdx}>
-                      <div className={`group/flex flex ${lineClass(line.type)}`}>
-                        <span className="w-10 flex-shrink-0 text-right pr-2 text-[var(--text-muted)]/40 select-none border-r border-[var(--border)]/30">
-                          {line.oldLineNo ?? ''}
-                        </span>
-                        <span className="w-10 flex-shrink-0 text-right pr-2 text-[var(--text-muted)]/40 select-none border-r border-[var(--border)]/30">
-                          {line.newLineNo ?? ''}
-                        </span>
-                        <span className="w-5 flex-shrink-0 text-center select-none">{gutterSign(line.type)}</span>
-                        <pre className="flex-1 pl-2 whitespace-pre-wrap break-all">{line.content}</pre>
-                        {onComment && (
-                          <button
-                            onClick={() => handleToggleComment(globalIdx)}
-                            className="flex-shrink-0 w-6 flex items-center justify-center opacity-0 group-hover/flex:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--accent)]"
-                            title="Add comment"
-                          >
-                            <MessageSquare className="w-3 h-3" />
-                          </button>
-                        )}
-                        {comments.has(globalIdx) && (
-                          <span className="flex-shrink-0 w-6 flex items-center justify-center text-[var(--accent)]">
-                            <MessageSquare className="w-3 h-3 fill-current" />
+        <CardContent className="p-0">
+          <div className="overflow-x-auto text-[12px] font-mono leading-[20px]">
+            {hunks.map((hunk, hunkIdx) => {
+              const resolved = acceptedHunks.has(hunkIdx) || rejectedHunks.has(hunkIdx)
+              return (
+                <div key={hunkIdx} className={resolved ? 'opacity-40' : ''}>
+                  {/* Hunk actions */}
+                  {(onAcceptHunk || onRejectHunk) && !resolved && hunks.length > 1 && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-secondary/50 border-y border-border/50">
+                      <Button
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleAccept(hunkIdx)}
+                        className="h-5 text-[10px] px-2 py-0"
+                      >
+                        <Check className="w-3 h-3 mr-1" /> Accept
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleReject(hunkIdx)}
+                        className="h-5 text-[10px] px-2 py-0"
+                      >
+                        <X className="w-3 h-3 mr-1" /> Reject
+                      </Button>
+                      <span className="text-[10px] text-muted-foreground">Hunk {hunkIdx + 1}/{hunks.length}</span>
+                    </div>
+                  )}
+                  {hunk.lines.map((line, lineIdx) => {
+                    const globalIdx = hunk.startIndex + lineIdx
+                    return (
+                      <div key={lineIdx}>
+                        <div className={`group/flex flex ${lineClass(line.type)}`}>
+                          <span className="w-10 flex-shrink-0 text-right pr-2 text-muted-foreground/40 select-none border-r border-border/30">
+                            {line.oldLineNo ?? ''}
                           </span>
+                          <span className="w-10 flex-shrink-0 text-right pr-2 text-muted-foreground/40 select-none border-r border-border/30">
+                            {line.newLineNo ?? ''}
+                          </span>
+                          <span className="w-5 flex-shrink-0 text-center select-none">{gutterSign(line.type)}</span>
+                          <pre className="flex-1 pl-2 whitespace-pre-wrap break-all">{line.content}</pre>
+                          {onComment && (
+                            <button
+                              onClick={() => handleToggleComment(globalIdx)}
+                              className="flex-shrink-0 w-6 flex items-center justify-center opacity-0 group-hover/flex:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                              title="Add comment"
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                            </button>
+                          )}
+                          {comments.has(globalIdx) && (
+                            <span className="flex-shrink-0 w-6 flex items-center justify-center text-primary">
+                              <MessageSquare className="w-3 h-3 fill-current" />
+                            </span>
+                          )}
+                        </div>
+                        {commentingLine === globalIdx && (
+                          <div className="flex items-center gap-2 px-12 py-1.5 bg-secondary border-b border-border/30">
+                            <input
+                              type="text"
+                              value={commentDraft}
+                              onChange={e => setCommentDraft(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault()
+                                  handleSubmitComment(globalIdx, line)
+                                }
+                                if (e.key === 'Escape') {
+                                  setCommentingLine(null)
+                                  setCommentDraft('')
+                                }
+                              }}
+                              placeholder="Comment on this line..."
+                              className="flex-1 px-2 py-1 text-[11px] bg-background border border-border rounded text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-ring"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleSubmitComment(globalIdx, line)}
+                              disabled={!commentDraft.trim()}
+                              className="p-1 rounded text-primary hover:bg-primary/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                              title="Submit comment"
+                            >
+                              <Send className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+                        {comments.has(globalIdx) && commentingLine !== globalIdx && (
+                          <div className="px-12 py-1 text-[11px] text-secondary-foreground bg-secondary/50 border-b border-border/20">
+                            {comments.get(globalIdx)}
+                          </div>
                         )}
                       </div>
-                      {commentingLine === globalIdx && (
-                        <div className="flex items-center gap-2 px-12 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]/30">
-                          <input
-                            type="text"
-                            value={commentDraft}
-                            onChange={e => setCommentDraft(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSubmitComment(globalIdx, line)
-                              }
-                              if (e.key === 'Escape') {
-                                setCommentingLine(null)
-                                setCommentDraft('')
-                              }
-                            }}
-                            placeholder="Comment on this line..."
-                            className="flex-1 px-2 py-1 text-[11px] bg-[var(--bg-primary)] border border-[var(--border)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none focus:border-[var(--accent)]"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleSubmitComment(globalIdx, line)}
-                            disabled={!commentDraft.trim()}
-                            className="p-1 rounded text-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                            title="Submit comment"
-                          >
-                            <Send className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                      {comments.has(globalIdx) && commentingLine !== globalIdx && (
-                        <div className="px-12 py-1 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-secondary)]/50 border-b border-[var(--border)]/20">
-                          {comments.get(globalIdx)}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        <div className="flex divide-x divide-[var(--border)] overflow-hidden">
-          <div ref={splitOldRef} onScroll={handleOldScroll} className="flex-1 overflow-x-auto overflow-y-auto max-h-[400px] text-[12px] font-mono leading-[20px]">
-            {diffLines.map((line, i) => (
-              <div key={i} className={`flex ${line.type === 'removed' ? 'bg-[var(--error)]/10' : ''}`}>
-                <span className="w-10 flex-shrink-0 text-right pr-2 text-[var(--text-muted)]/40 select-none border-r border-[var(--border)]/30">
-                  {line.oldLineNo ?? ''}
-                </span>
-                <span className="w-5 flex-shrink-0 text-center select-none">
-                  {line.type === 'removed' ? <span className="text-[var(--error)]">-</span> : ' '}
-                </span>
-                <pre className="flex-1 pl-2 whitespace-pre-wrap break-all text-[var(--text-muted)]">
-                  {line.type !== 'added' ? line.content : ''}
-                </pre>
-              </div>
-            ))}
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
-          <div ref={splitNewRef} className="flex-1 overflow-x-auto overflow-y-auto max-h-[400px] text-[12px] font-mono leading-[20px]">
-            {diffLines.map((line, i) => (
-              <div key={i}>
-                <div className={`group/split flex ${line.type === 'added' ? 'bg-[var(--success)]/10' : ''}`}>
-                  <span className="w-10 flex-shrink-0 text-right pr-2 text-[var(--text-muted)]/40 select-none border-r border-[var(--border)]/30">
-                    {line.newLineNo ?? ''}
+        </CardContent>
+      ) : (
+        <CardContent className="p-0">
+          <div className="flex divide-x divide-border overflow-hidden">
+            <div ref={splitOldRef} onScroll={handleOldScroll} className="flex-1 overflow-x-auto overflow-y-auto max-h-[400px] text-[12px] font-mono leading-[20px]">
+              {diffLines.map((line, i) => (
+                <div key={i} className={`flex ${line.type === 'removed' ? 'bg-destructive/10' : ''}`}>
+                  <span className="w-10 flex-shrink-0 text-right pr-2 text-muted-foreground/40 select-none border-r border-border/30">
+                    {line.oldLineNo ?? ''}
                   </span>
                   <span className="w-5 flex-shrink-0 text-center select-none">
-                    {line.type === 'added' ? <span className="text-[var(--success)]">+</span> : ' '}
+                    {line.type === 'removed' ? <span className="text-destructive">-</span> : ' '}
                   </span>
-                  <pre className="flex-1 pl-2 whitespace-pre-wrap break-all text-[var(--text-muted)]">
-                    {line.type !== 'removed' ? line.content : ''}
+                  <pre className="flex-1 pl-2 whitespace-pre-wrap break-all text-muted-foreground">
+                    {line.type !== 'added' ? line.content : ''}
                   </pre>
-                  {onComment && line.type !== 'unchanged' && (
-                    <button
-                      onClick={() => handleToggleComment(i)}
-                      className="flex-shrink-0 w-6 flex items-center justify-center opacity-0 group-hover/split:opacity-100 transition-opacity text-[var(--text-muted)] hover:text-[var(--accent)]"
-                      title="Add comment"
-                    >
-                      <MessageSquare className="w-3 h-3" />
-                    </button>
-                  )}
-                  {comments.has(i) && (
-                    <span className="flex-shrink-0 w-6 flex items-center justify-center text-[var(--accent)]">
-                      <MessageSquare className="w-3 h-3 fill-current" />
+                </div>
+              ))}
+            </div>
+            <div ref={splitNewRef} className="flex-1 overflow-x-auto overflow-y-auto max-h-[400px] text-[12px] font-mono leading-[20px]">
+              {diffLines.map((line, i) => (
+                <div key={i}>
+                  <div className={`group/split flex ${line.type === 'added' ? 'bg-success/10' : ''}`}>
+                    <span className="w-10 flex-shrink-0 text-right pr-2 text-muted-foreground/40 select-none border-r border-border/30">
+                      {line.newLineNo ?? ''}
                     </span>
+                    <span className="w-5 flex-shrink-0 text-center select-none">
+                      {line.type === 'added' ? <span className="text-success">+</span> : ' '}
+                    </span>
+                    <pre className="flex-1 pl-2 whitespace-pre-wrap break-all text-muted-foreground">
+                      {line.type !== 'removed' ? line.content : ''}
+                    </pre>
+                    {onComment && line.type !== 'unchanged' && (
+                      <button
+                        onClick={() => handleToggleComment(i)}
+                        className="flex-shrink-0 w-6 flex items-center justify-center opacity-0 group-hover/split:opacity-100 transition-opacity text-muted-foreground hover:text-primary"
+                        title="Add comment"
+                      >
+                        <MessageSquare className="w-3 h-3" />
+                      </button>
+                    )}
+                    {comments.has(i) && (
+                      <span className="flex-shrink-0 w-6 flex items-center justify-center text-primary">
+                        <MessageSquare className="w-3 h-3 fill-current" />
+                      </span>
+                    )}
+                  </div>
+                  {commentingLine === i && (
+                    <div className="flex items-center gap-2 px-12 py-1.5 bg-secondary border-b border-border/30">
+                      <input
+                        type="text"
+                        value={commentDraft}
+                        onChange={e => setCommentDraft(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSubmitComment(i, line)
+                          }
+                          if (e.key === 'Escape') {
+                            setCommentingLine(null)
+                            setCommentDraft('')
+                          }
+                        }}
+                        placeholder="Comment on this line..."
+                        className="flex-1 px-2 py-1 text-[11px] bg-background border border-border rounded text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-ring"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSubmitComment(i, line)}
+                        disabled={!commentDraft.trim()}
+                        className="p-1 rounded text-primary hover:bg-primary/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        title="Submit comment"
+                      >
+                        <Send className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  {comments.has(i) && commentingLine !== i && (
+                    <div className="px-12 py-1 text-[11px] text-secondary-foreground bg-secondary/50 border-b border-border/20">
+                      {comments.get(i)}
+                    </div>
                   )}
                 </div>
-                {commentingLine === i && (
-                  <div className="flex items-center gap-2 px-12 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]/30">
-                    <input
-                      type="text"
-                      value={commentDraft}
-                      onChange={e => setCommentDraft(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault()
-                          handleSubmitComment(i, line)
-                        }
-                        if (e.key === 'Escape') {
-                          setCommentingLine(null)
-                          setCommentDraft('')
-                        }
-                      }}
-                      placeholder="Comment on this line..."
-                      className="flex-1 px-2 py-1 text-[11px] bg-[var(--bg-primary)] border border-[var(--border)] rounded text-[var(--text-primary)] placeholder:text-[var(--text-muted)]/50 focus:outline-none focus:border-[var(--accent)]"
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => handleSubmitComment(i, line)}
-                      disabled={!commentDraft.trim()}
-                      className="p-1 rounded text-[var(--accent)] hover:bg-[var(--accent)]/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                      title="Submit comment"
-                    >
-                      <Send className="w-3 h-3" />
-                    </button>
-                  </div>
-                )}
-                {comments.has(i) && commentingLine !== i && (
-                  <div className="px-12 py-1 text-[11px] text-[var(--text-secondary)] bg-[var(--bg-secondary)]/50 border-b border-[var(--border)]/20">
-                    {comments.get(i)}
-                  </div>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   )
 }

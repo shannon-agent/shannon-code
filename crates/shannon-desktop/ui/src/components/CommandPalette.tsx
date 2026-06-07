@@ -1,8 +1,10 @@
-// Command palette with fuzzy search
-import { useState, useEffect, useRef } from 'react'
-import { Search, X, Plus, Settings, Layers, Sun, Sidebar, MessageSquare, Terminal, Zap } from 'lucide-react'
+// Command palette with fuzzy search using cmdk
+import { useState, useEffect } from 'react'
+import { Plus, Settings, Layers, Sun, Sidebar, MessageSquare, Terminal } from 'lucide-react'
 import { searchSessions } from '../lib/tauri-api'
 import type { SessionInfo } from '../types/tauri-events'
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandShortcut } from './ui/command'
+import { Kbd } from './ui/kbd'
 
 interface SkillInfo {
   name: string
@@ -36,12 +38,11 @@ interface CommandPaletteProps {
 }
 
 /**
- * Command palette modal with fuzzy search
+ * Command palette modal using cmdk
  * - Triggered by Ctrl+K
- * - Fuzzy filtering of actions
- * - Keyboard navigation (up/down, Enter, Escape)
+ * - Fuzzy filtering via cmdk
+ * - Keyboard navigation built-in
  * - Actions: New Session, Open Settings, Switch Model, Toggle Sidebar, Toggle Theme
- * - Tokyo Night styling with backdrop blur
  */
 export function CommandPalette({
   isOpen,
@@ -54,13 +55,10 @@ export function CommandPalette({
   onSessionSelect,
   onInsertSkillTrigger
 }: CommandPaletteProps) {
-  const [query, setQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
   const [sessionResults, setSessionResults] = useState<SessionInfo[]>([])
   const [searchingSessions, setSearchingSessions] = useState(false)
   const [skills, setSkills] = useState<SkillInfo[]>([])
-  const [loadingSkills, setLoadingSkills] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState('')
 
   const actions: Action[] = [
     { id: 'new-session', label: 'New Session', icon: Plus, shortcut: 'Ctrl+N', execute: onNewSession },
@@ -79,13 +77,11 @@ export function CommandPalette({
 
   // Load skills from backend
   const loadSkills = async () => {
-    setLoadingSkills(true)
     try {
       if (window.__TAURI__) {
         const result = await window.__TAURI__.invoke('list_skills')
-        setSkills(result)
+        setSkills(result as SkillInfo[])
       } else {
-        // Fallback mock skills
         setSkills([
           { name: 'commit', description: 'Create git commits', trigger: '/commit', source: 'claude' },
           { name: 'help', description: 'Show help', trigger: '/help', source: 'shannon' },
@@ -94,8 +90,6 @@ export function CommandPalette({
       }
     } catch (err) {
       console.error('Failed to load skills:', err)
-    } finally {
-      setLoadingSkills(false)
     }
   }
 
@@ -137,74 +131,18 @@ export function CommandPalette({
     skillTrigger: skill.trigger
   }))
 
-  const allItems = [...actions, ...sessionActions, ...skillActions]
-
-  const filteredActions = allItems.filter(action =>
-    action.label.toLowerCase().includes(query.toLowerCase())
-  )
-
-  // Fuzzy match highlight - safe React version
-  const highlightMatch = (text: string, query: string) => {
-    if (!query) return [{ text: text, highlight: false }]
-
-    const parts: { text: string; highlight: boolean }[] = []
-    let remainingText = text
-    let queryIndex = 0
-
-    for (let i = 0; i < text.length && queryIndex < query.length; i++) {
-      if (text[i].toLowerCase() === query[queryIndex].toLowerCase()) {
-        if (remainingText) {
-          parts.push({ text: remainingText, highlight: false })
-          remainingText = ''
-        }
-        parts.push({ text: text[i], highlight: true })
-        queryIndex++
-      } else if (remainingText) {
-        remainingText = ''
-        parts.push({ text: text[i], highlight: false })
-      } else {
-        parts[parts.length - 1].text += text[i]
-      }
-    }
-
-    if (remainingText || queryIndex === 0) {
-      parts.push({ text: text, highlight: false })
-    }
-
-    return parts
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault()
-        setSelectedIndex((prev) => (prev + 1) % filteredActions.length)
-        break
-      case 'ArrowUp':
-        e.preventDefault()
-        setSelectedIndex((prev) => (prev - 1 + filteredActions.length) % filteredActions.length)
-        break
-      case 'Enter':
-        e.preventDefault()
-        if (filteredActions[selectedIndex]) {
-          filteredActions[selectedIndex].execute()
-          onClose()
-        }
-        break
-      case 'Escape':
+  // Global keyboard shortcut Ctrl+K to close
+  useEffect(() => {
+    if (!isOpen) return
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         e.preventDefault()
         onClose()
-        break
+      }
     }
-  }
-
-  useEffect(() => {
-    if (isOpen) {
-      setQuery('')
-      setSelectedIndex(0)
-      inputRef.current?.focus()
-    }
-  }, [isOpen])
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
@@ -212,104 +150,101 @@ export function CommandPalette({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="relative bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-2xl w-full max-w-xl mx-4 overflow-hidden">
-        {/* Search Input */}
-        <div className="flex items-center px-4 py-3 border-b border-[var(--border)]">
-          <Search className="text-[var(--text-muted)] mr-3" size={20} />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
+      <div className="relative w-full max-w-xl mx-4 shadow-2xl border border-border rounded-lg overflow-hidden bg-background">
+        <Command shouldFilter={true} className="bg-background">
+          <CommandInput
             placeholder="Type a command or search..."
-            className="flex-1 bg-transparent text-[var(--text-primary)] placeholder-[#565f89] outline-none"
+            onValueChange={setQuery}
           />
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-[var(--bg-secondary)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Action List */}
-        <div className="max-h-80 overflow-y-auto py-2">
-          {filteredActions.length === 0 ? (
-            <div className="px-4 py-8 text-center text-[var(--text-muted)]">
+          <CommandList className="max-h-80">
+            <CommandEmpty>
               {searchingSessions ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="animate-spin h-5 w-5 border-2 border-[var(--accent)] border-t-transparent rounded-full" />
-                  <span>Searching...</span>
+                <div className="flex flex-col items-center gap-2 py-6">
+                  <div className="animate-spin h-5 w-5 border-2 border-ring border-t-transparent rounded-full" />
+                  <span className="text-sm text-muted-foreground">Searching...</span>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <Search className="w-8 h-8 opacity-50" />
-                  <span>No results found</span>
-                  <span className="text-xs">Try a different search term</span>
-                </div>
+                <span>No results found</span>
               )}
-            </div>
-          ) : (
-            filteredActions.map((action, index) => {
-              const Icon = action.icon
-              const isSelected = index === selectedIndex
-              const isSession = action.type === 'session'
+            </CommandEmpty>
 
-              return (
-                <button
-                  key={action.id}
-                  onClick={() => {
-                    action.execute()
-                    onClose()
-                  }}
-                  onMouseEnter={() => setSelectedIndex(index)}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 transition-colors
-                    ${isSelected ? 'bg-[var(--bg-tertiary)] text-[var(--accent)]' : 'text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'}
-                  `}
-                >
-                  <Icon className="flex-shrink-0" size={18} strokeWidth={2} />
-                  <span className="flex-1 text-left">
-                    {highlightMatch(action.label, query).map((part, i) => (
-                      <span
-                        key={i}
-                        className={part.highlight ? 'text-[var(--accent)] font-bold' : ''}
-                      >
-                        {part.text}
-                      </span>
-                    ))}
-                  </span>
-                  {!isSession && action.type !== 'skill' && (
-                    <span className="text-xs text-[var(--text-muted)]">
-                      {action.shortcut}
-                    </span>
-                  )}
-                  {action.type === 'skill' && (
-                    <span className="text-xs px-2 py-1 bg-[var(--bg-primary)] text-[var(--accent)] rounded">
-                      {action.shortcut}
-                    </span>
-                  )}
-                  {isSession && (
-                    <span className="text-xs text-[var(--text-muted)]">Session</span>
-                  )}
-                </button>
-              )
-            })
-          )}
-        </div>
+            {/* Actions */}
+            <CommandGroup heading="Actions">
+              {actions.map((action) => {
+                const Icon = action.icon
+                return (
+                  <CommandItem
+                    key={action.id}
+                    onSelect={() => {
+                      action.execute()
+                      onClose()
+                    }}
+                  >
+                    <Icon className="flex-shrink-0 h-[18px] w-[18px]" />
+                    <span>{action.label}</span>
+                    <CommandShortcut>{action.shortcut}</CommandShortcut>
+                  </CommandItem>
+                )
+              })}
+            </CommandGroup>
 
-        {/* Footer */}
-        <div className="px-4 py-2 border-t border-[var(--border)] flex items-center gap-4 text-xs text-[var(--text-muted)]">
-          <span>↑↓ Navigate</span>
-          <span>Enter Execute</span>
-          <span>Esc Close</span>
-        </div>
+            {/* Sessions */}
+            {sessionActions.length > 0 && (
+              <CommandGroup heading="Sessions">
+                {sessionActions.map((action) => {
+                  const Icon = action.icon
+                  return (
+                    <CommandItem
+                      key={action.id}
+                      onSelect={() => {
+                        action.execute()
+                        onClose()
+                      }}
+                    >
+                      <Icon className="flex-shrink-0 h-[18px] w-[18px]" />
+                      <span>{action.label}</span>
+                      <CommandShortcut>Session</CommandShortcut>
+                    </CommandItem>
+                  )
+                })}
+              </CommandGroup>
+            )}
+
+            {/* Skills */}
+            {skillActions.length > 0 && (
+              <CommandGroup heading="Skills">
+                {skillActions.map((action) => {
+                  const Icon = action.icon
+                  return (
+                    <CommandItem
+                      key={action.id}
+                      onSelect={() => {
+                        action.execute()
+                        onClose()
+                      }}
+                    >
+                      <Icon className="flex-shrink-0 h-[18px] w-[18px]" />
+                      <span>{action.label}</span>
+                      <Kbd className="ml-auto">{action.shortcut}</Kbd>
+                    </CommandItem>
+                  )
+                })}
+              </CommandGroup>
+            )}
+          </CommandList>
+
+          {/* Footer */}
+          <div className="px-4 py-2 border-t border-border flex items-center gap-4 text-xs text-muted-foreground">
+            <span>↑↓ Navigate</span>
+            <span>Enter Execute</span>
+            <span>Esc Close</span>
+          </div>
+        </Command>
       </div>
     </div>
   )

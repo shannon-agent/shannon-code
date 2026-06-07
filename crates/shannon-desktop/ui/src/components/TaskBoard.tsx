@@ -24,10 +24,10 @@ interface TaskBoardProps {
 }
 
 const STATUS_CONFIG = {
-  pending: { icon: Circle, color: 'text-[var(--text-muted)]', badge: 'secondary' as const },
-  in_progress: { icon: Clock, color: 'text-[var(--accent)]', pulse: true, badge: 'default' as const },
-  completed: { icon: CheckCircle2, color: 'text-[var(--success)]', badge: 'success' as const },
-  failed: { icon: AlertCircle, color: 'text-[var(--error)]', badge: 'error' as const },
+  pending: { icon: Circle, color: 'text-muted-foreground', badge: 'secondary' as const },
+  in_progress: { icon: Clock, color: 'text-primary', pulse: true, badge: 'default' as const },
+  completed: { icon: CheckCircle2, color: 'text-success', badge: 'success' as const },
+  failed: { icon: AlertCircle, color: 'text-destructive', badge: 'error' as const },
 }
 
 const FILTER_TABS: { key: TaskFilter; label: string }[] = [
@@ -47,10 +47,10 @@ function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (
       className={cn(
         'px-3 py-2 cursor-pointer transition-colors duration-100',
         isSelected
-          ? 'bg-[var(--accent)]/10 border-l-2 border-l-[var(--accent)]'
+          ? 'bg-primary/10 border-l-2 border-l-ring'
           : task.status === 'in_progress'
-            ? 'bg-[var(--bg-secondary)]/50'
-            : 'hover:bg-[var(--bg-secondary)]/30'
+            ? 'bg-secondary/50'
+            : 'hover:bg-secondary/30'
       )}
     >
       <div className="flex items-start gap-2">
@@ -58,12 +58,12 @@ function TaskCard({ task, onSelect, isSelected }: { task: TaskItem; onSelect?: (
         <div className="min-w-0 flex-1">
           <p className={cn(
             'text-[12px] truncate',
-            task.status === 'completed' ? 'line-through text-[var(--text-muted)]' : 'text-[var(--text-secondary)]'
+            task.status === 'completed' ? 'line-through text-muted-foreground' : 'text-secondary-foreground'
           )}>
             {task.subject}
           </p>
           {task.description && (
-            <p className="text-[10px] text-[var(--text-muted)] truncate mt-0.5">{task.description}</p>
+            <p className="text-[10px] text-muted-foreground truncate mt-0.5">{task.description}</p>
           )}
           {task.owner && (
             <Badge variant="outline" className="text-[9px] mt-0.5">{task.owner}</Badge>
@@ -105,10 +105,10 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-secondary border-b border-border">
         <div className="flex items-center gap-2">
-          <ListTodo className="w-3.5 h-3.5 text-[var(--accent)]" />
-          <span className="text-xs font-medium text-[var(--text-secondary)]">Tasks</span>
+          <ListTodo className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-secondary-foreground">Tasks</span>
         </div>
         <div className="flex items-center gap-1.5">
           {counts.in_progress > 0 && <Badge variant="default" className="text-[9px]">{counts.in_progress} active</Badge>}
@@ -117,7 +117,7 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors"
+              className="p-1 rounded text-muted-foreground hover:text-secondary-foreground hover:bg-secondary transition-colors"
               title="Refresh tasks"
             >
               <RefreshCw className="w-3 h-3" />
@@ -127,7 +127,7 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-[var(--border)]/50 bg-[var(--bg-secondary)]/30">
+      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/50 bg-secondary/30">
         {FILTER_TABS.map(tab => {
           const count = tab.key === 'all'
             ? tasks.length
@@ -141,8 +141,8 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
               className={cn(
                 'px-2 py-0.5 text-[10px] rounded transition-colors',
                 filter === tab.key
-                  ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-secondary-foreground'
               )}
             >
               {tab.label} {count > 0 && `(${count})`}
@@ -154,7 +154,7 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
       <ScrollArea className="flex-1">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center h-32 p-4">
-            <p className="text-[var(--text-muted)] text-[11px]">
+            <p className="text-muted-foreground text-[11px]">
               {tasks.length === 0 ? 'No tasks' : 'No matching tasks'}
             </p>
           </div>
@@ -173,8 +173,8 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
       {tasks.length > 0 && (
         <>
           <Separator />
-          <div className="px-3 py-1.5 bg-[var(--bg-secondary)]/50">
-            <div className="flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+          <div className="px-3 py-1.5 bg-secondary/50">
+            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <span>{tasks.length} task{tasks.length !== 1 ? 's' : ''}</span>
               <span>{counts.pending + counts.in_progress} remaining</span>
             </div>

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Zap, Settings, Keyboard, ArrowRight, Check } from 'lucide-react'
 import { Button } from './ui/button'
+import { Kbd } from './ui/kbd'
 
 interface WelcomePageProps {
   onComplete: () => void
@@ -11,12 +12,31 @@ const STEPS = [
   {
     icon: Settings,
     title: 'Configure your provider',
-    description: 'Add your API key in Settings to get started. Shannon supports Anthropic, OpenAI, DeepSeek, and Ollama.',
+    description: (
+      <>
+        Add your API key in Settings to get started. Shannon supports Anthropic, OpenAI, DeepSeek, and Ollama.
+      </>
+    ),
   },
   {
     icon: Keyboard,
     title: 'Keyboard shortcuts',
-    description: 'Ctrl+Enter to send, Ctrl+O to cycle view modes, Ctrl+K for commands, Ctrl+L to clear chat.',
+    description: (
+      <div className="space-y-1.5 mt-1">
+        <div className="flex items-center gap-2">
+          <Kbd>Ctrl+Enter</Kbd> <span>to send</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Kbd>Ctrl+O</Kbd> <span>to cycle view modes</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Kbd>Ctrl+K</Kbd> <span>for commands</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Kbd>Ctrl+L</Kbd> <span>to clear chat</span>
+        </div>
+      </div>
+    ),
   },
   {
     icon: Zap,
@@ -31,22 +51,22 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
   const isLast = currentStep === STEPS.length - 1
 
   return (
-    <div className="flex flex-col items-center justify-center h-full bg-[var(--bg-primary)] p-8">
+    <div className="flex flex-col items-center justify-center h-full bg-background p-8">
       <div className="max-w-md w-full space-y-10">
         {/* Branding */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold">
-            <span className="bg-gradient-to-r from-[var(--accent)] to-[var(--purple)] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">
               Shannon Code
             </span>
           </h1>
-          <p className="text-[var(--text-muted)] text-sm">
+          <p className="text-muted-foreground text-sm">
             Your AI coding assistant. Let's get started.
           </p>
         </div>
 
         {/* Step content */}
-        <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-2xl p-6 space-y-4 border border-[var(--glass-border)]">
+        <div className="bg-glass-bg rounded-2xl p-6 space-y-4 border border-glass-border">
           {STEPS.map((step, i) => {
             const Icon = step.icon
             const isActive = i === currentStep
@@ -55,17 +75,17 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
             return (
               <div
                 key={i}
-                className={`flex items-start gap-3 transition-all duration-200 ${isActive ? 'opacity-100 cursor-default' : isDone ? 'opacity-50' : 'opacity-30 hover:bg-[var(--bg-secondary)] rounded-md cursor-pointer'}`}
+                className={`flex items-start gap-3 transition-all duration-200 ${isActive ? 'opacity-100 cursor-default' : isDone ? 'opacity-50' : 'opacity-30 hover:bg-secondary rounded-md cursor-pointer'}`}
               >
-                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-[var(--success)]/20 text-[var(--success)]' : isActive ? 'bg-[var(--accent)]/20 text-[var(--accent)]' : 'bg-[var(--bg-input)] text-[var(--text-muted)]'}`}>
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${isDone ? 'bg-success/20 text-success' : isActive ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
                   {isDone ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-[var(--text-secondary)]">{step.title}</h3>
+                  <h3 className="text-sm font-medium text-secondary-foreground">{step.title}</h3>
                   {isActive && (
-                    <p className="text-[12px] text-[var(--text-muted)] mt-1 leading-relaxed animate-message-in">
+                    <div className="text-[12px] text-muted-foreground mt-1 leading-relaxed animate-message-in">
                       {step.description}
-                    </p>
+                    </div>
                   )}
                 </div>
               </div>
@@ -78,7 +98,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
           {STEPS.map((_, i) => (
             <div
               key={i}
-              className={`w-2 h-2 rounded-full transition-colors duration-[var(--duration-normal)] ${i === currentStep ? 'bg-[var(--accent)]' : i < currentStep ? 'bg-[var(--success)]' : 'bg-[var(--border)]'}`}
+              className={`w-2 h-2 rounded-full transition-colors duration-[var(--duration-normal)] ${i === currentStep ? 'bg-primary' : i < currentStep ? 'bg-success' : 'bg-border'}`}
             />
           ))}
         </div>
@@ -89,7 +109,7 @@ export function WelcomePage({ onComplete }: WelcomePageProps) {
             variant="ghost"
             size="sm"
             onClick={onComplete}
-            className="text-[var(--text-muted)] text-xs"
+            className="text-muted-foreground text-xs"
           >
             Skip
           </Button>

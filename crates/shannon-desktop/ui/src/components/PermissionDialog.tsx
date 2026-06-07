@@ -58,11 +58,9 @@ export function PermissionDialog({
       e.preventDefault()
       setExpanded(false)
     } else if (e.key === 'Enter' && e.shiftKey && request) {
-      // Shift+Enter to deny
       e.preventDefault()
       handleDeny()
     } else if (e.key === 'Enter' && request) {
-      // Enter to allow
       e.preventDefault()
       handleApprove()
     }
@@ -116,15 +114,15 @@ export function PermissionDialog({
       aria-modal="false"
     >
       <div
-        className="rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] overflow-hidden transition-all duration-150"
+        className="rounded-lg border border-border bg-secondary overflow-hidden transition-all duration-150"
         onKeyDown={handleKeyDown}
       >
         {/* Header row */}
         <div className="flex items-center gap-2 px-4 py-3">
-          <ShieldAlert className="w-4 h-4 flex-shrink-0 text-[var(--warning)]" aria-hidden />
+          <ShieldAlert className="w-4 h-4 flex-shrink-0 text-warning" aria-hidden />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span id={`${dialogId}-title`} className="text-sm font-medium text-[var(--text-primary)]">
+              <span id={`${dialogId}-title`} className="text-sm font-medium text-foreground">
                 {request.tool}
               </span>
               <Badge variant={riskVariant} aria-label={`Risk level: ${request.risk}`}>{request.risk}</Badge>
@@ -150,7 +148,7 @@ export function PermissionDialog({
             <div id={contentId} className="px-4 py-3 space-y-3">
               <div id={`${dialogId}-description`}>
                 <ScrollArea className="max-h-32">
-                  <pre className="text-[11px] text-[var(--text-muted)] font-mono leading-relaxed">
+                  <pre className="text-[11px] text-muted-foreground font-mono leading-relaxed">
                     <code>{JSON.stringify(request.input, null, 2)}</code>
                   </pre>
                 </ScrollArea>
@@ -162,10 +160,10 @@ export function PermissionDialog({
                     type="checkbox"
                     checked={alwaysAllow}
                     onChange={(e) => setAlwaysAllow(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-[var(--border)] bg-[var(--bg-primary)] text-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)]"
+                    className="w-3.5 h-3.5 rounded border-border bg-background text-primary focus:ring-1 focus:ring-ring"
                     aria-label="Always allow this tool"
                   />
-                  <span className="text-[11px] text-[var(--text-muted)]">Always allow</span>
+                  <span className="text-[11px] text-muted-foreground">Always allow</span>
                 </label>
 
                 <div className="flex items-center gap-2">

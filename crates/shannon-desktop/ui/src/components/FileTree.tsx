@@ -1,11 +1,14 @@
 // File tree explorer with expand/collapse and file status indicators
 import { useState, useCallback, useEffect } from 'react'
 import {
-  ChevronRight, ChevronDown, Folder, FolderOpen, File, FileCode,
-  FileText, FileJson, Image, Lock, GitBranch, RefreshCw, Loader2
+  ChevronRight, Folder, FolderOpen, File, FileCode,
+  FileText, FileJson, Image, Lock, GitBranch, RefreshCw
 } from 'lucide-react'
 import { getFileTree, getWorkingDirInfo } from '../lib/tauri-api'
 import type { FileNode } from '../lib/tauri-api'
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible'
+import { Spinner } from './ui/spinner'
+import { cn } from '../lib/utils'
 
 interface FileTreeProps {
   rootPath?: string
@@ -73,7 +76,6 @@ function FileTreeNode({
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     onKeyDown?.(e, node)
 
-    // Handle keyboard navigation for this node
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       handleClick()
@@ -90,59 +92,89 @@ function FileTreeNode({
     onFocus?.(node)
   }, [node, onFocus])
 
+  if (isDir) {
+    return (
+      <Collapsible open={expanded} onOpenChange={setExpanded}>
+        <CollapsibleTrigger asChild>
+          <div
+            onClick={handleClick}
+            onKeyDown={handleKeyDown}
+            onFocus={handleFocus}
+            tabIndex={tabIndex}
+            role="treeitem"
+            aria-expanded={expanded}
+            aria-selected={isSelected}
+            aria-level={depth + 1}
+            aria-label={`${node.name}${isModified ? ' (modified)' : ''}`}
+            data-node-path={dataNodePath}
+            className={cn(
+              'flex items-center gap-1.5 py-1 pr-2 cursor-pointer rounded-sm transition-all duration-150 group outline-none focus-visible:ring-1 focus-visible:ring-ring w-full',
+              isSelected
+                ? 'bg-primary/15 text-primary'
+                : 'text-secondary-foreground hover:bg-secondary'
+            )}
+            style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          >
+            <ChevronRight className={cn(
+              'w-3.5 h-3.5 flex-shrink-0 text-muted-foreground transition-transform duration-150',
+              expanded && 'rotate-90'
+            )} aria-hidden />
+            <Icon className={cn(
+              'w-3.5 h-3.5 flex-shrink-0',
+              isDir ? 'text-warning' : isModified ? 'text-success' : 'text-muted-foreground'
+            )} aria-hidden />
+            <span className="text-[12px] truncate flex-1 text-left">{node.name}</span>
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div role="group">
+            {node.children && sortNodes(node.children).map(child => (
+              <FileTreeNode
+                key={child.path}
+                node={child}
+                depth={depth + 1}
+                onFileSelect={onFileSelect}
+                modifiedFiles={modifiedFiles}
+                selectedFile={selectedFile}
+                onKeyDown={onKeyDown}
+                onFocus={onFocus}
+                tabIndex={-1}
+              />
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    )
+  }
+
+  // File node (non-collapsible)
   return (
-    <div>
-      <div
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        tabIndex={tabIndex}
-        role="treeitem"
-        aria-expanded={isDir ? expanded : undefined}
-        aria-selected={isSelected}
-        aria-level={depth + 1}
-        aria-label={`${node.name}${isModified ? ' (modified)' : ''}`}
-        data-node-path={dataNodePath}
-        className={`flex items-center gap-1.5 py-1 pr-2 cursor-pointer rounded-sm transition-all duration-150 group outline-none focus-visible:ring-1 focus-visible:ring-[var(--accent)] ${
-          isSelected
-            ? 'bg-[var(--accent)]/15 text-[var(--accent)]'
-            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'
-        }`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
-      >
-        {isDir ? (
-          expanded ? (
-            <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 text-[var(--text-muted)] aria-hidden" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 text-[var(--text-muted)] aria-hidden" />
-          )
-        ) : (
-          <span className="w-3.5 flex-shrink-0" />
-        )}
-        <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${
-          isDir ? 'text-[var(--warning)]' : isModified ? 'text-[var(--success)]' : 'text-[var(--text-muted)]'
-        }`} aria-hidden />
-        <span className="text-[12px] truncate flex-1">{node.name}</span>
-        {isModified && !isDir && (
-          <span className="w-2 h-2 rounded-full bg-[var(--success)] flex-shrink-0" aria-label="modified" />
-        )}
-      </div>
-      {isDir && expanded && node.children && (
-        <div role="group">
-          {sortNodes(node.children).map(child => (
-            <FileTreeNode
-              key={child.path}
-              node={child}
-              depth={depth + 1}
-              onFileSelect={onFileSelect}
-              modifiedFiles={modifiedFiles}
-              selectedFile={selectedFile}
-              onKeyDown={onKeyDown}
-              onFocus={onFocus}
-              tabIndex={-1}
-            />
-          ))}
-        </div>
+    <div
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      tabIndex={tabIndex}
+      role="treeitem"
+      aria-selected={isSelected}
+      aria-level={depth + 1}
+      aria-label={`${node.name}${isModified ? ' (modified)' : ''}`}
+      data-node-path={dataNodePath}
+      className={cn(
+        'flex items-center gap-1.5 py-1 pr-2 cursor-pointer rounded-sm transition-all duration-150 group outline-none focus-visible:ring-1 focus-visible:ring-ring',
+        isSelected
+          ? 'bg-primary/15 text-primary'
+          : 'text-secondary-foreground hover:bg-secondary'
+      )}
+      style={{ paddingLeft: `${depth * 12 + 8}px` }}
+    >
+      <span className="w-3.5 flex-shrink-0" />
+      <Icon className={cn(
+        'w-3.5 h-3.5 flex-shrink-0',
+        isModified ? 'text-success' : 'text-muted-foreground'
+      )} aria-hidden />
+      <span className="text-[12px] truncate flex-1">{node.name}</span>
+      {isModified && (
+        <span className="w-2 h-2 rounded-full bg-success flex-shrink-0" aria-label="modified" />
       )}
     </div>
   )
@@ -172,12 +204,10 @@ export function FileTree({
         getWorkingDirInfo()
       ])
 
-      // Convert single node to array if needed
       const treeArray = Array.isArray(treeData) ? treeData : [treeData]
       setTree(treeArray)
       setBranch(dirInfo.branch)
 
-      // Create flat list for keyboard navigation
       const flattenNodes = (nodes: FileNode[]): FileNode[] => {
         const result: FileNode[] = []
         const traverse = (node: FileNode) => {
@@ -191,7 +221,6 @@ export function FileTree({
       }
       setFlatNodes(flattenNodes(treeArray))
 
-      // Update modified files from working dir info
       if (dirInfo.modified_files.length > 0 && onFileSelect) {
         // The parent component should handle modifiedFiles prop
       }
@@ -248,33 +277,33 @@ export function FileTree({
   return (
     <div className="flex flex-col h-full" role="tree" aria-label="File tree">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-[var(--bg-secondary)] border-b border-[var(--border)]">
+      <div className="flex items-center justify-between px-3 py-2 bg-secondary border-b border-border">
         <div className="flex items-center gap-2">
-          <GitBranch className="w-3.5 h-3.5 text-[var(--accent)]" aria-hidden />
-          <span className="text-xs font-medium text-[var(--text-secondary)]">Files</span>
+          <GitBranch className="w-3.5 h-3.5 text-primary" aria-hidden />
+          <span className="text-xs font-medium text-secondary-foreground">Files</span>
           {branch && (
-            <span className="text-[10px] text-[var(--text-muted)] bg-[var(--bg-primary)] px-1.5 py-0.5 rounded">
+            <span className="text-[10px] text-muted-foreground bg-background px-1.5 py-0.5 rounded">
               {branch}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
           {modifiedFiles && modifiedFiles.size > 0 && (
-            <span className="text-[10px] text-[var(--success)]" aria-label={`${modifiedFiles.size} modified files`}>
+            <span className="text-[10px] text-success" aria-label={`${modifiedFiles.size} modified files`}>
               {modifiedFiles.size} modified
             </span>
           )}
           <button
             onClick={loadTree}
             disabled={loading}
-            className="p-1 hover:bg-[var(--bg-primary)] rounded transition-colors"
+            className="p-1 hover:bg-background rounded transition-colors"
             title="Refresh file tree"
             aria-label="Refresh file tree"
           >
             {loading ? (
-              <Loader2 className="w-3.5 h-3.5 text-[var(--text-muted)] animate-spin" />
+              <Spinner className="w-3.5 h-3.5 text-muted-foreground" />
             ) : (
-              <RefreshCw className="w-3.5 h-3.5 text-[var(--text-muted)]" />
+              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
             )}
           </button>
         </div>
@@ -284,14 +313,14 @@ export function FileTree({
       <div className="flex-1 overflow-y-auto py-1" role="group" aria-label="Files and folders">
         {loading ? (
           <div className="p-3 text-center" role="status">
-            <div className="animate-spin w-4 h-4 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto" />
+            <Spinner className="mx-auto" />
           </div>
         ) : error ? (
-          <div className="p-3 text-center text-[var(--error)] text-[11px]" role="alert">
+          <div className="p-3 text-center text-destructive text-[11px]" role="alert">
             {error}
           </div>
         ) : tree.length === 0 ? (
-          <div className="p-3 text-center text-[var(--text-muted)] text-[11px]" role="status">
+          <div className="p-3 text-center text-muted-foreground text-[11px]" role="status">
             {rootPath ? 'No files found' : 'Open a project to browse files'}
           </div>
         ) : (

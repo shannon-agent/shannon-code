@@ -1,11 +1,21 @@
 // Left sidebar session list with create/delete functionality and polished design
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Trash2, MessageSquare, Search, MoreHorizontal, Edit, Copy, Download } from 'lucide-react'
 import { listSessions, newSession, deleteSession, searchSessions, renameSession, duplicateSession, exportSession } from '../lib/tauri-api'
 import type { SessionInfo } from '../types/tauri-events'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
 import { Separator } from './ui/separator'
+import { Input } from './ui/input'
+import { Skeleton } from './ui/skeleton'
+import { Empty } from './ui/empty'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from './ui/dropdown-menu'
 import { cn } from '../lib/utils'
 
 interface SessionListProps {
@@ -60,10 +70,6 @@ export function SessionList({
   const [filteredSessions, setFilteredSessions] = useState<SessionInfo[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
-  const [contextMenu, setContextMenu] = useState<{ sessionId: string; x: number; y: number } | null>(null)
-  const [previewSession, setPreviewSession] = useState<SessionInfo | null>(null)
-  const [previewTimeout, setPreviewTimeout] = useState<ReturnType<typeof setTimeout> | null>(null)
-  const contextMenuRef = useRef<HTMLDivElement>(null)
 
   const loadSessions = async () => {
     try {
@@ -96,18 +102,6 @@ export function SessionList({
     }
   }
 
-  const handleContextMenu = (e: React.MouseEvent, sessionId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
-    setContextMenu({
-      sessionId,
-      x: rect.left,
-      y: rect.bottom + 4
-    })
-  }
-
   const handleRename = async (sessionId: string) => {
     const newTitle = prompt('Enter new session name:')
     if (!newTitle || !newTitle.trim()) return
@@ -120,19 +114,16 @@ export function SessionList({
     } catch (error) {
       console.error('Failed to rename session:', error)
     }
-    setContextMenu(null)
   }
 
   const handleDuplicate = async (sessionId: string) => {
     try {
-      const newSession = await duplicateSession(sessionId)
+      const newSess = await duplicateSession(sessionId)
       await loadSessions()
-      // Switch to the new session
-      onSessionSelect(newSession.id)
+      onSessionSelect(newSess.id)
     } catch (error) {
       console.error('Failed to duplicate session:', error)
     }
-    setContextMenu(null)
   }
 
   const handleExport = async (sessionId: string, format: 'markdown' | 'json') => {
@@ -149,39 +140,7 @@ export function SessionList({
     } catch (error) {
       console.error('Failed to export session:', error)
     }
-    setContextMenu(null)
   }
-
-  const handlePreview = (session: SessionInfo) => {
-    setPreviewSession(session)
-
-    // Clear previous timeout
-    if (previewTimeout) {
-      clearTimeout(previewTimeout)
-    }
-
-    // Set new timeout to clear preview
-    setPreviewTimeout(setTimeout(() => setPreviewSession(null), 2000))
-  }
-
-  const handlePreviewHide = () => {
-    if (previewTimeout) {
-      clearTimeout(previewTimeout)
-    }
-    setPreviewSession(null)
-  }
-
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
-        setContextMenu(null)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [contextMenu])
 
   useEffect(() => {
     loadSessions()
@@ -197,8 +156,7 @@ export function SessionList({
     }
   }
 
-  const handleDeleteSession = async (sessionId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+  const handleDeleteSession = async (sessionId: string) => {
     if (!confirm('Delete this session?')) return
 
     try {
@@ -219,13 +177,13 @@ export function SessionList({
           New Chat
         </Button>
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]" />
-          <input
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <Input
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search sessions..."
-            className="w-full pl-8 pr-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-md focus:outline-none focus:border-[var(--accent)]/50 placeholder:text-[var(--text-muted)]"
+            className="pl-8"
           />
         </div>
       </div>
@@ -233,61 +191,88 @@ export function SessionList({
 
       <ScrollArea className="flex-1">
         {loading ? (
-          <div className="p-4 text-center text-[var(--text-muted)] text-sm">
-            <div className="animate-spin w-5 h-5 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto mb-2" />
-            Loading...
+          <div className="p-4 space-y-3">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
+            <Skeleton className="h-9 w-full" />
           </div>
         ) : filteredSessions.length === 0 ? (
-          <div className="p-4 text-center text-[var(--text-muted)] text-sm">
-            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            {searchQuery ? 'No sessions found' : 'No sessions yet'}
-          </div>
+          <Empty
+            icon={<MessageSquare className="w-8 h-8" />}
+            title={searchQuery ? 'No sessions found' : 'No sessions yet'}
+            description={searchQuery ? 'Try a different search term' : 'Start a new chat to begin'}
+          />
         ) : (
           <div className="py-1">
             {grouped.map((group) => (
               <div key={group.label}>
-                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {group.label}
                 </div>
                 {group.sessions.map((session) => (
                   <div
                     key={session.id}
                     onClick={() => onSessionSelect(session.id)}
-                    onContextMenu={(e) => handleContextMenu(e, session.id)}
-                    onMouseEnter={() => handlePreview(session)}
-                    onMouseLeave={handlePreviewHide}
                     className={cn(
                       'mx-1.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative',
                       currentSessionId === session.id
-                        ? 'bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20'
-                        : 'text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] border border-transparent'
+                        ? 'bg-primary/15 text-primary border border-ring/20'
+                        : 'text-secondary-foreground hover:bg-secondary border border-transparent'
                     )}
                   >
                     <div className="flex items-start gap-2">
                       <div className={cn(
                         'w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
-                        currentSessionId === session.id ? 'bg-[var(--accent)]' : 'bg-[var(--text-muted)]/40'
+                        currentSessionId === session.id ? 'bg-primary' : 'bg-muted-foreground/40'
                       )} />
                       <div className="flex-1 min-w-0">
                         <div className="text-sm truncate leading-tight">
                           {session.title || 'New Conversation'}
                         </div>
-                        <div className="text-[10px text-[var(--text-muted)] mt-0.5 tabular-nums">
+                        <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
                           {session.message_count} msgs
                         </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleContextMenu(e, session.id)
-                        }}
-                        className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-[var(--bg-secondary)]/50"
-                        title="More options"
-                      >
-                        <MoreHorizontal className="w-3 h-3 text-[var(--text-muted)]" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => e.stopPropagation()}
+                            className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-secondary/50"
+                            title="More options"
+                          >
+                            <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRename(session.id) }}>
+                            <Edit className="w-3.5 h-3.5" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(session.id) }}>
+                            <Copy className="w-3.5 h-3.5" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExport(session.id, 'markdown') }}>
+                            <Download className="w-3.5 h-3.5" />
+                            Export Markdown
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExport(session.id, 'json') }}>
+                            <Download className="w-3.5 h-3.5" />
+                            Export JSON
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id) }}
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 ))}
@@ -296,76 +281,6 @@ export function SessionList({
           </div>
         )}
       </ScrollArea>
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <div
-          ref={contextMenuRef}
-          className="fixed bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-lg py-1 z-50 min-w-[160px]"
-          style={{
-            left: `${contextMenu.x}px`,
-            top: `${contextMenu.y}px`
-          }}
-        >
-          <button
-            onClick={() => handleRename(contextMenu.sessionId)}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
-          >
-            <Edit className="w-3.5 h-3.5" />
-            Rename
-          </button>
-          <button
-            onClick={() => handleDuplicate(contextMenu.sessionId)}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
-          >
-            <Copy className="w-3.5 h-3.5" />
-            Duplicate
-          </button>
-          <button
-            onClick={() => handleExport(contextMenu.sessionId, 'markdown')}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export Markdown
-          </button>
-          <button
-            onClick={() => handleExport(contextMenu.sessionId, 'json')}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--bg-secondary)] flex items-center gap-2 text-[var(--text-primary)]"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export JSON
-          </button>
-          <div className="h-px bg-[var(--border)] my-1" />
-          <button
-            onClick={(e) => {
-              handleDeleteSession(contextMenu.sessionId, e)
-              setContextMenu(null)
-            }}
-            className="w-full px-3 py-2 text-left text-sm hover:bg-[var(--error)]/10 flex items-center gap-2 text-[var(--error)]"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete
-          </button>
-        </div>
-      )}
-
-      {/* Session Preview Popup */}
-      {previewSession && (
-        <div
-          className="fixed bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg shadow-xl p-3 z-50 max-w-[280px]"
-          style={{
-            left: `${contextMenu?.x || 0}px`,
-            top: `${(contextMenu?.y || 0) + 40}px`
-          }}
-        >
-          <div className="text-sm font-medium text-[var(--text-primary)] mb-1">
-            {previewSession.title || 'New Conversation'}
-          </div>
-          <div className="text-xs text-[var(--text-muted)]">
-            {previewSession.message_count} messages · Created {new Date(previewSession.created_at).toLocaleDateString()}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

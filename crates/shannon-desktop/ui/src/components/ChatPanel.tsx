@@ -13,6 +13,8 @@ import { PermissionDialog } from './PermissionDialog'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { ScrollArea } from './ui/scroll-area'
+import { Kbd } from './ui/kbd'
+import { Spinner } from './ui/spinner'
 import { listen } from '@tauri-apps/api/event'
 import { useState, useCallback, useEffect } from 'react'
 import type { DiffFileInfo, HunkAction } from '../types/tauri-events'
@@ -26,7 +28,7 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatPanelProps) {
-  const { messages, loading, streamingText, activeToolCalls, permissionRequest, respondPermission, mode, setMode, approvalMode, setApprovalMode, viewMode, setViewMode } = useAppState()
+  const { messages, loading, streamingText, activeToolCalls, permissionRequest, mode, setMode, approvalMode, setApprovalMode, viewMode, setViewMode } = useAppState()
   const [diffReviewAvailable, setDiffReviewAvailable] = useState(false)
   const [diffFiles, setDiffFiles] = useState<DiffFileInfo[]>([])
   const [showDiffReview, setShowDiffReview] = useState(false)
@@ -99,9 +101,9 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full bg-[var(--bg-primary)] text-[var(--text-secondary)]">
+      <div className="flex items-center justify-center h-full bg-background text-secondary-foreground">
         <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-2 border-[var(--accent)] border-t-transparent rounded-full mx-auto mb-4" />
+          <Spinner className="h-8 w-8 mx-auto mb-4" />
           <p>Loading Shannon Desktop...</p>
         </div>
       </div>
@@ -120,11 +122,11 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--bg-primary)]">
+    <div className="flex flex-col h-full bg-background">
       {error && (
-        <div className="bg-[var(--error)]/10 border-l-4 border-[var(--error)] p-3 flex items-center justify-between">
-          <span className="text-sm text-[var(--error)]">{error}</span>
-          <Button variant="ghost" size="sm" onClick={clearError} className="text-[var(--error)] hover:text-[var(--error)] hover:bg-[var(--error)]/10 h-7">
+        <div className="bg-destructive/10 border-l-4 border-destructive p-3 flex items-center justify-between">
+          <span className="text-sm text-destructive">{error}</span>
+          <Button variant="ghost" size="sm" onClick={clearError} className="text-destructive hover:text-destructive hover:bg-destructive/10 h-7">
             Dismiss
           </Button>
         </div>
@@ -135,10 +137,10 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
 
       {/* Review Changes button */}
       {diffReviewAvailable && (
-        <div className="bg-[var(--accent)]/10 border-l-4 border-[var(--accent)] p-3">
+        <div className="bg-primary/10 border-l-4 border-ring p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-[var(--accent)]">File changes ready for review</span>
+              <span className="text-sm font-medium text-primary">File changes ready for review</span>
               <Badge variant="secondary">{diffFiles.length} files</Badge>
             </div>
             <Button variant="default" size="sm" onClick={handleOpenDiffReview} className="h-7">
@@ -155,9 +157,9 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
               {/* App Icon/Name */}
               <div className="mb-8">
                 <h1 className="text-4xl font-bold mb-2">
-                  <span className="bg-gradient-to-r from-[var(--accent)] to-[var(--purple)] bg-clip-text text-transparent">Shannon</span>
+                  <span className="bg-gradient-to-r from-primary to-purple bg-clip-text text-transparent">Shannon</span>
                 </h1>
-                <p className="text-[var(--text-muted)]">Ask me anything about your code</p>
+                <p className="text-muted-foreground">Ask me anything about your code</p>
               </div>
 
               {/* Suggestion Chips */}
@@ -165,7 +167,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Explain this codebase to me')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-glass-bg border border-glass-border hover:border-ring/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Sparkles className="w-5 h-5" />
                   <span className="text-xs">Explain this codebase</span>
@@ -173,7 +175,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Find bugs in my code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-glass-bg border border-glass-border hover:border-ring/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Bug className="w-5 h-5" />
                   <span className="text-xs">Find bugs</span>
@@ -181,7 +183,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Help me refactor this code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-glass-bg border border-glass-border hover:border-ring/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <Wand2 className="w-5 h-5" />
                   <span className="text-xs">Refactor</span>
@@ -189,7 +191,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
                 <Button
                   variant="outline"
                   onClick={() => sendMessage('Write tests for this code')}
-                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-[var(--glass-bg)] backdrop-blur-sm border border-[var(--glass-border)] hover:border-[var(--accent)]/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+                  className="h-auto py-3 px-4 flex flex-col items-center gap-2 text-left rounded-xl bg-glass-bg border border-glass-border hover:border-ring/30 hover:shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
                 >
                   <FlaskConical className="w-5 h-5" />
                   <span className="text-xs">Write tests</span>
@@ -197,15 +199,15 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
               </div>
 
               {/* Keyboard shortcuts hint */}
-              <div className="mt-8 pt-6 border-t border-[var(--glass-border)]">
-                <p className="text-xs text-[var(--text-muted)] mb-2">Keyboard shortcuts</p>
-                <div className="flex items-center justify-center gap-4 text-xs text-[var(--text-muted)]">
+              <div className="mt-8 pt-6 border-t border-glass-border">
+                <p className="text-xs text-muted-foreground mb-2">Keyboard shortcuts</p>
+                <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
-                    <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-primary)]">Ctrl+K</kbd>
+                    <Kbd>Ctrl+K</Kbd>
                     <span>Focus input</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <kbd className="bg-[var(--bg-secondary)] px-2 py-1 rounded text-[var(--text-primary)]">Ctrl+N</kbd>
+                    <Kbd>Ctrl+N</Kbd>
                     <span>New session</span>
                   </div>
                 </div>
@@ -245,7 +247,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
 
       <StatusBar />
 
-      <div className="border-t border-[var(--border)]">
+      <div className="border-t border-border">
         <div className="flex items-center justify-between px-4 pt-2">
           <div className="flex items-center gap-4">
             <ModeToggle mode={mode} onChange={setMode} disabled={isStreaming} />
@@ -260,7 +262,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
             {/* View Mode Toggle */}
             <button
               onClick={() => setViewMode(viewMode === 'verbose' ? 'normal' : viewMode === 'normal' ? 'summary' : 'verbose')}
-              className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--bg-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-border bg-secondary hover:bg-tertiary transition-colors"
               title="View mode (Ctrl+O)"
               aria-label={`View mode: ${viewMode}. Click to cycle.`}
             >
@@ -270,7 +272,7 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
               <span className="capitalize">{viewMode}</span>
             </button>
           </div>
-          <span className="text-[10px] text-[var(--text-muted)]">
+          <span className="text-[10px] text-muted-foreground">
             {mode === 'plan' ? 'Read-only · no tool execution' : 'Full access · tools enabled'}
           </span>
         </div>

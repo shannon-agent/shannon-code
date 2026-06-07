@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { Download, X } from 'lucide-react'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
+import { Progress } from './ui/progress'
+import { Button } from './ui/button'
 
 interface UpdateAvailablePayload {
   version: string
@@ -43,7 +45,8 @@ export function UpdateBanner() {
   const handleDownload = () => {
     // Emit event to trigger update download
     // This will be handled by the Tauri backend
-    window.__TAURI__?.emit?.('download-update', {})
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window.__TAURI__ as any)?.emit?.('download-update', {})
   }
 
   if (!updateInfo) {
@@ -51,23 +54,23 @@ export function UpdateBanner() {
   }
 
   return (
-    <div className="relative border-b border-[var(--border)] bg-gradient-to-r from-[var(--bg-primary)] to-[var(--bg-secondary)]">
+    <div className="relative border-b border-border bg-background">
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20">
-            <Download className="w-4 h-4 text-[var(--accent)]" />
-            <span className="text-sm font-medium text-[var(--accent)]">Update Available</span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-ring/20">
+            <Download className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Update Available</span>
           </div>
 
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">v{updateInfo.version}</span>
+              <span className="text-sm font-semibold text-foreground">v{updateInfo.version}</span>
               {updateInfo.date && (
-                <span className="text-xs text-[var(--text-muted)]">{updateInfo.date}</span>
+                <span className="text-xs text-muted-foreground">{updateInfo.date}</span>
               )}
             </div>
             {updateInfo.body && (
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5 line-clamp-1">
+              <p className="text-xs text-secondary-foreground mt-0.5 line-clamp-1">
                 {updateInfo.body}
               </p>
             )}
@@ -76,35 +79,32 @@ export function UpdateBanner() {
 
         <div className="flex items-center gap-2">
           {progress > 0 && progress < 100 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-[var(--bg-input)]">
-              <div className="w-24 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[var(--accent)] transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <span className="text-xs text-[var(--text-muted)]">{Math.round(progress)}%</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-muted min-w-[180px]">
+              <Progress value={progress} className="flex-1 h-1.5" />
+              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
             </div>
           )}
 
           {status && (
-            <span className="text-xs text-[var(--text-muted)]">{status}</span>
+            <span className="text-xs text-muted-foreground">{status}</span>
           )}
 
-          <button
+          <Button
+            size="sm"
             onClick={handleDownload}
             disabled={progress > 0 && progress < 100}
-            className="px-3 py-1.5 text-sm font-medium rounded-lg bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {progress > 0 && progress < 100 ? 'Downloading...' : 'Download & Install'}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setUpdateInfo(null)}
-            className="p-1.5 rounded-lg hover:bg-[var(--bg-hover)] transition-colors"
+            className="h-8 w-8 p-0"
           >
-            <X className="w-4 h-4 text-[var(--text-muted)]" />
-          </button>
+            <X className="w-4 h-4 text-muted-foreground" />
+          </Button>
         </div>
       </div>
     </div>

@@ -8,32 +8,98 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Tokyo Night theme colors
-        bg: {
-          primary: '#1a1b26',
-          secondary: '#24283b',
-          input: '#1f2335',
+        // shadcn/ui standard semantic tokens → CSS variables
+        background: 'var(--bg-primary)',
+        foreground: 'var(--text-primary)',
+        card: {
+          DEFAULT: 'var(--bg-secondary)',
+          foreground: 'var(--text-primary)',
         },
-        text: {
-          primary: '#c0caf5',
-          secondary: '#a9b1d6',
-          muted: '#565f89',
+        popover: {
+          DEFAULT: 'var(--bg-secondary)',
+          foreground: 'var(--text-primary)',
+        },
+        primary: {
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--bg-primary)',
+        },
+        secondary: {
+          DEFAULT: 'var(--bg-secondary)',
+          foreground: 'var(--text-secondary)',
+        },
+        muted: {
+          DEFAULT: 'var(--bg-input)',
+          foreground: 'var(--text-muted)',
         },
         accent: {
-          DEFAULT: '#7aa2f7',
-          hover: '#89b4fa',
+          DEFAULT: 'var(--accent)',
+          foreground: 'var(--bg-primary)',
+          hover: 'var(--accent-hover)',
         },
-        border: '#3b4261',
-        user: '#2a2f4a',
-        assistant: '#24283b',
-        tool: {
-          bg: '#1f2335',
-          header: '#2a2f4a',
+        destructive: {
+          DEFAULT: 'var(--error)',
+          foreground: 'var(--text-primary)',
         },
-        success: '#9ece6a',
-        error: '#f7768e',
-        warning: '#e0af68',
-      }
+        border: 'var(--border)',
+        input: 'var(--border)',
+        ring: 'var(--accent)',
+
+        // Semantic status colors
+        success: 'var(--success)',
+        warning: 'var(--warning)',
+        info: 'var(--info)',
+        error: 'var(--error)',
+        running: 'var(--running)',
+        cancelled: 'var(--cancelled)',
+
+        // Chat role backgrounds
+        'user-bg': 'var(--user-bg)',
+        'assistant-bg': 'var(--assistant-bg)',
+        'tool-bg': 'var(--tool-bg)',
+        'tool-header-bg': 'var(--tool-header-bg)',
+
+        // Extra accent colors
+        purple: 'var(--purple)',
+        cyan: 'var(--cyan)',
+
+        // Extra surfaces
+        tertiary: 'var(--bg-tertiary)',
+        glass: {
+          bg: 'var(--glass-bg)',
+          border: 'var(--glass-border)',
+        },
+      },
+      borderRadius: {
+        xs: 'var(--radius-xs)',
+        sm: 'var(--radius-sm)',
+        md: 'var(--radius-md)',
+        lg: 'var(--radius-lg)',
+        xl: 'var(--radius-xl)',
+      },
+      boxShadow: {
+        sm: 'var(--shadow-sm)',
+        md: 'var(--shadow-md)',
+        lg: 'var(--shadow-lg)',
+        glass: 'var(--glass-shadow)',
+      },
+      fontFamily: {
+        sans: 'var(--font-sans)',
+        mono: 'var(--font-mono)',
+      },
+      keyframes: {
+        'accordion-down': {
+          from: { height: '0' },
+          to: { height: 'var(--radix-accordion-content-height)' },
+        },
+        'accordion-up': {
+          from: { height: 'var(--radix-accordion-content-height)' },
+          to: { height: '0' },
+        },
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+      },
     },
   },
   plugins: [],

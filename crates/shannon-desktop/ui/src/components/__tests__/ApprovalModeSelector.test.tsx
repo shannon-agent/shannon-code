@@ -3,38 +3,37 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import { ApprovalModeSelector } from '../ApprovalModeSelector'
 
 describe('ApprovalModeSelector', () => {
-  it('renders all approval modes as options', () => {
+  it('renders primary approval modes as toggle buttons', () => {
     render(<ApprovalModeSelector mode="suggest" onChange={vi.fn()} />)
 
-    const select = screen.getByTitle('Approval mode for tool execution')
-    expect(select).toBeDefined()
-
-    const options = select.querySelectorAll('option')
-    expect(options.length).toBe(10)
+    // PRIMARY_MODES: suggest, auto, full_auto, readonly
+    expect(screen.getByText('Confirm')).toBeDefined()
+    expect(screen.getByText('Auto')).toBeDefined()
+    expect(screen.getByText('Full Auto')).toBeDefined()
+    expect(screen.getByText('Readonly')).toBeDefined()
   })
 
-  it('shows the selected mode', () => {
+  it('shows the selected mode as active', () => {
     render(<ApprovalModeSelector mode="auto" onChange={vi.fn()} />)
 
-    const select = screen.getByTitle('Approval mode for tool execution') as HTMLSelectElement
-    expect(select.value).toBe('auto')
+    const activeButton = screen.getByText('Auto').closest('[data-state="on"]')
+    expect(activeButton).toBeDefined()
   })
 
-  it('calls onChange when a different mode is selected', () => {
+  it('calls onChange when a different mode is clicked', () => {
     const onChange = vi.fn()
     render(<ApprovalModeSelector mode="suggest" onChange={onChange} />)
 
-    const select = screen.getByTitle('Approval mode for tool execution')
-    fireEvent.change(select, { target: { value: 'plan' } })
-
-    expect(onChange).toHaveBeenCalledWith('plan')
+    fireEvent.click(screen.getByText('Auto'))
+    expect(onChange).toHaveBeenCalledWith('auto')
   })
 
   it('is disabled when disabled prop is true', () => {
     render(<ApprovalModeSelector mode="suggest" onChange={vi.fn()} disabled />)
 
-    const select = screen.getByTitle('Approval mode for tool execution') as HTMLSelectElement
-    expect(select.disabled).toBe(true)
+    // ToggleGroup disables all children - check buttons are disabled
+    const toggleItems = screen.getAllByRole('radio')
+    toggleItems.forEach(btn => expect(btn).toBeDisabled())
   })
 
   it('renders shield icon', () => {
@@ -44,16 +43,10 @@ describe('ApprovalModeSelector', () => {
     expect(svg).toBeDefined()
   })
 
-  it('contains expected mode labels', () => {
-    render(<ApprovalModeSelector mode="suggest" onChange={vi.fn()} />)
+  it('shows single mode fallback for non-primary modes', () => {
+    render(<ApprovalModeSelector mode="bypass_permissions" onChange={vi.fn()} />)
 
-    const select = screen.getByTitle('Approval mode for tool execution')
-    const optionTexts = Array.from(select.querySelectorAll('option')).map(o => o.textContent)
-
-    expect(optionTexts).toContain('Auto')
-    expect(optionTexts).toContain('Plan')
-    expect(optionTexts).toContain('Full Auto')
-    expect(optionTexts).toContain('Readonly')
-    expect(optionTexts).toContain('Bypass')
+    // Non-primary mode shows only that mode as a toggle
+    expect(screen.getByText('Bypass')).toBeDefined()
   })
 })
