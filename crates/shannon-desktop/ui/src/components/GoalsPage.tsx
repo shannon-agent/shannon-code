@@ -1,19 +1,17 @@
 // Goals Page — 3-column layout with task decomposition tree, agent call path, and resource sidebar
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '../lib/utils'
+import { listTasks, listAgents } from '../lib/tauri-api'
+import type { TaskItem } from '../lib/tauri-api'
+import { Spinner } from './ui/spinner'
 
 interface Goal {
   title: string
   progress: number
-  active?: boolean
+  active: boolean
+  description?: string
+  status: string
 }
-
-const GOALS: Goal[] = [
-  { title: 'Launch Desktop App v1.0', progress: 34, active: true },
-  { title: 'Q3 Test Coverage Audit', progress: 82 },
-  { title: 'MCP Integration Milestone', progress: 15 },
-  { title: 'Documentation Overhaul', progress: 50 },
-]
 
 interface TreeStep {
   icon: string
@@ -22,12 +20,6 @@ interface TreeStep {
   active?: boolean
 }
 
-const AGENT_CALL_PATH: TreeStep[] = [
-  { icon: 'search', label: 'Researcher', sublabel: 'Analysis Bot' },
-  { icon: 'edit_note', label: 'Copywriter', sublabel: 'Drafting Logic' },
-  { icon: 'schedule', label: 'Scheduler', sublabel: 'Wait-state', active: true },
-]
-
 interface TreeNode {
   title: string
   status: 'done' | 'active' | 'pending'
@@ -35,37 +27,92 @@ interface TreeNode {
   reasoningSteps?: { text: string; active?: boolean }[]
 }
 
-const TASK_TREE: TreeNode[] = [
-  {
-    title: 'Market Analysis',
-    status: 'done',
-    description: 'Comprehensive review of competitor landscape and architecture patterns for the desktop release.',
-  },
-  {
-    title: 'Implement UI Components',
-    status: 'active',
-    description: 'Building all page-level components with MD3 styling, glass morphism, and Material Symbols.',
-    reasoningSteps: [
-      { text: 'Identifying components from design specification...' },
-      { text: 'Awaiting verification of design token mapping.', active: true },
-    ],
-  },
-  {
-    title: 'Integration Testing',
-    status: 'pending',
-    description: 'End-to-end testing of Tauri bridge integration with UI components.',
-  },
-]
-
 const STATUS_CONFIG = {
   done: { label: 'Done', color: 'bg-emerald-100 text-emerald-700', icon: 'check_circle' },
   active: { label: 'In Progress', color: 'bg-md3-primary/10 text-md3-primary', icon: 'sync' },
   pending: { label: 'Pending', color: 'bg-md3-surface-container-high text-md3-on-surface-variant', icon: 'lock' },
 }
 
+function statusToProgress(status: string): number {
+  switch (status) {
+    case 'completed': return 100
+    case 'in_progress': return 50
+    case 'failed': return 0
+    default: return 0
+  }
+}
+
+function statusToGoalStatus(status: string): Goal['status'] {
+  switch (status) {
+    case 'completed': return 'done'
+    case 'in_progress': return 'active'
+    case 'failed': return 'pending'
+    default: return 'pending'
+  }
+}
+
 export function GoalsPage() {
-  const [activeGoalIdx, setActiveGoalIdx] = useState(GOALS.findIndex(g => g.active) || 0)
-  const activeGoal = GOALS[activeGoalIdx]
+  const [goals, setGoals] = useState<Goal[]>([])
+  const [agents, setAgents] = useState<TreeStep[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeGoalIdx, setActiveGoalIdx] = useState(0)
+
+  useEffect(() => {
+    Promise.all([
+      listTasks().catch((): TaskItem[] => []),
+      listAgents().catch(() => []),
+    ]).then(([tasks, agentList]) => {
+      const mapped: Goal[] = tasks.map(t => ({
+        title: t.title || t.id,
+        progress: statusToProgress(t.status),
+        active: t.status === 'in_progress',
+        description: t.description,
+        status: t.status,
+      }))
+      setGoals(mapped)
+
+      const steps: TreeStep[] = agentList.map(a => ({
+        icon: 'smart_toy',
+        label: a.name,
+        sublabel: a.status === 'running' ? 'Running' : a.status,
+        active: a.status === 'running',
+      }))
+      setAgents(steps)
+      setLoading(false)
+    })
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="text-center space-y-md3-md">
+          <Spinner className="h-8 w-8 mx-auto" />
+          <p className="text-body-md text-md3-on-surface-variant">Loading goals...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (goals.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center h-full">
+        <div className="text-center max-w-md px-8">
+          <span className="material-symbols-outlined text-[48px] text-md3-on-surface-variant/30">flag</span>
+          <h2 className="text-headline-md text-md3-on-surface mt-md3-md">No Goals Yet</h2>
+          <p className="text-body-md text-md3-on-surface-variant mt-sm">Tasks created during sessions will appear here as goals.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const activeGoal = goals[activeGoalIdx] || goals[0]
+
+  // Build task tree from goals
+  const taskTree: TreeNode[] = goals.slice(0, 5).map(g => ({
+    title: g.title,
+    status: statusToGoalStatus(g.status) as TreeNode['status'],
+    description: g.description || `Progress: ${g.progress}%`,
+  }))
 
   return (
     <div className="flex-1 flex w-full h-full pb-10 animate-in fade-in duration-700">
@@ -86,9 +133,9 @@ export function GoalsPage() {
             <p className="text-label-sm text-md3-on-surface-variant/60 uppercase tracking-wider">Active Goals</p>
           </div>
           <div className="px-sm space-y-1">
-            {GOALS.map((goal, idx) => (
+            {goals.map((goal, idx) => (
               <button
-                key={goal.title}
+                key={goal.title + idx}
                 onClick={() => setActiveGoalIdx(idx)}
                 className={cn(
                   'w-full flex flex-col gap-1 p-md3-md rounded-xl text-left cursor-pointer transition-all duration-300',
@@ -119,8 +166,9 @@ export function GoalsPage() {
         <div className="flex items-end justify-between mb-md3-xl">
           <div>
             <div className="flex items-center gap-sm mb-xs">
-              <span className="px-sm py-xs bg-md3-primary/10 text-md3-primary text-label-sm rounded-full">Active Goal</span>
-              <span className="text-label-sm text-md3-on-surface-variant/60">Started 2 days ago</span>
+              <span className="px-sm py-xs bg-md3-primary/10 text-md3-primary text-label-sm rounded-full">
+                {activeGoal.status === 'in_progress' ? 'Active Goal' : activeGoal.status === 'completed' ? 'Completed' : 'Pending'}
+              </span>
             </div>
             <h2 className="text-headline-lg text-[28px] text-md3-on-surface">{activeGoal.title}</h2>
           </div>
@@ -144,34 +192,38 @@ export function GoalsPage() {
                 <span className="material-symbols-outlined text-md3-primary text-[20px]">hub</span>
                 Agent Call Path
               </h3>
-              <div className="space-y-md3-lg relative">
-                <div className="absolute left-[15px] top-6 bottom-6 w-px border-l border-dashed border-md3-primary/30" />
-                {AGENT_CALL_PATH.map((step) => (
-                  <div key={step.label} className={cn('relative flex items-center gap-md3-md', step.active && 'opacity-40')}>
-                    <div className={cn(
-                      'z-10 w-8 h-8 rounded-full flex items-center justify-center text-[18px]',
-                      step.active
-                        ? 'bg-md3-surface-container-highest text-md3-on-surface'
-                        : 'bg-md3-primary text-md3-on-primary'
-                    )}>
-                      <span className="material-symbols-outlined">{step.icon}</span>
+              {agents.length > 0 ? (
+                <div className="space-y-md3-lg relative">
+                  <div className="absolute left-[15px] top-6 bottom-6 w-px border-l border-dashed border-md3-primary/30" />
+                  {agents.map((step) => (
+                    <div key={step.label} className={cn('relative flex items-center gap-md3-md', step.active && 'opacity-40')}>
+                      <div className={cn(
+                        'z-10 w-8 h-8 rounded-full flex items-center justify-center text-[18px]',
+                        step.active
+                          ? 'bg-md3-surface-container-highest text-md3-on-surface'
+                          : 'bg-md3-primary text-md3-on-primary'
+                      )}>
+                        <span className="material-symbols-outlined">{step.icon}</span>
+                      </div>
+                      <div>
+                        <p className="text-label-md text-md3-on-surface">{step.label}</p>
+                        <p className="text-label-sm text-md3-on-surface-variant/70">{step.sublabel}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-label-md text-md3-on-surface">{step.label}</p>
-                      <p className="text-label-sm text-md3-on-surface-variant/70">{step.sublabel}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-label-sm text-md3-on-surface-variant/50 italic">No active agents</p>
+              )}
             </div>
           </div>
 
           {/* Task Decomposition Tree */}
           <div className="flex-1 space-y-md3-md">
-            {TASK_TREE.map((node, i) => {
+            {taskTree.map((node, i) => {
               const cfg = STATUS_CONFIG[node.status]
               return (
-                <div key={node.title} className={cn('flex items-start gap-md3-lg', node.status === 'pending' && 'opacity-60 grayscale-[0.5]')}>
+                <div key={node.title + i} className={cn('flex items-start gap-md3-lg', node.status === 'pending' && 'opacity-60 grayscale-[0.5]')}>
                   <div className="mt-4 flex flex-col items-center">
                     <div className={cn(
                       'w-4 h-4 rounded-full z-10',
@@ -179,14 +231,13 @@ export function GoalsPage() {
                       node.status === 'active' && 'border-2 border-md3-primary bg-md3-primary shadow-lg',
                       node.status === 'pending' && 'border-2 border-md3-outline-variant bg-md3-surface-container-highest'
                     )} />
-                    {i < TASK_TREE.length - 1 && <div className="w-px h-24 bg-md3-outline-variant/30" />}
+                    {i < taskTree.length - 1 && <div className="w-px h-24 bg-md3-outline-variant/30" />}
                   </div>
                   <div className={cn(
                     'flex-1 glass-card p-md3-lg rounded-xl flex justify-between items-center group hover:shadow-md transition-all',
                     node.status === 'active' && 'bg-white border-md3-primary/30 ring-1 ring-md3-primary/10 shadow-lg relative overflow-hidden'
                   )}>
                     <div>
-                      {node.status === 'active' && <div className="absolute top-lg right-lg"><div className="animate-pulse-amber w-3 h-3 rounded-full bg-md3-tertiary shadow-lg" /></div>}
                       <div className="flex items-center gap-md3-md mb-xs">
                         <h4 className={cn('text-headline-md', node.status === 'active' ? 'text-md3-primary' : 'text-md3-on-surface')}>{node.title}</h4>
                         <span className={cn('px-sm py-xs text-label-sm rounded-lg flex items-center gap-1', cfg.color)}>
@@ -194,28 +245,6 @@ export function GoalsPage() {
                         </span>
                       </div>
                       <p className="text-md3-on-surface-variant max-w-lg">{node.description}</p>
-
-                      {/* Reasoning steps for active node */}
-                      {node.reasoningSteps && (
-                        <div className="bg-md3-surface-container-low/50 rounded-lg p-md3-md space-y-md3-md mt-md3-md">
-                          <p className="text-label-sm text-md3-primary uppercase tracking-wider mb-sm">Agent Reasoning Steps</p>
-                          {node.reasoningSteps.map((step, si) => (
-                            <div key={si} className="flex items-start gap-md3-md">
-                              <div className="mt-1 flex flex-col items-center">
-                                <div className={cn('w-2 h-2 rounded-full', step.active ? 'bg-md3-primary animate-pulse' : 'bg-md3-primary')} />
-                                {si < node.reasoningSteps!.length - 1 && <div className="w-px h-8 bg-md3-outline-variant/50" />}
-                              </div>
-                              <span className={cn('text-label-sm', step.active ? 'text-md3-on-surface font-bold' : 'text-md3-on-surface-variant')}>
-                                {step.text}
-                              </span>
-                            </div>
-                          ))}
-                          <div className="mt-md3-md flex gap-sm">
-                            <button className="px-md3-md py-sm bg-md3-tertiary text-md3-on-tertiary rounded-lg text-label-md shadow-sm hover:brightness-110 active:scale-95 transition-all">Approve</button>
-                            <button className="px-md3-md py-sm border border-md3-outline-variant text-md3-on-surface rounded-lg text-label-md hover:bg-md3-surface-container-high/50 transition-all">Adjust</button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                     <button className="p-sm text-md3-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="material-symbols-outlined">more_vert</span>
@@ -251,23 +280,35 @@ export function GoalsPage() {
       {/* Right Sidebar */}
       <aside className="w-[300px] border-l border-md3-outline-variant/20 bg-md3-surface-container-low/30 p-md3-lg shrink-0 flex flex-col gap-md3-lg">
         <div className="glass-card bg-white/70 p-md3-lg rounded-xl">
-          <h5 className="text-label-md text-md3-on-surface-variant mb-md3-md">Connected Resources</h5>
-          <div className="flex flex-wrap gap-sm">
-            {['Google Analytics 4', 'Meta Ads API', 'Notion Workspace'].map((resource) => (
-              <span key={resource} className="px-md3-md py-sm bg-md3-surface-container-highest rounded-full text-label-sm">{resource}</span>
-            ))}
+          <h5 className="text-label-md text-md3-on-surface-variant mb-md3-md">Session Stats</h5>
+          <div className="space-y-sm text-label-sm">
+            <div className="flex justify-between">
+              <span className="text-md3-on-surface-variant">Total Goals</span>
+              <span className="text-md3-on-surface font-medium">{goals.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-md3-on-surface-variant">Active</span>
+              <span className="text-md3-primary font-medium">{goals.filter(g => g.active).length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-md3-on-surface-variant">Agents</span>
+              <span className="text-md3-on-surface font-medium">{agents.length}</span>
+            </div>
           </div>
         </div>
-        <div className="glass-card bg-white/70 p-md3-lg rounded-xl flex flex-col justify-between">
-          <div>
-            <h5 className="text-label-md text-md3-on-surface-variant mb-xs">Agent Efficiency Report</h5>
-            <p className="text-md3-on-surface-variant text-body-sm">
-              Estimated time saved: <span className="text-md3-primary font-bold">14.5 hours</span> this week.
-            </p>
-          </div>
-          <div className="flex gap-xs items-end h-16 mt-md3-md">
-            {[40, 60, 30, 80, 100].map((h, i) => (
-              <div key={i} className={cn('w-4 rounded-t-sm', i === 4 ? 'bg-md3-primary' : `bg-md3-primary/${20 + i * 20}`)} style={{ height: `${h}%` }} />
+        <div className="glass-card bg-white/70 p-md3-lg rounded-xl">
+          <h5 className="text-label-md text-md3-on-surface-variant mb-md3-md">Goal Progress</h5>
+          <div className="space-y-md3-sm">
+            {goals.slice(0, 4).map((g, i) => (
+              <div key={g.title + i}>
+                <div className="flex justify-between text-label-sm mb-xs">
+                  <span className="text-md3-on-surface-variant truncate mr-sm">{g.title}</span>
+                  <span className="text-md3-on-surface font-medium">{g.progress}%</span>
+                </div>
+                <div className="h-1 bg-md3-surface-container-highest rounded-full overflow-hidden">
+                  <div className="h-full bg-md3-primary rounded-full" style={{ width: `${g.progress}%` }} />
+                </div>
+              </div>
             ))}
           </div>
         </div>
