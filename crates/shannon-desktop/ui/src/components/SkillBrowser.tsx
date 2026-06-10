@@ -7,24 +7,10 @@ import { Badge } from './ui/badge'
 import { Empty } from './ui/empty'
 import { Spinner } from './ui/spinner'
 import { Kbd } from './ui/kbd'
+import { listSkills, getSkillDetail } from '../lib/tauri-api'
+import type { SkillInfo, SkillDetail } from '../lib/tauri-api'
 
-interface Skill {
-  name: string
-  description: string
-  trigger: string
-  source: string
-  category?: string
-}
-
-interface SkillDetail {
-  name: string
-  description: string
-  trigger: string
-  content: string
-  parameters: string[]
-  source: string
-  category?: string
-}
+type Skill = SkillInfo
 
 interface SkillBrowserProps {
   onInsertTrigger?: (trigger: string) => void
@@ -88,37 +74,10 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
     setLoading(true)
     setError(null)
     try {
-      if (window.__TAURI__) {
-        const result = await window.__TAURI__.invoke('list_skills')
-        setSkills(result as Skill[])
-      } else {
-        setSkills([
-          {
-            name: 'commit',
-            description: 'Create git commits with staged changes',
-            trigger: '/commit',
-            source: 'claude',
-            category: 'git'
-          },
-          {
-            name: 'help',
-            description: 'Show available commands and help information',
-            trigger: '/help',
-            source: 'shannon',
-            category: 'general'
-          },
-          {
-            name: 'search',
-            description: 'Search for files and content across the codebase',
-            trigger: '/search',
-            source: 'shannon',
-            category: 'navigation'
-          }
-        ])
-      }
+      const result = await listSkills()
+      setSkills(result)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load skills')
-      console.error('Error loading skills:', err)
     } finally {
       setLoading(false)
     }
@@ -126,20 +85,8 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
 
   const loadSkillDetail = async (skillName: string) => {
     try {
-      if (window.__TAURI__) {
-        const result = await window.__TAURI__.invoke('get_skill_detail', { name: skillName })
-        setSkillDetail(result as SkillDetail)
-      } else {
-        setSkillDetail({
-          name: skillName,
-          description: `Detailed description for ${skillName} skill`,
-          trigger: `/${skillName}`,
-          content: `# ${skillName} Skill\n\nThis is a custom skill for ${skillName} functionality.`,
-          parameters: ['param1', 'param2'],
-          source: 'claude',
-          category: 'general'
-        })
-      }
+      const result = await getSkillDetail(skillName)
+      setSkillDetail(result)
     } catch (err) {
       console.error('Error loading skill detail:', err)
       setError(err instanceof Error ? err.message : 'Failed to load skill detail')
@@ -410,13 +357,4 @@ export function SkillBrowser({ onInsertTrigger, onClose }: SkillBrowserProps) {
       )}
     </div>
   )
-}
-
-// Extend Window interface for Tauri invoke
-declare global {
-  interface Window {
-    __TAURI__?: {
-      invoke: (command: string, args?: Record<string, unknown>) => Promise<unknown>
-    }
-  }
 }

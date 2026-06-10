@@ -1,6 +1,6 @@
 // Plugin browser for managing MCP servers
-import { useState, useEffect } from 'react'
-import { Plus, Search, RefreshCw, PlayCircle, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Search, RefreshCw, XCircle } from 'lucide-react'
 import { PluginCard } from './PluginCard'
 import { useTauriEvent } from '../hooks/useTauriEvent'
 
@@ -42,7 +42,6 @@ export function PluginBrowser({
   onRemovePlugin,
   onRefreshTools,
   onTestConnection,
-  onEditServer,
   onRestartServer
 }: PluginBrowserProps) {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -80,12 +79,6 @@ export function PluginBrowser({
     e.preventDefault()
     if (newPlugin.name && newPlugin.command) {
       try {
-        // Parse args as JSON
-        let args: string[] = []
-        if (newPlugin.args.trim()) {
-          args = JSON.parse(newPlugin.args)
-        }
-
         const plugin = {
           name: newPlugin.name,
           command: newPlugin.command,
@@ -158,21 +151,6 @@ export function PluginBrowser({
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value)
-  }
-
-  const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return 'Never'
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    const diffHours = Math.floor(diffMins / 60)
-    if (diffHours < 24) return `${diffHours}h ago`
-    const diffDays = Math.floor(diffHours / 24)
-    return `${diffDays}d ago`
   }
 
   return (

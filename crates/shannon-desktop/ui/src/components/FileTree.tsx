@@ -190,7 +190,7 @@ export function FileTree({
   const [loading, setLoading] = useState(false)
   const [branch, setBranch] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
-  const [focusedNode, setFocusedNode] = useState<FileNode | null>(null)
+  const [_focusedNode, setFocusedNode] = useState<FileNode | null>(null)
   const [flatNodes, setFlatNodes] = useState<FileNode[]>([])
 
   const loadTree = useCallback(async () => {

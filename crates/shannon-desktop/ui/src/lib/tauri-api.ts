@@ -212,6 +212,7 @@ export async function listMcpServers(): Promise<import('../types/tauri-events').
 
 /**
  * Get file tree for a directory
+ */
 export async function getFileTree(path: string): Promise<FileNode> {
   return await invoke('get_file_tree', { path })
 }
@@ -249,4 +250,31 @@ export interface TaskItem {
   assignee?: string
   priority?: string
   description?: string
+}
+
+// Skill types
+export interface SkillInfo {
+  name: string
+  description: string
+  trigger: string
+  source: string
+  category?: string
+}
+
+export interface SkillDetail {
+  name: string
+  description: string
+  trigger: string
+  content: string
+  parameters: string[]
+  source: string
+  category?: string
+}
+
+export async function listSkills(): Promise<SkillInfo[]> {
+  return await invoke('list_skills')
+}
+
+export async function getSkillDetail(name: string): Promise<SkillDetail> {
+  return await invoke('get_skill_detail', { name })
 }
