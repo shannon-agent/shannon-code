@@ -95,6 +95,43 @@ vi.mock('@tauri-apps/api/core', () => ({
         return Promise.resolve(true)
       case 'new_session':
         return Promise.resolve('session-new-123')
+      case 'list_tasks':
+        return Promise.resolve([
+          { id: 'task-1', title: 'Fix auth bug', status: 'in_progress', description: 'Token refresh loop', assignee: 'worker-1' },
+          { id: 'task-2', title: 'Add tests', status: 'pending', description: 'Write unit tests' },
+          { id: 'task-3', title: 'Refactor API', status: 'completed', description: 'Clean up endpoints', assignee: 'worker-2' },
+        ])
+      case 'list_agents':
+        return Promise.resolve([
+          { id: 'agent-1', name: 'Researcher', model: 'claude-sonnet-4-6', status: 'running', task: 'Analyzing codebase' },
+          { id: 'agent-2', name: 'Engineer', model: 'claude-sonnet-4-6', status: 'completed', task: 'Build feature' },
+          { id: 'agent-3', name: 'QA', model: 'claude-haiku-4-5', status: 'pending' },
+        ])
+      case 'list_skills':
+        return Promise.resolve([
+          { name: 'commit', description: 'Create git commit', trigger: '/commit', source: 'builtin', category: 'git' },
+          { name: 'help', description: 'Show help', trigger: '/help', source: 'builtin', category: 'navigation' },
+        ])
+      case 'get_skill_detail':
+        return Promise.resolve({
+          name: 'commit', description: 'Create git commit', trigger: '/commit',
+          content: 'Generate a commit...', parameters: [], source: 'builtin', category: 'git',
+        })
+      case 'get_file_tree':
+        return Promise.resolve([
+          { name: 'src', type: 'directory', path: '/test/src', children: [
+            { name: 'main.rs', type: 'file', path: '/test/src/main.rs' },
+          ]},
+          { name: 'Cargo.toml', type: 'file', path: '/test/Cargo.toml' },
+        ])
+      case 'get_working_dir_info':
+        return Promise.resolve({ working_dir: '/home/ed/test', branch: 'main', modified_files: [] })
+      case 'list_mcp_servers':
+        return Promise.resolve([
+          { name: 'filesystem', command: 'npx @modelcontextprotocol/server-filesystem', enabled: true, connected: true, toolCount: 5, tools: [] },
+        ])
+      case 'respond_permission':
+        return Promise.resolve()
       default:
         return Promise.reject(new Error(`Unknown command: ${cmd}`))
     }

@@ -1,6 +1,7 @@
 // Fixed sidebar navigation with collapsible sections
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cn } from '../lib/utils'
+import { getWorkingDirInfo } from '../lib/tauri-api'
 
 export type PageId =
   | 'chat'
@@ -71,12 +72,6 @@ const SETTINGS_ITEMS: NavItem[] = [
   { id: 'settings-advanced', label: 'Advanced', icon: 'tune' },
 ]
 
-const OPC_PROJECTS = [
-  { name: 'Shannon Core', icon: 'hub', color: 'bg-md3-primary/10 text-md3-primary' },
-  { name: 'Shannon Desktop', icon: 'desktop_windows', color: 'bg-md3-secondary/10 text-md3-secondary' },
-  { name: 'Shannon Mobile', icon: 'phone_iphone', color: 'bg-md3-tertiary/10 text-md3-tertiary' },
-]
-
 const SECTION_ICONS: Record<string, string> = {
   opc: 'account_tree',
   extensions: 'category',
@@ -86,6 +81,13 @@ export function AppSidebar({ currentPage, onNavigate }: AppSidebarProps) {
   const [opcOpen, setOpcOpen] = useState(currentPage.startsWith('opc'))
   const [extensionsOpen, setExtensionsOpen] = useState(currentPage.startsWith('extensions-'))
   const [settingsOpen, setSettingsOpen] = useState(currentPage.startsWith('settings-'))
+  const [workingDir, setWorkingDir] = useState<string>('')
+
+  useEffect(() => {
+    getWorkingDirInfo().then(info => setWorkingDir(info.working_dir)).catch(() => {})
+  }, [])
+
+  const projectName = workingDir ? workingDir.split('/').pop() || workingDir : 'Shannon Core'
 
   const sectionState: Record<string, boolean> = {
     opc: opcOpen,
@@ -198,18 +200,15 @@ export function AppSidebar({ currentPage, onNavigate }: AppSidebarProps) {
                   {section.id === 'opc' && (
                     <div className="mt-2 pt-2 border-t border-md3-outline-variant/10 space-y-1">
                       <p className="px-4 py-1 text-[10px] text-md3-on-surface-variant/60 uppercase tracking-widest font-bold">Projects</p>
-                      {OPC_PROJECTS.map((project) => (
-                        <button
-                          key={project.name}
-                          onClick={() => onNavigate('opc')}
-                          className="w-full flex items-center gap-3 px-4 py-1.5 rounded-lg text-label-sm text-md3-on-surface-variant hover:text-md3-primary hover:bg-md3-surface-container-low transition-all"
-                        >
-                          <span className={cn('w-7 h-7 rounded-md flex items-center justify-center', project.color)}>
-                            <span className="material-symbols-outlined text-[14px]">{project.icon}</span>
-                          </span>
-                          <span className="truncate">{project.name}</span>
-                        </button>
-                      ))}
+                      <button
+                        onClick={() => onNavigate('opc')}
+                        className="w-full flex items-center gap-3 px-4 py-1.5 rounded-lg text-label-sm text-md3-on-surface-variant hover:text-md3-primary hover:bg-md3-surface-container-low transition-all"
+                      >
+                        <span className="w-7 h-7 rounded-md flex items-center justify-center bg-md3-primary/10 text-md3-primary">
+                          <span className="material-symbols-outlined text-[14px]">folder</span>
+                        </span>
+                        <span className="truncate">{projectName}</span>
+                      </button>
                     </div>
                   )}
                 </div>
