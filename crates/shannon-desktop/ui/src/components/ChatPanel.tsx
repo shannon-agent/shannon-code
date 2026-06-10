@@ -18,7 +18,6 @@ import { listen } from '@tauri-apps/api/event'
 import { useState, useCallback, useEffect } from 'react'
 import type { DiffFileInfo, HunkAction } from '../types/tauri-events'
 import { applyDiff } from '../lib/tauri-api'
-import { ContextPanel } from './ContextPanel'
 
 interface ChatPanelProps {
   sendMessage: (text: string, filePaths?: string[]) => Promise<void>
@@ -122,47 +121,8 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
   }
 
   return (
-    <div className="flex flex-row flex-1 h-full overflow-hidden">
-      {/* Session History Sidebar */}
-      <aside className="w-[240px] border-r border-md3-outline-variant/10 glass-panel shrink-0 flex flex-col bg-white/40">
-        <div className="p-md border-b border-md3-outline-variant/10">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-md3-on-surface-variant text-[18px]">search</span>
-            <input
-              className="w-full pl-xl pr-md py-xs bg-md3-surface-container border-none rounded-lg text-body-sm focus:ring-1 focus:ring-md3-primary/30"
-              placeholder="Search sessions..."
-              type="text"
-            />
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-sm space-y-xs">
-          <div className="text-label-sm text-md3-on-surface-variant px-sm py-xs uppercase tracking-widest opacity-60">Today</div>
-          <div className="p-sm rounded-lg bg-md3-primary/10 border-l-4 border-md3-primary shadow-sm cursor-pointer">
-            <p className="text-label-md text-md3-primary font-bold truncate">Current Session</p>
-            <p className="text-body-sm text-md3-on-surface-variant opacity-70 truncate">Active conversation...</p>
-          </div>
-          <div className="p-sm rounded-lg hover:bg-md3-surface-container-high/50 cursor-pointer group">
-            <p className="text-label-md text-md3-on-surface truncate group-hover:text-md3-primary transition-colors">Code Review Session</p>
-            <p className="text-body-sm text-md3-on-surface-variant opacity-70 truncate">Ended earlier today</p>
-          </div>
-          <div className="p-sm rounded-lg hover:bg-md3-surface-container-high/50 cursor-pointer group">
-            <p className="text-label-md text-md3-on-surface truncate group-hover:text-md3-primary transition-colors">API Integration Help</p>
-            <p className="text-body-sm text-md3-on-surface-variant opacity-70 truncate">Session ended yesterday</p>
-          </div>
-          <div className="text-label-sm text-md3-on-surface-variant px-sm py-xs uppercase tracking-widest opacity-60 mt-md3-md">Yesterday</div>
-          <div className="p-sm rounded-lg hover:bg-md3-surface-container-high/50 cursor-pointer group">
-            <p className="text-label-md text-md3-on-surface truncate group-hover:text-md3-primary transition-colors">Refactor Architecture</p>
-            <p className="text-body-sm text-md3-on-surface-variant opacity-70 truncate">Exported components</p>
-          </div>
-          <div className="p-sm rounded-lg hover:bg-md3-surface-container-high/50 cursor-pointer group">
-            <p className="text-label-md text-md3-on-surface truncate group-hover:text-md3-primary transition-colors">Bug Fix: Auth Flow</p>
-            <p className="text-body-sm text-md3-on-surface-variant opacity-70 truncate">Resolved issue</p>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main chat area */}
-      <div className="flex flex-col flex-1 min-w-0 bg-md3-surface">
+    <div className="flex flex-col flex-1 h-full overflow-hidden bg-md3-surface">
+      <div className="flex flex-col flex-1 min-w-0">
       {error && (
         <div className="bg-md3-error/10 border-l-4 border-md3-error p-md3-md flex items-center justify-between">
           <span className="text-body-sm text-md3-error">{error}</span>
@@ -189,24 +149,6 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
           </div>
         </div>
       )}
-
-      {/* Actionable Breadcrumbs */}
-      <div className="px-xl py-md flex items-center gap-sm border-b border-md3-outline-variant/10 bg-white/20 backdrop-blur-sm sticky top-0 z-10">
-        <div className="flex items-center gap-xs px-md py-sm bg-md3-surface-container-low rounded-full cursor-pointer hover:bg-md3-surface-container-high/50">
-          <span className="material-symbols-outlined text-[16px] text-md3-primary">search</span>
-          <span className="text-label-sm">Search</span>
-        </div>
-        <span className="material-symbols-outlined text-md3-outline-variant text-[16px]">chevron_right</span>
-        <div className="flex items-center gap-xs px-md py-sm bg-md3-surface-container-low rounded-full cursor-pointer hover:bg-md3-surface-container-high/50">
-          <span className="material-symbols-outlined text-[16px] text-md3-primary">filter_list</span>
-          <span className="text-label-sm">Filter</span>
-        </div>
-        <span className="material-symbols-outlined text-md3-outline-variant text-[16px]">chevron_right</span>
-        <div className="flex items-center gap-xs px-md py-sm bg-md3-primary-container text-md3-on-primary-container rounded-full shadow-sm cursor-pointer hover:opacity-90">
-          <span className="material-symbols-outlined text-[16px]">summarize</span>
-          <span className="text-label-sm font-bold">Summarize</span>
-        </div>
-      </div>
 
       <ScrollArea className="flex-1 px-md3-lg py-md3-lg">
         {messages.length === 0 && !streamingText && activeToolCalls.length === 0 ? (
@@ -362,8 +304,6 @@ export function ChatPanel({ sendMessage, isStreaming, error, clearError }: ChatP
         />
       </div>
       </div>
-      {/* Right context panel */}
-      <ContextPanel />
     </div>
   )
 }
