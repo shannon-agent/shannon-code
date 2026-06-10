@@ -1,6 +1,5 @@
-// Floating badge for background tasks
+// Floating badge for background tasks with MD3 styling
 import { useState, useEffect, useCallback } from 'react'
-import { Brain, X } from 'lucide-react'
 import { getBackgroundTasks, cancelBackgroundTask } from '../lib/tauri-api'
 import { useTauriEvent } from '../hooks/useTauriEvent'
 import type { BackgroundTaskInfo } from '../types/tauri-events'
@@ -84,7 +83,7 @@ export function BackgroundAgentBadge() {
                   : 'bg-secondary text-secondary-foreground hover:bg-background'
               )}
             >
-              <Brain className="w-4 h-4" />
+              <span className="material-symbols-outlined text-[18px]">psychology</span>
               <Badge variant={runningTasks.length > 0 ? 'default' : 'secondary'} className="text-xs">
                 {tasks.length}
               </Badge>
@@ -110,7 +109,7 @@ export function BackgroundAgentBadge() {
                 Background Tasks ({tasks.length})
               </CardTitle>
               <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)} className="h-7 w-7 p-0">
-                <X className="w-4 h-4" />
+                <span className="material-symbols-outlined text-[18px]">close</span>
               </Button>
             </CardHeader>
             <CardContent className="p-0 overflow-y-auto max-h-[60vh]">

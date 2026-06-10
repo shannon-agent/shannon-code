@@ -1,7 +1,7 @@
 // Theme context for Shannon Desktop with Tokyo Night variants and popular themes
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-export type Theme = 'tokyo-night' | 'tokyo-night-light' | 'catppuccin' | 'nord' | 'ember' | 'slate'
+export type Theme = 'material' | 'tokyo-night' | 'tokyo-night-light' | 'catppuccin' | 'nord' | 'ember' | 'slate'
 
 interface ThemeContextType {
   theme: Theme
@@ -25,14 +25,14 @@ async function loadTheme(): Promise<Theme> {
       // Use Tauri configure API in production
       const { getConfig } = await import('../lib/tauri-api')
       const config = await getConfig()
-      return (config.theme as Theme) ?? 'tokyo-night'
+      return (config.theme as Theme) ?? 'material'
     }
   } catch {
     // Fallback to localStorage
   }
 
   const stored = localStorage.getItem(THEME_STORAGE_KEY)
-  return (stored as Theme) ?? 'tokyo-night'
+  return (stored as Theme) ?? 'material'
 }
 
 // Save theme to storage (mock in tests, Tauri in production)
@@ -55,11 +55,11 @@ interface ThemeProviderProps {
   defaultTheme?: Theme
 }
 
-export function ThemeProvider({ children, defaultTheme = 'tokyo-night' }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme = 'material' }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>(defaultTheme)
   const [isLoading, setIsLoading] = useState(true)
 
-  const themes: Theme[] = ['tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord', 'ember', 'slate']
+  const themes: Theme[] = ['material', 'tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord', 'ember', 'slate']
 
   // Load theme on mount
   useEffect(() => {

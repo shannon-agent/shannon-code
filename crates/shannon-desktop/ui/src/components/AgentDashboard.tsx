@@ -1,9 +1,7 @@
-// Agent dashboard showing active sub-agents, status, and progress
+// Agent dashboard with MD3 styling and Material Symbols
 import { useState, useMemo } from 'react'
-import { Bot, CheckCircle2, XCircle, Loader2, Clock, ChevronDown, ChevronRight, Wrench, Timer } from 'lucide-react'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
-import { Separator } from './ui/separator'
 import { Badge } from './ui/badge'
 import { cn } from '../lib/utils'
 
@@ -26,11 +24,11 @@ interface AgentDashboardProps {
   onCancel?: (agentId: string) => void
 }
 
-const STATUS_CONFIG = {
-  running: { icon: Loader2, color: 'text-primary', animate: 'animate-spin', badge: 'default' as const },
-  completed: { icon: CheckCircle2, color: 'text-success', animate: '', badge: 'success' as const },
-  failed: { icon: XCircle, color: 'text-destructive', animate: '', badge: 'error' as const },
-  pending: { icon: Clock, color: 'text-muted-foreground', animate: '', badge: 'secondary' as const },
+const STATUS_ICON: Record<string, { icon: string; color: string }> = {
+  running: { icon: 'progress_activity', color: 'text-md3-primary' },
+  completed: { icon: 'check_circle', color: 'text-md3-secondary' },
+  failed: { icon: 'cancel', color: 'text-md3-error' },
+  pending: { icon: 'schedule', color: 'text-md3-on-surface-variant' },
 }
 
 const FILTER_TABS: { key: StatusFilter; label: string }[] = [
@@ -61,12 +59,13 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-secondary border-b border-border">
-        <div className="flex items-center gap-2">
-          <Bot className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-medium text-secondary-foreground">Agents</span>
+      {/* Header */}
+      <div className="flex items-center justify-between px-md3-md py-md3-sm bg-md3-surface-container border-b border-md3-outline-variant/10">
+        <div className="flex items-center gap-md3-sm">
+          <span className="material-symbols-outlined text-[16px] text-md3-primary">smart_toy</span>
+          <span className="text-label-md font-medium text-md3-on-surface">Agents</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-md3-xs">
           {running > 0 && <Badge variant="default">{running} running</Badge>}
           {completed > 0 && <Badge variant="success">{completed} done</Badge>}
           {failed > 0 && <Badge variant="error">{failed} failed</Badge>}
@@ -74,7 +73,7 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-0.5 px-2 py-1 border-b border-border/50 bg-secondary/30">
+      <div className="flex items-center gap-md3-xs px-md3-md py-md3-xs border-b border-md3-outline-variant/10 bg-md3-surface-container-low">
         {FILTER_TABS.map(tab => {
           const count = tab.key === 'all' ? agents.length : agents.filter(a => a.status === tab.key).length
           return (
@@ -82,10 +81,10 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
               key={tab.key}
               onClick={() => setFilter(tab.key)}
               className={cn(
-                'px-2 py-0.5 text-[10px] rounded transition-colors',
+                'px-md3-sm py-md3-xs text-label-sm rounded-lg transition-colors',
                 filter === tab.key
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-muted-foreground hover:text-secondary-foreground'
+                  ? 'bg-md3-primary/10 text-md3-primary font-medium'
+                  : 'text-md3-on-surface-variant hover:text-md3-on-surface'
               )}
             >
               {tab.label} {count > 0 && `(${count})`}
@@ -97,103 +96,100 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
       <ScrollArea className="flex-1">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center p-8">
-            <p className="text-muted-foreground text-[11px]">
-              {agents.length === 0 ? 'No active agents' : 'No matching agents'}
-            </p>
+            <div className="text-center space-y-md3-sm">
+              <span className="material-symbols-outlined text-[32px] text-md3-on-surface-variant/40">smart_toy</span>
+              <p className="text-label-sm text-md3-on-surface-variant">
+                {agents.length === 0 ? 'No active agents' : 'No matching agents'}
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="py-1">
+          <div className="p-md3-md space-y-md3-sm">
             {filtered.map(agent => {
-              const cfg = STATUS_CONFIG[agent.status]
-              const Icon = cfg.icon
+              const cfg = STATUS_ICON[agent.status]
               const isExpanded = expandedId === agent.id
-              const hasDetails = agent.task || agent.outputPreview
               return (
                 <div
                   key={agent.id}
                   className={cn(
-                    'px-3 py-2',
-                    agent.status === 'running' ? 'bg-primary/5' : ''
+                    'rounded-xl border transition-colors',
+                    agent.status === 'running'
+                      ? 'bg-md3-primary/5 border-md3-primary/15'
+                      : 'bg-md3-surface-container border-md3-outline-variant/10'
                   )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Icon className={cn('w-3.5 h-3.5 flex-shrink-0', cfg.color, cfg.animate)} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] font-medium text-secondary-foreground truncate">
-                            {agent.name}
-                          </span>
-                          <Badge variant={cfg.badge} className="text-[9px]">{agent.status}</Badge>
-                          <span className="text-[10px] text-muted-foreground flex-shrink-0">
-                            {agent.model}
-                          </span>
+                  <div className="px-md3-md py-md3-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-md3-sm min-w-0 flex-1">
+                        <span className={cn(
+                          'material-symbols-outlined text-[18px] shrink-0',
+                          cfg.color,
+                          agent.status === 'running' && 'animate-spin'
+                        )}>
+                          {cfg.icon}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-md3-xs">
+                            <span className="text-body-sm font-medium text-md3-on-surface truncate">{agent.name}</span>
+                            <Badge variant={agent.status === 'running' ? 'default' : agent.status === 'completed' ? 'success' : agent.status === 'failed' ? 'error' : 'secondary'} className="text-[9px]">{agent.status}</Badge>
+                            <span className="text-label-sm text-md3-on-surface-variant shrink-0">{agent.model}</span>
+                          </div>
+                          {agent.task && (
+                            <p className="text-label-sm text-md3-on-surface-variant truncate mt-md3-xs">{agent.task}</p>
+                          )}
                         </div>
-                        {agent.task && (
-                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {agent.task}
-                          </p>
-                        )}
                       </div>
-                      {hasDetails && (
+                      <div className="flex items-center gap-md3-sm shrink-0 ml-md3-sm">
+                        {agent.duration != null && (
+                          <span className="text-label-sm text-md3-on-surface-variant flex items-center gap-md3-xs">
+                            <span className="material-symbols-outlined text-[12px]">timer</span>
+                            {formatDuration(agent.duration)}
+                          </span>
+                        )}
+                        {agent.status === 'running' && onCancel && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onCancel(agent.id)}
+                            className="h-6 text-label-sm text-md3-error hover:text-md3-error hover:bg-md3-error/10 px-md3-sm"
+                          >
+                            Cancel
+                          </Button>
+                        )}
                         <button
                           onClick={() => setExpandedId(isExpanded ? null : agent.id)}
-                          className="flex-shrink-0 p-0.5 text-muted-foreground hover:text-secondary-foreground"
+                          className="p-0.5 text-md3-on-surface-variant hover:text-md3-on-surface transition-colors"
                         >
-                          {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                          <span className="material-symbols-outlined text-[16px]">
+                            {isExpanded ? 'expand_less' : 'expand_more'}
+                          </span>
                         </button>
-                      )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                      {agent.duration != null && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
-                          <Timer className="w-2.5 h-2.5" />
-                          {formatDuration(agent.duration)}
-                        </span>
-                      )}
-                      {agent.status === 'running' && onCancel && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onCancel(agent.id)}
-                          className="h-5 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10 px-1.5"
-                        >
-                          Cancel
-                        </Button>
-                      )}
-                    </div>
+                    {/* Progress bar */}
+                    {agent.status === 'running' && agent.progress != null && (
+                      <div className="mt-md3-sm h-1 bg-md3-surface-container-high rounded-full overflow-hidden">
+                        <div className="h-full bg-md3-primary rounded-full transition-all duration-300" style={{ width: `${Math.min(100, agent.progress)}%` }} />
+                      </div>
+                    )}
+                    {/* Quick stats */}
+                    {agent.toolsUsed != null && agent.toolsUsed > 0 && (
+                      <span className="text-label-sm text-md3-on-surface-variant mt-md3-xs flex items-center gap-md3-xs">
+                        <span className="material-symbols-outlined text-[12px]">build</span>
+                        {agent.toolsUsed} tool{agent.toolsUsed !== 1 ? 's' : ''} used
+                      </span>
+                    )}
                   </div>
-                  {/* Progress bar */}
-                  {agent.status === 'running' && agent.progress != null && (
-                    <div className="mt-1.5 h-1 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, agent.progress)}%` }}
-                      />
-                    </div>
-                  )}
-                  {/* Quick stats */}
-                  {agent.toolsUsed != null && agent.toolsUsed > 0 && (
-                    <span className="text-[10px] text-muted-foreground mt-1 flex items-center gap-0.5">
-                      <Wrench className="w-2.5 h-2.5" />
-                      {agent.toolsUsed} tool{agent.toolsUsed !== 1 ? 's' : ''} used
-                    </span>
-                  )}
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="mt-2 p-2 rounded bg-background border border-border/50 text-[10px] text-muted-foreground space-y-1">
+                    <div className="mx-md3-md mb-md3-md p-md3-md rounded-lg bg-md3-surface border border-md3-outline-variant/10 text-label-sm text-md3-on-surface-variant space-y-md3-xs">
                       {agent.task && (
-                        <div>
-                          <span className="text-secondary-foreground font-medium">Task:</span> {agent.task}
-                        </div>
+                        <div><span className="text-md3-on-surface font-medium">Task:</span> {agent.task}</div>
                       )}
                       {agent.outputPreview && (
-                        <div>
-                          <span className="text-secondary-foreground font-medium">Output:</span>{' '}
-                          <span className="font-mono whitespace-pre-wrap">{agent.outputPreview}</span>
-                        </div>
+                        <div><span className="text-md3-on-surface font-medium">Output:</span> <span className="font-mono whitespace-pre-wrap">{agent.outputPreview}</span></div>
                       )}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-md3-md">
                         <span>ID: <span className="font-mono">{agent.id.slice(0, 8)}</span></span>
                         <span>Model: {agent.model}</span>
                       </div>
@@ -202,7 +198,6 @@ export function AgentDashboard({ agents, onCancel }: AgentDashboardProps) {
                 </div>
               )
             })}
-            {filtered.length > 1 && <Separator />}
           </div>
         )}
       </ScrollArea>

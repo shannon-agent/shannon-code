@@ -1,10 +1,9 @@
-// Tests for SettingsPanel component
+// Tests for Settings page components
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { SettingsPanel } from '../SettingsPanel'
+import { render, screen } from '@testing-library/react'
+import { GeneralSettingsPage, ThemeSettingsPage, ModelsSettingsPage, BillingSettingsPage, AdvancedSettingsPage } from '../SettingsPanel'
 import { ThemeProvider } from '../../context/ThemeContext'
 
-// Mock Tauri API
 vi.mock('../../lib/tauri-api', () => ({
   configure: vi.fn(() => Promise.resolve()),
   getConfig: vi.fn(() => Promise.resolve({
@@ -17,91 +16,135 @@ vi.mock('../../lib/tauri-api', () => ({
   getTools: vi.fn(() => Promise.resolve([
     { name: 'bash', description: 'Run shell commands', enabled: true },
     { name: 'file_read', description: 'Read file contents', enabled: true },
-    { name: 'search', description: 'Search codebase', enabled: true },
   ]))
 }))
 
-describe('SettingsPanel', () => {
-  const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <ThemeProvider>{children}</ThemeProvider>
-  )
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <ThemeProvider>{children}</ThemeProvider>
+)
 
-  it('renders settings title', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByText('Settings')).toBeDefined()
+describe('GeneralSettingsPage', () => {
+  it('renders System Settings header', () => {
+    render(<GeneralSettingsPage />, { wrapper })
+    expect(screen.getByText('System Settings')).toBeDefined()
   })
 
-  it('renders API key input field', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByPlaceholderText('sk-ant-...')).toBeDefined()
+  it('renders Accessibility section', () => {
+    render(<GeneralSettingsPage />, { wrapper })
+    expect(screen.getByText('Accessibility')).toBeDefined()
+    expect(screen.getByText('Text Size')).toBeDefined()
   })
 
-  it('renders base URL input field', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByPlaceholderText('https://api.example.com')).toBeDefined()
+  it('renders Autonomy Level section', () => {
+    render(<GeneralSettingsPage />, { wrapper })
+    expect(screen.getByText('Autonomy Level')).toBeDefined()
+    expect(screen.getByText('Human-in-the-loop')).toBeDefined()
+    expect(screen.getByText('Full Autonomy')).toBeDefined()
+  })
+})
+
+describe('ThemeSettingsPage', () => {
+  it('renders Theme Settings header', () => {
+    render(<ThemeSettingsPage />, { wrapper })
+    expect(screen.getByText('Theme Settings')).toBeDefined()
   })
 
-  it('renders theme selector', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByText('Theme')).toBeDefined()
+  it('renders Appearance section', () => {
+    render(<ThemeSettingsPage />, { wrapper })
+    expect(screen.getByText('Appearance')).toBeDefined()
+    expect(screen.getByText('Light Mode')).toBeDefined()
+    expect(screen.getByText('Dark Mode')).toBeDefined()
   })
 
-  it('toggles API key visibility', () => {
-    render(<SettingsPanel />, { wrapper })
-    const toggleButton = screen.getAllByRole('button').find(btn =>
-      btn.querySelector('svg')
-    )
-    expect(toggleButton).toBeDefined()
+  it('renders Color Accents section', () => {
+    render(<ThemeSettingsPage />, { wrapper })
+    expect(screen.getByText('Color Accents')).toBeDefined()
   })
 
-  it('displays about section', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByText('About')).toBeDefined()
-    expect(screen.getByText(/Shannon Desktop/)).toBeDefined()
+  it('renders Glass Pane section', () => {
+    render(<ThemeSettingsPage />, { wrapper })
+    expect(screen.getByText('Glass Pane Intensity')).toBeDefined()
   })
 
-  it('shows version information', () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(screen.getByText(/Shannon Desktop v0\.1\.0/)).toBeDefined()
+  it('renders Interface Font section', () => {
+    render(<ThemeSettingsPage />, { wrapper })
+    expect(screen.getByText('Interface Font')).toBeDefined()
+  })
+})
+
+describe('ModelsSettingsPage', () => {
+  it('renders Model Configuration header', () => {
+    render(<ModelsSettingsPage />, { wrapper })
+    expect(screen.getByText('Model Configuration')).toBeDefined()
   })
 
-  it('provides documentation links', () => {
-    render(<SettingsPanel />, { wrapper })
-    const githubLink = screen.getByText('GitHub')
-    const docsLink = screen.getByText('Documentation')
-    expect(githubLink).toBeDefined()
-    expect(docsLink).toBeDefined()
+  it('renders Performance Strategy section', () => {
+    render(<ModelsSettingsPage />, { wrapper })
+    expect(screen.getByText('Performance Strategy')).toBeDefined()
+    expect(screen.getByText('Balanced')).toBeDefined()
+    expect(screen.getByText('Speed')).toBeDefined()
+    expect(screen.getByText('High Quality')).toBeDefined()
   })
 
-  it('applies Tokyo Night colors', () => {
-    const { container } = render(<SettingsPanel />, { wrapper })
-    const panel = container.querySelector('.bg-\\[\\#24283b\\]')
-    expect(panel).toBeDefined()
+  it('renders Active Tier Summary', () => {
+    render(<ModelsSettingsPage />, { wrapper })
+    expect(screen.getByText('Active Tier Summary')).toBeDefined()
+    expect(screen.getByText('Pro Tier')).toBeDefined()
   })
 
-  it('uses correct text styling', () => {
-    const { container } = render(<SettingsPanel />, { wrapper })
-    const title = container.querySelector('.text-\\[\\#c0caf5\\]')
-    expect(title).toBeDefined()
+  it('renders Global Parameters', () => {
+    render(<ModelsSettingsPage />, { wrapper })
+    expect(screen.getByText('Global Parameters')).toBeDefined()
+    expect(screen.getByText('Temperature')).toBeDefined()
+    expect(screen.getByText('Max Tokens')).toBeDefined()
+  })
+})
+
+describe('BillingSettingsPage', () => {
+  it('renders Usage & Billing header', () => {
+    render(<BillingSettingsPage />, { wrapper })
+    expect(screen.getByText(/Usage & Billing/)).toBeDefined()
   })
 
-  it('renders tools section with tool names', async () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(await screen.findByText('Tools')).toBeDefined()
-    expect(await screen.findByText('bash')).toBeDefined()
-    expect(await screen.findByText('file_read')).toBeDefined()
-    expect(await screen.findByText('search')).toBeDefined()
+  it('renders Current Plan section', () => {
+    render(<BillingSettingsPage />, { wrapper })
+    expect(screen.getByText('Pro Plan')).toBeDefined()
+    expect(screen.getByText('$29.00')).toBeDefined()
   })
 
-  it('renders tool toggle switches', async () => {
-    render(<SettingsPanel />, { wrapper })
-    const toggle = await screen.findByLabelText('Toggle bash')
-    expect(toggle).toBeDefined()
-    expect(toggle.getAttribute('aria-checked')).toBe('true')
+  it('renders Billing History', () => {
+    render(<BillingSettingsPage />, { wrapper })
+    expect(screen.getByText('Billing History')).toBeDefined()
+  })
+})
+
+describe('AdvancedSettingsPage', () => {
+  it('renders Advanced Settings header', () => {
+    render(<AdvancedSettingsPage />, { wrapper })
+    expect(screen.getByText('Advanced Settings')).toBeDefined()
   })
 
-  it('renders tool descriptions', async () => {
-    render(<SettingsPanel />, { wrapper })
-    expect(await screen.findByText('Run shell commands')).toBeDefined()
+  it('renders Memory Management section', () => {
+    render(<AdvancedSettingsPage />, { wrapper })
+    expect(screen.getByText('Memory Management')).toBeDefined()
+    expect(screen.getByText('Long-term Memory')).toBeDefined()
+    expect(screen.getByText('Clear Session Cache')).toBeDefined()
+  })
+
+  it('renders Data Privacy section', () => {
+    render(<AdvancedSettingsPage />, { wrapper })
+    expect(screen.getByText('Data Privacy')).toBeDefined()
+  })
+
+  it('renders Developer Options section', () => {
+    render(<AdvancedSettingsPage />, { wrapper })
+    expect(screen.getByText('Developer Options')).toBeDefined()
+    expect(screen.getByText('View System Logs')).toBeDefined()
+  })
+
+  it('renders Critical System Reset section', () => {
+    render(<AdvancedSettingsPage />, { wrapper })
+    expect(screen.getByText('Critical System Reset')).toBeDefined()
+    expect(screen.getByText('Reset to Factory Settings')).toBeDefined()
   })
 })

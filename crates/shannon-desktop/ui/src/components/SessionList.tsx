@@ -1,11 +1,9 @@
-// Left sidebar session list with create/delete functionality and polished design
+// Session list with MD3 styling and Material Symbols
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, MessageSquare, Search, MoreHorizontal, Edit, Copy, Download } from 'lucide-react'
 import { listSessions, newSession, deleteSession, searchSessions, renameSession, duplicateSession, exportSession } from '../lib/tauri-api'
 import type { SessionInfo } from '../types/tauri-events'
 import { Button } from './ui/button'
 import { ScrollArea } from './ui/scroll-area'
-import { Separator } from './ui/separator'
 import { Input } from './ui/input'
 import { Skeleton } from './ui/skeleton'
 import { Empty } from './ui/empty'
@@ -171,43 +169,42 @@ export function SessionList({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 space-y-2">
-        <Button onClick={handleNewSession} className="w-full gap-2">
-          <Plus className="w-4 h-4" />
+      <div className="p-md3-md space-y-md3-sm">
+        <Button onClick={handleNewSession} className="w-full gap-md3-sm rounded-xl">
+          <span className="material-symbols-outlined text-[18px]">add</span>
           New Chat
         </Button>
         <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-[16px] text-md3-on-surface-variant/50 pointer-events-none">search</span>
           <Input
             type="text"
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search sessions..."
-            className="pl-8"
+            className="pl-8 rounded-xl bg-md3-surface-container border-md3-outline-variant/10"
           />
         </div>
       </div>
-      <Separator />
 
       <ScrollArea className="flex-1">
         {loading ? (
-          <div className="p-4 space-y-3">
-            <Skeleton className="h-4 w-16" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
+          <div className="p-md3-md space-y-md3-md">
+            <Skeleton className="h-4 w-16 rounded-lg" />
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <Skeleton className="h-9 w-full rounded-xl" />
           </div>
         ) : filteredSessions.length === 0 ? (
           <Empty
-            icon={<MessageSquare className="w-8 h-8" />}
+            icon={<span className="material-symbols-outlined text-[32px] text-md3-on-surface-variant/40">chat_bubble</span>}
             title={searchQuery ? 'No sessions found' : 'No sessions yet'}
             description={searchQuery ? 'Try a different search term' : 'Start a new chat to begin'}
           />
         ) : (
-          <div className="py-1">
+          <div className="py-md3-xs">
             {grouped.map((group) => (
               <div key={group.label}>
-                <div className="px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-md3-md pt-md3-md pb-md3-xs text-label-sm font-semibold uppercase tracking-wider text-md3-on-surface-variant/50">
                   {group.label}
                 </div>
                 {group.sessions.map((session) => (
@@ -215,22 +212,22 @@ export function SessionList({
                     key={session.id}
                     onClick={() => onSessionSelect(session.id)}
                     className={cn(
-                      'mx-1.5 px-3 py-2 rounded-lg cursor-pointer transition-all duration-100 group relative',
+                      'mx-md3-sm px-md3-md py-md3-sm rounded-xl cursor-pointer transition-all duration-150 group relative',
                       currentSessionId === session.id
-                        ? 'bg-primary/15 text-primary border border-ring/20'
-                        : 'text-secondary-foreground hover:bg-secondary border border-transparent'
+                        ? 'bg-md3-primary/10 text-md3-primary border border-md3-primary/15'
+                        : 'text-md3-on-surface hover:bg-md3-surface-container border border-transparent'
                     )}
                   >
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-start gap-md3-sm">
                       <div className={cn(
-                        'w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
-                        currentSessionId === session.id ? 'bg-primary' : 'bg-muted-foreground/40'
+                        'w-1.5 h-1.5 rounded-full mt-1.5 shrink-0',
+                        currentSessionId === session.id ? 'bg-md3-primary' : 'bg-md3-on-surface-variant/30'
                       )} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm truncate leading-tight">
+                        <div className="text-body-sm truncate leading-tight">
                           {session.title || 'New Conversation'}
                         </div>
-                        <div className="text-[10px] text-muted-foreground mt-0.5 tabular-nums">
+                        <div className="text-label-sm text-md3-on-surface-variant/60 mt-md3-xs tabular-nums">
                           {session.message_count} msgs
                         </div>
                       </div>
@@ -240,35 +237,35 @@ export function SessionList({
                             variant="ghost"
                             size="sm"
                             onClick={(e) => e.stopPropagation()}
-                            className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-secondary/50"
+                            className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0 hover:bg-md3-surface-container-high rounded-lg"
                             title="More options"
                           >
-                            <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+                            <span className="material-symbols-outlined text-[14px] text-md3-on-surface-variant">more_horiz</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleRename(session.id) }}>
-                            <Edit className="w-3.5 h-3.5" />
+                            <span className="material-symbols-outlined text-[16px] mr-2">edit</span>
                             Rename
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(session.id) }}>
-                            <Copy className="w-3.5 h-3.5" />
+                            <span className="material-symbols-outlined text-[16px] mr-2">content_copy</span>
                             Duplicate
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExport(session.id, 'markdown') }}>
-                            <Download className="w-3.5 h-3.5" />
+                            <span className="material-symbols-outlined text-[16px] mr-2">download</span>
                             Export Markdown
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleExport(session.id, 'json') }}>
-                            <Download className="w-3.5 h-3.5" />
+                            <span className="material-symbols-outlined text-[16px] mr-2">download</span>
                             Export JSON
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={(e) => { e.stopPropagation(); handleDeleteSession(session.id) }}
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                            className="text-md3-error focus:text-md3-error focus:bg-md3-error/10"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="material-symbols-outlined text-[16px] mr-2">delete</span>
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

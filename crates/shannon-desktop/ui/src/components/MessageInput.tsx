@@ -1,6 +1,5 @@
-// Multi-line message input with keyboard shortcuts, file drag-drop, and polished design
+// Glass card message input with glow effect, MD3 styling, and Material Symbols
 import { useState, useRef, useEffect, KeyboardEvent, useCallback } from 'react'
-import { Send, Loader2, Paperclip, X } from 'lucide-react'
 import { Textarea } from './ui/textarea'
 import { Button } from './ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './ui/tooltip'
@@ -11,7 +10,7 @@ interface FileAttachment {
   name: string
   path: string
   size: number
-  preview?: string  // Data URL for image preview
+  preview?: string
 }
 
 interface MessageInputProps {
@@ -61,7 +60,6 @@ export function MessageInput({
         size: file.size
       }
 
-      // Generate preview for images
       if (file.type.startsWith('image/')) {
         const reader = new FileReader()
         reader.onload = (e) => {
@@ -91,7 +89,6 @@ export function MessageInput({
   }, [])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle keyboard shortcuts for attachment navigation
     if (e.key === 'Escape' && attachments.length > 0) {
       e.preventDefault()
       setAttachments([])
@@ -133,11 +130,12 @@ export function MessageInput({
   const characterCount = text.length
   const maxLength = 4000
   const isNearLimit = characterCount > maxLength * 0.9
+  const hasContent = text.trim() || attachments.length > 0
 
   return (
     <TooltipProvider delayDuration={300}>
       <div
-        className="border-t border-border bg-secondary/80 px-4 py-3"
+        className="relative px-md3-lg py-md3-md bg-gradient-to-t from-md3-surface via-md3-surface/95 to-transparent"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -146,158 +144,161 @@ export function MessageInput({
       >
         {/* File attachments */}
         {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-2" role="list" aria-label="Attached files">
+          <div className="flex flex-wrap gap-md3-xs mb-md3-sm" role="list" aria-label="Attached files">
             {attachments.map((attachment, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-lg group"
+                className="flex items-center gap-md3-sm px-md3-md py-md3-sm bg-md3-surface-container rounded-xl border border-md3-outline-variant/10 group"
                 role="listitem"
                 aria-label={`Attachment: ${attachment.name}, ${formatFileSize(attachment.size)}`}
               >
                 {attachment.preview ? (
-                  <div className="relative w-8 h-8 rounded overflow-hidden flex-shrink-0" aria-hidden>
-                    <img
-                      src={attachment.preview}
-                      alt={attachment.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative w-8 h-8 rounded-lg overflow-hidden shrink-0" aria-hidden>
+                    <img src={attachment.preview} alt={attachment.name} className="w-full h-full object-cover" />
                   </div>
                 ) : (
-                  <Paperclip className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" aria-hidden />
+                  <span className="material-symbols-outlined text-[16px] text-md3-on-surface-variant">attach_file</span>
                 )}
-                <span className="text-sm text-secondary-foreground truncate max-w-[150px]">
-                  {attachment.name}
-                </span>
-                <span className="text-xs text-muted-foreground" aria-label={`Size: ${formatFileSize(attachment.size)}`}>
-                  {formatFileSize(attachment.size)}
-                </span>
+                <span className="text-body-sm text-md3-on-surface truncate max-w-[150px]">{attachment.name}</span>
+                <span className="text-label-sm text-md3-on-surface-variant">{formatFileSize(attachment.size)}</span>
                 <button
                   onClick={() => removeAttachment(index)}
-                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-background rounded transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-md3-surface-container-high rounded-lg transition-all"
                   aria-label={`Remove ${attachment.name}`}
                   title={`Remove ${attachment.name}`}
                 >
-                  <X className="w-3 h-3 text-muted-foreground" />
+                  <span className="material-symbols-outlined text-[14px] text-md3-on-surface-variant">close</span>
                 </button>
               </div>
             ))}
           </div>
         )}
 
-        <div
-          className={cn(
-            'relative flex items-end gap-2 rounded-2xl bg-glass-bg border transition-all duration-150',
-            isDragging
-              ? 'border-ring bg-primary/5'
-              : 'border-glass-border focus-within:border-ring/40 focus-within:shadow-[0_0_0_4px_var(--accent)]/12'
-          )}
-          role="search"
-          aria-label="Compose message"
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            className="hidden"
-            onChange={(e) => {
-              const files = Array.from(e.target.files || [])
-              const processedAttachments = files.map(file => {
-                const attachment: FileAttachment = {
-                  name: file.name,
-                  path: (file as any).path || file.name,
-                  size: file.size
-                }
+        {/* Input card with glow */}
+        <div className="relative">
+          {/* Glow effect behind input when focused */}
+          <div className={cn(
+            'absolute -inset-1 rounded-3xl transition-all duration-500 pointer-events-none',
+            hasContent && !disabled
+              ? 'bg-md3-primary/8 blur-xl opacity-100'
+              : 'opacity-0'
+          )} />
 
-                if (file.type.startsWith('image/')) {
-                  const reader = new FileReader()
-                  reader.onload = (ev) => {
-                    const preview = ev.target?.result as string
-                    setAttachments(prev => prev.map(a =>
-                      a.path === attachment.path ? { ...a, preview } : a
-                    ))
+          <div
+            className={cn(
+              'relative flex items-end gap-md3-sm rounded-2xl glass-card transition-all duration-200',
+              isDragging
+                ? 'border-md3-primary/40 bg-md3-primary/5'
+                : 'focus-within:border-md3-primary/25 focus-within:shadow-[0_0_0_3px_rgba(107,56,212,0.08)]'
+            )}
+            role="search"
+            aria-label="Compose message"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || [])
+                const processedAttachments = files.map(file => {
+                  const attachment: FileAttachment = {
+                    name: file.name,
+                    path: (file as any).path || file.name,
+                    size: file.size
                   }
-                  reader.readAsDataURL(file)
-                }
 
-                return attachment
-              })
-              setAttachments(prev => [...prev, ...processedAttachments])
-            }}
-            aria-label="Attach files"
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex-shrink-0 p-2 h-auto text-muted-foreground hover:text-secondary-foreground transition-colors rounded-none"
-                type="button"
-                aria-label="Attach files"
-              >
-                <Paperclip className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Attach files</TooltipContent>
-          </Tooltip>
+                  if (file.type.startsWith('image/')) {
+                    const reader = new FileReader()
+                    reader.onload = (ev) => {
+                      const preview = ev.target?.result as string
+                      setAttachments(prev => prev.map(a =>
+                        a.path === attachment.path ? { ...a, preview } : a
+                      ))
+                    }
+                    reader.readAsDataURL(file)
+                  }
 
-          <Textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={disabled}
-            placeholder={placeholder}
-            rows={1}
-            className="border-0 bg-transparent focus-visible:ring-0 px-0 py-3 pr-2 text-sm leading-relaxed"
-            style={{ maxHeight: '200px' }}
-            aria-label="Message text"
-            aria-describedby={attachments.length > 0 ? 'attachments-instructions' : undefined}
-          />
+                  return attachment
+                })
+                setAttachments(prev => [...prev, ...processedAttachments])
+              }}
+              aria-label="Attach files"
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="shrink-0 p-2 h-auto text-md3-on-surface-variant hover:text-md3-on-surface transition-colors rounded-none"
+                  type="button"
+                  aria-label="Attach files"
+                >
+                  <span className="material-symbols-outlined text-[20px]">attach_file</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Attach files</TooltipContent>
+            </Tooltip>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleSend}
-                disabled={disabled || (!text.trim() && attachments.length === 0)}
-                size="sm"
-                className={cn(
-                  'flex-shrink-0 m-1.5 h-8 w-8 p-0 rounded-full',
-                  (text.trim() || attachments.length > 0) && !disabled
-                    ? 'bg-gradient-to-b from-primary to-accent-hover'
-                    : 'bg-transparent text-muted-foreground hover:bg-transparent hover:text-muted-foreground'
-                )}
-                aria-label="Send message"
-              >
-                {disabled ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Send message (Enter)</TooltipContent>
-          </Tooltip>
+            <Textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={disabled}
+              placeholder={placeholder}
+              rows={1}
+              className="border-0 bg-transparent focus-visible:ring-0 px-0 py-md3-md pr-2 text-body-md leading-relaxed placeholder:text-md3-on-surface-variant/50"
+              style={{ maxHeight: '200px' }}
+              aria-label="Message text"
+              aria-describedby={attachments.length > 0 ? 'attachments-instructions' : undefined}
+            />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={handleSend}
+                  disabled={disabled || (!text.trim() && attachments.length === 0)}
+                  size="sm"
+                  className={cn(
+                    'shrink-0 m-1.5 h-8 w-8 p-0 rounded-xl transition-all duration-200',
+                    hasContent && !disabled
+                      ? 'bg-md3-primary text-md3-on-primary hover:bg-md3-primary/90 active:scale-95'
+                      : 'bg-transparent text-md3-on-surface-variant hover:bg-transparent'
+                  )}
+                  aria-label="Send message"
+                >
+                  {disabled ? (
+                    <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                  ) : (
+                    <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Send message (Enter)</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Drag overlay */}
         {isDragging && (
           <div
-            className="absolute inset-0 flex items-center justify-center bg-primary/10 rounded-lg border-2 border-dashed border-ring pointer-events-none"
+            className="absolute inset-0 flex items-center justify-center bg-md3-primary/10 rounded-2xl border-2 border-dashed border-md3-primary/40 pointer-events-none"
             role="status"
             aria-live="polite"
           >
             <div className="text-center">
-              <Paperclip className="w-8 h-8 mx-auto mb-2 text-primary" aria-hidden />
-              <p className="text-sm font-medium text-primary">Drop files to attach</p>
+              <span className="material-symbols-outlined text-[32px] text-md3-primary mx-auto mb-2 block">cloud_upload</span>
+              <p className="text-body-sm font-medium text-md3-primary">Drop files to attach</p>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-1.5 px-1">
+        <div className="flex items-center justify-between mt-md3-sm px-1">
           <div
             id="attachments-instructions"
-            className="text-[10px] text-muted-foreground flex items-center gap-1"
+            className="text-label-sm text-md3-on-surface-variant/60 flex items-center gap-1"
             aria-hidden
           >
             <Kbd>Enter</Kbd>
@@ -307,7 +308,7 @@ export function MessageInput({
           </div>
           {characterCount > 0 && (
             <span
-              className={cn('text-[10px] tabular-nums', isNearLimit ? 'text-destructive' : 'text-muted-foreground')}
+              className={cn('text-label-sm tabular-nums', isNearLimit ? 'text-md3-error' : 'text-md3-on-surface-variant/60')}
               aria-label={`Character count: ${characterCount} of ${maxLength}`}
             >
               {characterCount}/{maxLength}

@@ -10,6 +10,8 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
   --radius-full: 9999px;
   --radius-pill: 9999px;
 
@@ -21,6 +23,16 @@
   --space-5: 20px;
   --space-6: 24px;
 
+  /* MD3 spacing aliases */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-gutter: 24px;
+  --spacing-sidebar-width: 280px;
+  --spacing-max-content-width: 1200px;
+
   /* Animation tokens */
   --duration-fast: 100ms;
   --duration-normal: 180ms;
@@ -31,13 +43,143 @@
   --ease-spring-apple: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* Font stacks */
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist', ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
   --font-body-size: 14px;
+
+  /* Typography scale */
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 1;
+  --text-label-sm--letter-spacing: 0.04em;
+  --text-label-sm--font-weight: 500;
+
+  --text-label-md: 14px;
+  --text-label-md--line-height: 1;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 500;
+
+  --text-body-sm: 14px;
+  --text-body-sm--line-height: 1.5;
+  --text-body-sm--font-weight: 400;
+
+  --text-body-md: 16px;
+  --text-body-md--line-height: 1.6;
+  --text-body-md--font-weight: 400;
+
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 1.6;
+  --text-body-lg--font-weight: 400;
+
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 1.3;
+  --text-headline-md--font-weight: 600;
+
+  --text-headline-lg: 32px;
+  --text-headline-lg--line-height: 1.2;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 600;
+
+  --text-display-lg: 48px;
+  --text-display-lg--line-height: 1.1;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
 }
 
-/* Tokyo Night theme CSS variables (default) */
+/* ========================================================================
+   Material Design 3 theme (Aether) — new default
+   ======================================================================== */
 :root,
+[data-theme='material'] {
+  /* Primary — Purple */
+  --md3-primary: #6b38d4;
+  --md3-primary-container: #8455ef;
+  --md3-on-primary: #ffffff;
+  --md3-on-primary-container: #fffbff;
+  --md3-primary-fixed: #e9ddff;
+  --md3-primary-fixed-dim: #d0bcff;
+  --md3-on-primary-fixed: #23005c;
+  --md3-on-primary-fixed-variant: #5516be;
+
+  /* Secondary — Blue */
+  --md3-secondary: #0051d5;
+  --md3-secondary-container: #316bf3;
+  --md3-on-secondary: #ffffff;
+  --md3-on-secondary-container: #fefcff;
+
+  /* Tertiary — Amber */
+  --md3-tertiary: #855000;
+  --md3-tertiary-container: #a76500;
+  --md3-on-tertiary: #ffffff;
+  --md3-on-tertiary-container: #fffbff;
+  --md3-tertiary-fixed: #ffdcbb;
+  --md3-tertiary-fixed-dim: #ffb869;
+  --md3-on-tertiary-fixed: #2c1700;
+  --md3-on-tertiary-fixed-variant: #673d00;
+
+  /* Error */
+  --md3-error: #ba1a1a;
+  --md3-error-container: #ffdad6;
+  --md3-on-error: #ffffff;
+  --md3-on-error-container: #93000a;
+
+  /* Surface elevation */
+  --md3-surface: #f7f9fb;
+  --md3-surface-dim: #d8dadc;
+  --md3-surface-bright: #f7f9fb;
+  --md3-surface-container-lowest: #ffffff;
+  --md3-surface-container-low: #f2f4f6;
+  --md3-surface-container: #eceef0;
+  --md3-surface-container-high: #e6e8ea;
+  --md3-surface-container-highest: #e0e3e5;
+
+  /* On-surface */
+  --md3-on-surface: #191c1e;
+  --md3-on-surface-variant: #494454;
+  --md3-inverse-surface: #2d3133;
+  --md3-inverse-on-surface: #eff1f3;
+  --md3-outline: #7b7486;
+  --md3-outline-variant: #cbc3d7;
+
+  --md3-background: #f7f9fb;
+  --md3-on-background: #191c1e;
+
+  /* Map to existing token names for backward compatibility */
+  --bg-primary: #f7f9fb;
+  --bg-secondary: #f2f4f6;
+  --bg-input: #eceef0;
+  --bg-tertiary: #e6e8ea;
+  --text-primary: #191c1e;
+  --text-secondary: #494454;
+  --text-muted: #7b7486;
+  --accent: #6b38d4;
+  --accent-hover: #8455ef;
+  --border: #cbc3d7;
+  --user-bg: #e9ddff;
+  --assistant-bg: #ffffff;
+  --tool-bg: #f2f4f6;
+  --tool-header-bg: #eceef0;
+  --success: #15803d;
+  --error: #ba1a1a;
+  --warning: #d97706;
+  --purple: #6b38d4;
+  --cyan: #0051d5;
+  --info: #0051d5;
+  --running: #0051d5;
+  --cancelled: #d97706;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  --glass-bg: rgba(255,255,255,0.70);
+  --glass-border: rgba(203,195,215,0.30);
+}
+
+/* ========================================================================
+   Legacy themes — preserved for backward compatibility
+   ======================================================================== */
+
+/* Tokyo Night theme (dark) */
 [data-theme='tokyo-night'] {
   --bg-primary: #1a1b26;
   --bg-secondary: #24283b;
@@ -165,7 +307,7 @@
   --glass-border: rgba(255,255,255,0.10);
 }
 
-/* Ember theme — warm forge aesthetic */
+/* Ember theme */
 [data-theme='ember'] {
   --bg-primary: #160800;
   --bg-secondary: #1e0c02;
@@ -194,7 +336,7 @@
   --glass-border: rgba(255,255,255,0.10);
 }
 
-/* Slate theme — GitHub-inspired developer theme */
+/* Slate theme */
 [data-theme='slate'] {
   --bg-primary: #0d1117;
   --bg-secondary: #161b22;
@@ -223,16 +365,85 @@
   --glass-border: rgba(255,255,255,0.10);
 }
 
+/* ========================================================================
+   Base styles
+   ======================================================================== */
+
 body {
   margin: 0;
   padding: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: var(--text-body-md);
+  line-height: var(--text-body-md--line-height);
+  transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   background-color: var(--bg-primary);
   color: var(--text-primary);
 }
 
-/* Themed scrollbar */
+/* ========================================================================
+   Material Symbols Outlined
+   ======================================================================== */
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========================================================================
+   Glass morphism utilities
+   ======================================================================== */
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.50);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* ========================================================================
+   Connector utilities (Goals tree, thought steps)
+   ======================================================================== */
+
+.node-connector {
+  background: linear-gradient(to bottom, var(--md3-outline-variant, var(--border)) 50%, transparent 50%);
+  background-size: 1px 12px;
+}
+
+.thought-connector {
+  width: 2px;
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  height: 24px;
+  margin-left: 11px;
+}
+
+/* ========================================================================
+   Custom scrollbar
+   ======================================================================== */
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -251,19 +462,37 @@ body {
   background: var(--text-muted);
 }
 
-/* Smooth scrolling */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
 html {
   scroll-behavior: smooth;
 }
 
-/* Focus ring utility */
+/* ========================================================================
+   Focus ring
+   ======================================================================== */
+
 *:focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
   border-radius: 4px;
 }
 
-/* Syntax highlighting */
+/* ========================================================================
+   Syntax highlighting
+   ======================================================================== */
+
 .hljs {
   background: var(--bg-input);
   padding: 1rem;
@@ -271,106 +500,104 @@ html {
 }
 
 code {
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-family: 'Geist', ui-monospace, 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
-/* Streaming cursor animation */
+/* ========================================================================
+   Animations
+   ======================================================================== */
+
+/* Streaming cursor */
 @keyframes streaming-cursor {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
-
 .streaming-cursor {
   animation: streaming-cursor 1s ease-in-out infinite;
 }
 
-/* Pulse animation for status indicators */
+/* Status pulse */
 @keyframes status-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-
 .status-pulse {
   animation: status-pulse 2s ease-in-out infinite;
 }
 
-/* Smooth height transition for streaming content */
+/* Streaming container */
 .streaming-container {
   overflow: hidden;
   transition: max-height 0.15s ease-out;
 }
 
-/* Selection color */
+/* Selection */
 ::selection {
   background: var(--accent);
   color: var(--bg-primary);
 }
 
-/* Toast slide-in animation from right */
+/* Slide in from right */
 @keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
-
 .animate-slide-in-right {
   animation: slide-in-right 0.3s ease-out;
 }
 
-/* Apple-style message entrance animation */
+/* Message entrance */
 @keyframes message-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .animate-message-in {
   animation: message-in 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-/* Smooth panel transition */
+/* Panel slide */
 @keyframes panel-slide {
-  from {
-    opacity: 0;
-    transform: translateX(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
 .animate-panel-slide {
   animation: panel-slide 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
-/* Subtle fade in */
+/* Fade in */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 .animate-fade-in {
   animation: fade-in 0.2s ease-out forwards;
 }
 
-/* Apple-style scale press */
+/* Page fade in (slower, for route transitions) */
+@keyframes animate-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-in {
+  animation: animate-in 0.7s ease-out forwards;
+}
+
+/* Press */
 @keyframes press {
   0% { transform: scale(1); }
   50% { transform: scale(0.97); }
   100% { transform: scale(1); }
 }
-
 .animate-press {
   animation: press 0.15s ease-out;
+}
+
+/* Amber pulse (active node in Goals tree) */
+@keyframes pulse-amber {
+  0% { box-shadow: 0 0 0 0 rgba(167, 101, 0, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(167, 101, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(167, 101, 0, 0); }
+}
+.animate-pulse-amber {
+  animation: pulse-amber 2s infinite;
 }

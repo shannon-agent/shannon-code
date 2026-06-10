@@ -1,5 +1,4 @@
-// Plan/Act mode toggle using ToggleGroup — controls whether the agent only plans or also executes
-import { Lightbulb, Zap } from 'lucide-react'
+// Plan/Act mode toggle with MD3 styling and Material Symbols
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group'
 
 export type AgentMode = 'plan' | 'act'
@@ -10,9 +9,9 @@ interface ModeToggleProps {
   disabled?: boolean
 }
 
-const MODE_CONFIG: Record<AgentMode, { icon: typeof Lightbulb; label: string; description: string }> = {
-  plan: { icon: Lightbulb, label: 'Plan', description: 'Read-only analysis' },
-  act: { icon: Zap, label: 'Act', description: 'Execute changes' },
+const MODE_CONFIG: Record<AgentMode, { icon: string; label: string; description: string }> = {
+  plan: { icon: 'lightbulb', label: 'Plan', description: 'Read-only analysis' },
+  act: { icon: 'bolt', label: 'Act', description: 'Execute changes' },
 }
 
 export function ModeToggle({ mode, onChange, disabled }: ModeToggleProps) {
@@ -22,19 +21,18 @@ export function ModeToggle({ mode, onChange, disabled }: ModeToggleProps) {
       value={mode}
       onValueChange={(value) => { if (value) onChange(value as AgentMode) }}
       disabled={disabled}
-      className="bg-secondary rounded-md p-0.5 gap-0.5"
+      className="bg-md3-surface-container rounded-xl p-0.5 gap-0.5"
     >
       {(Object.keys(MODE_CONFIG) as AgentMode[]).map((m) => {
         const cfg = MODE_CONFIG[m]
-        const Icon = cfg.icon
         return (
           <ToggleGroupItem
             key={m}
             value={m}
             title={cfg.description}
-            className="h-6 gap-1 px-2.5 text-[11px] font-medium data-[state=on]:bg-primary/15 data-[state=on]:text-primary data-[state=on]:shadow-sm"
+            className="h-6 gap-md3-xs px-md3-sm text-label-sm font-medium data-[state=on]:bg-md3-primary/10 data-[state=on]:text-md3-primary data-[state=on]:shadow-sm rounded-lg"
           >
-            <Icon className="w-3 h-3" />
+            <span className="material-symbols-outlined text-[14px]">{cfg.icon}</span>
             <span>{cfg.label}</span>
           </ToggleGroupItem>
         )

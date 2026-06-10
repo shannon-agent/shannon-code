@@ -1,5 +1,4 @@
-// Approval mode selector using ToggleGroup for compact mode switching
-import { Shield } from 'lucide-react'
+// Approval mode selector with MD3 styling and Material Symbols
 import type { ApprovalMode } from '../types/tauri-events'
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group'
 
@@ -22,15 +21,14 @@ const APPROVAL_MODES: Record<ApprovalMode, { label: string; description: string 
   confirm: { label: 'Confirm', description: 'Ask for each tool execution' },
 }
 
-// Show a subset of the most commonly used modes as toggle buttons
 const PRIMARY_MODES: ApprovalMode[] = ['suggest', 'auto', 'full_auto', 'readonly']
 
 export function ApprovalModeSelector({ mode, onChange, disabled }: ApprovalModeSelectorProps) {
   const isPrimary = (PRIMARY_MODES as string[]).includes(mode)
 
   return (
-    <div className="flex items-center gap-2">
-      <Shield className="w-3.5 h-3.5 text-muted-foreground" />
+    <div className="flex items-center gap-md3-sm">
+      <span className="material-symbols-outlined text-[14px] text-md3-on-surface-variant">shield</span>
       <ToggleGroup
         type="single"
         value={mode}
@@ -45,7 +43,7 @@ export function ApprovalModeSelector({ mode, onChange, disabled }: ApprovalModeS
               key={m}
               value={m}
               title={cfg.description}
-              className="h-6 px-2 text-[10px] font-medium data-[state=on]:bg-primary/15 data-[state=on]:text-primary data-[state=on]:shadow-sm"
+              className="h-6 px-md3-sm text-label-sm font-medium data-[state=on]:bg-md3-primary/10 data-[state=on]:text-md3-primary data-[state=on]:shadow-sm rounded-lg"
             >
               {cfg.label}
             </ToggleGroupItem>

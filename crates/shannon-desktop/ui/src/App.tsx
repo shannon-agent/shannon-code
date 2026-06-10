@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { AppStateProvider, useAppState } from './context/AppState'
 import { ThemeProvider } from './context/ThemeContext'
 import { useTheme } from './context/ThemeContext'
+import type { Theme } from './context/ThemeContext'
 import { useStreaming } from './hooks/useStreaming'
 import { useKeyboardShortcuts, DEFAULT_SHORTCUTS } from './hooks/useKeyboardShortcuts'
 import { listen } from '@tauri-apps/api/event'
@@ -9,22 +10,15 @@ import { Layout } from './components/Layout'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ChatPanel } from './components/ChatPanel'
 import { SessionList } from './components/SessionList'
-import { SettingsPanel } from './components/SettingsPanel'
 import { CommandPalette } from './components/CommandPalette'
-import { TabBar } from './components/TabBar'
-import { FileTree } from './components/FileTree'
-import { TerminalPane } from './components/TerminalPane'
-import { AgentDashboard } from './components/AgentDashboard'
-import { TaskBoard } from './components/TaskBoard'
-import { McpBrowser } from './components/McpBrowser'
 import { ToastProvider } from './components/ToastProvider'
 import { BackgroundAgentBadge } from './components/BackgroundAgentBadge'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs'
+import { PageRouter } from './components/PageRouter'
+import type { PageId } from './components/AppSidebar'
 import {
   newSession,
   listSessions,
   switchSession,
-  deleteSession,
   listAgents,
   listTasks,
   cancelBackgroundTask,
@@ -36,29 +30,27 @@ function AppContent() {
   const { sendMessage, isStreaming, error, clearError } = useStreaming()
   const { theme, setTheme } = useTheme()
   const { setViewMode } = useAppState()
+  const [currentPage, setCurrentPage] = useState<PageId>('chat')
   const [currentSessionId, setCurrentSessionId] = useState<string>()
   const [sessions, setSessions] = useState<SessionInfo[]>([])
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
-  const [sidebarVisible, setSidebarVisible] = useState(true)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [settingsVisible, setSettingsVisible] = useState(true)
-  const [rightPanelTab, setRightPanelTab] = useState<string>('settings')
   const [agents, setAgents] = useState<import('./components/AgentDashboard').AgentInfo[]>([])
   const [tasks, setTasks] = useState<import('./components/TaskBoard').TaskItem[]>([])
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([])
 
-  // Refs for keyboard shortcut handlers (avoid stale closures)
+  // Refs for keyboard shortcut handlers
   const sessionsRef = useRef(sessions)
   sessionsRef.current = sessions
   const currentSessionIdRef = useRef(currentSessionId)
   currentSessionIdRef.current = currentSessionId
-  // Register default keyboard shortcuts (dispatches DOM custom events)
+
   useKeyboardShortcuts(DEFAULT_SHORTCUTS)
 
   const handleNewSession = useCallback(async () => {
     try {
       const newId = await newSession()
       setCurrentSessionId(newId)
+      setCurrentPage('chat')
       const updated = await listSessions()
       setSessions(updated)
     } catch (error) {
@@ -66,7 +58,11 @@ function AppContent() {
     }
   }, [])
 
-  // Load agents and tasks on mount + listen for updates
+  const handleNavigate = useCallback((page: PageId) => {
+    setCurrentPage(page)
+  }, [])
+
+  // Load agents, tasks, MCP on mount + listen for updates
   useEffect(() => {
     listAgents().then(setAgents).catch(() => {})
     listMcpServers().then(setMcpServers).catch(() => {})
@@ -107,14 +103,11 @@ function AppContent() {
     }
   }, [])
 
-  // Listen for DOM custom events dispatched by shortcuts
+  // Keyboard shortcut handlers
   useEffect(() => {
     const handlers: Record<string, EventListener> = {
       'shannon:command-palette': () => setCommandPaletteOpen(prev => !prev),
       'shannon:new-session': () => handleNewSession(),
-      'shannon:toggle-right-panel': () => setSettingsVisible(prev => !prev),
-      'shannon:toggle-sidebar': () => setSidebarCollapsed(prev => !prev),
-      'shannon:toggle-settings': () => setSettingsVisible(prev => !prev),
       'shannon:close-dialogs': () => setCommandPaletteOpen(false),
       'shannon:cycle-view-mode': () => setViewMode(prev => prev === 'verbose' ? 'normal' : prev === 'normal' ? 'summary' : 'verbose'),
       'shannon:next-session': () => {
@@ -137,7 +130,6 @@ function AppContent() {
       },
       'global:new-session': () => handleNewSession(),
       'global:focus-input': () => {
-        // Dispatch focus input event for MessageInput component
         window.dispatchEvent(new CustomEvent('shannon:focus-input'))
       },
     }
@@ -152,14 +144,13 @@ function AppContent() {
     }
   }, [])
 
-  // Listen for Tauri global shortcut events
+  // Tauri global shortcut events
   useEffect(() => {
     const unlisteners = [
       listen('new-session', () => {
         handleNewSession()
       }),
       listen('focus-input', () => {
-        // Dispatch focus input event for MessageInput component
         window.dispatchEvent(new CustomEvent('shannon:focus-input'))
       }),
     ]
@@ -180,6 +171,7 @@ function AppContent() {
 
   const handleSessionSelect = useCallback(async (sessionId: string) => {
     setCurrentSessionId(sessionId)
+    setCurrentPage('chat')
     try {
       await switchSession(sessionId)
     } catch (error) {
@@ -187,91 +179,110 @@ function AppContent() {
     }
   }, [])
 
-  const handleSessionClose = useCallback(async (id: string) => {
-    try {
-      await deleteSession(id)
-      if (currentSessionId === id) {
-        setCurrentSessionId(undefined)
-      }
-      const updated = await listSessions()
-      setSessions(updated)
-    } catch (error) {
-      console.error('Failed to close session:', error)
-    }
-  }, [currentSessionId])
-
   const cycleTheme = useCallback(() => {
-    const themes = ['tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord'] as const
+    const themes: Theme[] = ['material', 'tokyo-night', 'tokyo-night-light', 'catppuccin', 'nord', 'ember', 'slate']
     const idx = themes.indexOf(theme)
     setTheme(themes[(idx + 1) % themes.length])
   }, [theme, setTheme])
 
+  const handleRefreshTasks = useCallback(() => {
+    listTasks().then(apiTasks => {
+      setTasks(apiTasks.map(t => ({
+        id: t.id,
+        subject: t.title,
+        description: t.description,
+        status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
+        owner: t.assignee,
+      })))
+    }).catch(() => {})
+  }, [])
+
+  // Chat page: three-column layout with session list + chat + context panel
+  const isChatPage = currentPage === 'chat'
+
   return (
     <>
       <Layout
-        sidebar={sidebarVisible ? (
-          <SessionList
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
+        activeAgents={agents.filter(a => a.status === 'running').map(a => a.name)}
+      >
+        {isChatPage ? (
+          <div className="flex h-full">
+            {/* Left — Session history */}
+            <aside className="w-[240px] border-r border-md3-outline-variant/10 flex flex-col glass-panel shrink-0 overflow-hidden">
+              <SessionList
+                currentSessionId={currentSessionId}
+                onSessionSelect={handleSessionSelect}
+                onNewSession={handleNewSession}
+              />
+            </aside>
+
+            {/* Center — Chat */}
+            <section className="flex-1 flex flex-col overflow-hidden">
+              <ChatPanel
+                sendMessage={sendMessage}
+                isStreaming={isStreaming}
+                error={error}
+                clearError={clearError}
+              />
+            </section>
+
+            {/* Right — Context panel */}
+            <aside className="w-[300px] border-l border-md3-outline-variant/10 glass-panel shrink-0 overflow-y-auto hidden lg:block">
+              <div className="p-md3-lg space-y-md3-xl">
+                <div>
+                  <div className="text-label-md text-md3-on-surface-variant uppercase tracking-wider opacity-60 mb-md3-sm">Context</div>
+                  <div className="space-y-md3-xs text-body-sm text-md3-on-surface-variant opacity-70">
+                    <div className="p-md3-md bg-md3-surface-container rounded-xl flex items-center gap-md3-md border border-md3-outline-variant/10">
+                      <span className="material-symbols-outlined text-md3-primary text-[18px]">folder</span>
+                      <span className="text-label-md truncate">Project Context</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-label-md text-md3-on-surface-variant uppercase tracking-wider opacity-60 mb-md3-sm">Active Skills</div>
+                  <div className="flex flex-wrap gap-md3-xs">
+                    {['code-edit', 'bash', 'search'].map(skill => (
+                      <span key={skill} className="px-md3-md py-md3-sm bg-md3-primary/10 text-md3-primary text-label-sm rounded-full border border-md3-primary/20">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        ) : (
+          <PageRouter
+            currentPage={currentPage}
+            sendMessage={sendMessage}
+            isStreaming={isStreaming}
+            error={error}
+            clearError={clearError}
+            sessions={sessions}
             currentSessionId={currentSessionId}
             onSessionSelect={handleSessionSelect}
             onNewSession={handleNewSession}
+            agents={agents}
+            tasks={tasks}
+            mcpServers={mcpServers}
+            onRefreshTasks={handleRefreshTasks}
+            onRefreshMcp={() => listMcpServers().then(setMcpServers).catch(() => {})}
+            onCancelAgent={(id) => cancelBackgroundTask(id).catch(() => {})}
+            onNavigate={handleNavigate}
           />
-        ) : undefined}
-        sidebarCollapsed={sidebarCollapsed}
-        onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
-        panel={settingsVisible ? (
-          <Tabs value={rightPanelTab} onValueChange={setRightPanelTab} className="flex flex-col h-full">
-            <TabsList className="w-full justify-start rounded-none border-b border-[var(--border)] bg-[var(--bg-secondary)] px-2 py-1 h-auto gap-0.5">
-              <TabsTrigger value="settings" className="text-[10px] px-2 py-1">Settings</TabsTrigger>
-              <TabsTrigger value="agents" className="text-[10px] px-2 py-1">Agents</TabsTrigger>
-              <TabsTrigger value="tasks" className="text-[10px] px-2 py-1">Tasks</TabsTrigger>
-              <TabsTrigger value="mcp" className="text-[10px] px-2 py-1">MCP</TabsTrigger>
-            </TabsList>
-            <TabsContent value="settings" className="flex-1 overflow-hidden mt-0"><SettingsPanel /></TabsContent>
-            <TabsContent value="agents" className="flex-1 overflow-hidden mt-0"><AgentDashboard agents={agents} onCancel={id => cancelBackgroundTask(id).catch(() => {})} /></TabsContent>
-            <TabsContent value="tasks" className="flex-1 overflow-hidden mt-0"><TaskBoard tasks={tasks} onRefresh={() => listTasks().then(apiTasks => {
-              setTasks(apiTasks.map(t => ({
-                id: t.id,
-                subject: t.title,
-                description: t.description,
-                status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
-                owner: t.assignee,
-              })))
-            }).catch(() => {})} /></TabsContent>
-            <TabsContent value="mcp" className="flex-1 overflow-hidden mt-0"><McpBrowser
-                  servers={mcpServers.map(s => ({
-                    name: s.name,
-                    status: s.connected ? 'connected' as const : s.enabled ? 'disconnected' as const : 'disconnected' as const,
-                    tools: s.tools.map(t => ({ name: t.name, description: t.description })),
-                  }))}
-                  onRefresh={() => listMcpServers().then(setMcpServers).catch(() => {})}
-                /></TabsContent>
-          </Tabs>
-        ) : undefined}
-        tabBar={
-          <TabBar
-            sessions={sessions}
-            activeSessionId={currentSessionId ?? null}
-            onSessionSelect={handleSessionSelect}
-            onSessionClose={handleSessionClose}
-            onNewSession={handleNewSession}
-          />
-        }
-        bottomPanel={<TerminalPane />}
-      >
-        <ChatPanel
-          sendMessage={sendMessage}
-          isStreaming={isStreaming}
-          error={error}
-          clearError={clearError}
-        />
+        )}
       </Layout>
+
       <CommandPalette
         isOpen={commandPaletteOpen}
         onClose={() => setCommandPaletteOpen(false)}
         onNewSession={handleNewSession}
-        onOpenSettings={() => setSettingsVisible(prev => !prev)}
-        onSwitchModel={() => {}}
-        onToggleSidebar={() => setSidebarVisible(prev => !prev)}
+        onOpenSettings={() => setCurrentPage('settings-general')}
+        onSwitchModel={() => setCurrentPage('settings-models')}
+        onToggleSidebar={() => {}}
         onToggleTheme={cycleTheme}
         onSessionSelect={handleSessionSelect}
       />

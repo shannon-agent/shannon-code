@@ -1,6 +1,5 @@
-// Update banner component for displaying available updates
+// Update banner with MD3 styling and Material Symbols
 import { useEffect, useState } from 'react'
-import { Download, X } from 'lucide-react'
 import { listen, UnlistenFn } from '@tauri-apps/api/event'
 import { Progress } from './ui/progress'
 import { Button } from './ui/button'
@@ -54,45 +53,46 @@ export function UpdateBanner() {
   }
 
   return (
-    <div className="relative border-b border-border bg-background">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary/10 border border-ring/20">
-            <Download className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Update Available</span>
+    <div className="relative border-b border-md3-outline-variant/10 bg-md3-surface">
+      <div className="flex items-center justify-between px-md3-lg py-md3-md">
+        <div className="flex items-center gap-md3-md">
+          <div className="flex items-center gap-md3-sm px-md3-md py-md3-sm rounded-xl bg-md3-primary/10 border border-md3-primary/15">
+            <span className="material-symbols-outlined text-[18px] text-md3-primary">download</span>
+            <span className="text-label-md font-medium text-md3-primary">Update Available</span>
           </div>
 
           <div className="flex flex-col">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">v{updateInfo.version}</span>
+            <div className="flex items-center gap-md3-sm">
+              <span className="text-body-sm font-semibold text-md3-on-surface">v{updateInfo.version}</span>
               {updateInfo.date && (
-                <span className="text-xs text-muted-foreground">{updateInfo.date}</span>
+                <span className="text-label-sm text-md3-on-surface-variant">{updateInfo.date}</span>
               )}
             </div>
             {updateInfo.body && (
-              <p className="text-xs text-secondary-foreground mt-0.5 line-clamp-1">
+              <p className="text-label-sm text-md3-on-surface-variant mt-md3-xs line-clamp-1">
                 {updateInfo.body}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-md3-sm">
           {progress > 0 && progress < 100 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded bg-muted min-w-[180px]">
+            <div className="flex items-center gap-md3-sm px-md3-md py-md3-sm rounded-lg bg-md3-surface-container min-w-[180px]">
               <Progress value={progress} className="flex-1 h-1.5" />
-              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+              <span className="text-label-sm text-md3-on-surface-variant">{Math.round(progress)}%</span>
             </div>
           )}
 
           {status && (
-            <span className="text-xs text-muted-foreground">{status}</span>
+            <span className="text-label-sm text-md3-on-surface-variant">{status}</span>
           )}
 
           <Button
             size="sm"
             onClick={handleDownload}
             disabled={progress > 0 && progress < 100}
+            className="rounded-xl"
           >
             {progress > 0 && progress < 100 ? 'Downloading...' : 'Download & Install'}
           </Button>
@@ -101,9 +101,9 @@ export function UpdateBanner() {
             variant="ghost"
             size="sm"
             onClick={() => setUpdateInfo(null)}
-            className="h-8 w-8 p-0"
+            className="h-8 w-8 p-0 rounded-xl"
           >
-            <X className="w-4 h-4 text-muted-foreground" />
+            <span className="material-symbols-outlined text-[18px] text-md3-on-surface-variant">close</span>
           </Button>
         </div>
       </div>
