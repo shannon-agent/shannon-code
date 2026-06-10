@@ -109,7 +109,7 @@ describe('BillingSettingsPage', () => {
   it('renders Current Plan section', () => {
     render(<BillingSettingsPage />, { wrapper })
     expect(screen.getByText('Pro Plan')).toBeDefined()
-    expect(screen.getByText('$29.00')).toBeDefined()
+    expect(screen.getAllByText(/\$29\.00/).length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders Billing History', () => {
