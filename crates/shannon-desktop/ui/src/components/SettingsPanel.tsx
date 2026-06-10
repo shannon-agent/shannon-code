@@ -1,12 +1,53 @@
-// Settings pages — 5 separate full-page components matching design
-import { useState } from 'react'
+// Settings pages — 5 separate full-page components with real config persistence
+import { useState, useEffect, useCallback } from 'react'
 import { cn } from '../lib/utils'
+import { getConfig, configure, switchProvider, listModels } from '../lib/tauri-api'
+import type { DesktopConfig, ModelInfo } from '../types/tauri-events'
+
+// Shared hook for loading config
+function useConfig() {
+  const [config, setConfig] = useState<DesktopConfig | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getConfig().then(setConfig).catch(console.error)
+  }, [])
+
+  const save = useCallback(async (key: string, value: string) => {
+    setSaving(true)
+    try {
+      await configure({ key, value })
+      setConfig(prev => prev ? { ...prev, [key]: value } : prev)
+    } catch (err) {
+      console.error('Failed to save setting:', err)
+    } finally {
+      setSaving(false)
+    }
+  }, [])
+
+  return { config, saving, save }
+}
 
 // ─── General Settings ────────────────────────────────────────────────
 export function GeneralSettingsPage() {
+  const { config, save } = useConfig()
   const [textSize, setTextSize] = useState(2)
   const [autonomy, setAutonomy] = useState(45)
   const textLabels = ['Compact', 'Standard', 'Medium', 'Large']
+
+  useEffect(() => {
+    if (config?.approval_mode) {
+      const modeMap: Record<string, number> = { deny: 0, confirm: 33, allow: 66, full_auto: 100 }
+      setAutonomy(modeMap[config.approval_mode] ?? 45)
+    }
+  }, [config?.approval_mode])
+
+  const handleAutonomyChange = (value: number) => {
+    setAutonomy(value)
+    const modes = ['deny', 'confirm', 'allow', 'full_auto']
+    const idx = Math.min(Math.floor(value / 25), 3)
+    save('approval_mode', modes[idx])
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-md3-xl py-md3-xl animate-in fade-in duration-700">
@@ -47,7 +88,7 @@ export function GeneralSettingsPage() {
           <div className="space-y-sm">
             <input
               type="range" min={0} max={100} value={autonomy}
-              onChange={e => setAutonomy(Number(e.target.value))}
+              onChange={e => handleAutonomyChange(Number(e.target.value))}
               className="w-full appearance-none bg-md3-outline-variant/30 h-1 rounded-full cursor-pointer outline-none slider-thumb-primary"
             />
             <div className="flex justify-between text-label-sm px-1 mt-sm">
@@ -85,9 +126,19 @@ export function GeneralSettingsPage() {
 
 // ─── Theme Settings ──────────────────────────────────────────────────
 export function ThemeSettingsPage() {
-  const [appearance, setAppearance] = useState('light')
+  const { config, save } = useConfig()
+  const [appearance, setAppearance] = useState(config?.theme ?? 'light')
   const [accent, setAccent] = useState('#8B5CF6')
   const [glassIntensity, setGlassIntensity] = useState(70)
+
+  useEffect(() => {
+    if (config?.theme) setAppearance(config.theme)
+  }, [config?.theme])
+
+  const handleAppearanceChange = (value: string) => {
+    setAppearance(value)
+    save('theme', value)
+  }
 
   const accents = [
     { color: '#8B5CF6', name: 'Purple' },
@@ -118,7 +169,7 @@ export function ThemeSettingsPage() {
                 <input
                   type="radio" name="appearance" value={opt.value}
                   checked={appearance === opt.value}
-                  onChange={() => setAppearance(opt.value)}
+                  onChange={() => handleAppearanceChange(opt.value)}
                   className="hidden peer"
                 />
                 <div className="p-md3-md rounded-xl border-2 border-md3-outline-variant/30 peer-checked:border-md3-primary peer-checked:bg-md3-primary/5 transition-all">
@@ -205,10 +256,59 @@ export function ThemeSettingsPage() {
 
 // ─── Models Settings ─────────────────────────────────────────────────
 export function ModelsSettingsPage() {
+  const { config, save } = useConfig()
   const [strategy, setStrategy] = useState('high_quality')
-  const [providerTab, setProviderTab] = useState('openai')
+  const [providerTab, setProviderTab] = useState(config?.provider ?? 'openai')
   const [temperature, setTemperature] = useState(0.7)
   const [maxTokens, setMaxTokens] = useState(4096)
+  const [apiKey, setApiKey] = useState('')
+  const [models, setModels] = useState<ModelInfo[]>([])
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle')
+
+  useEffect(() => {
+    if (config) {
+      setProviderTab(config.provider)
+      setApiKey(config.api_key ? 'sk-••••••••••••••••••••••••' : '')
+    }
+  }, [config])
+
+  useEffect(() => {
+    listModels().then(setModels).catch(() => {})
+  }, [providerTab])
+
+  const handleTestConnection = async () => {
+    setTestStatus('testing')
+    try {
+      await listModels()
+      setTestStatus('ok')
+    } catch {
+      setTestStatus('fail')
+    }
+    setTimeout(() => setTestStatus('idle'), 3000)
+  }
+
+  const handleSaveApiKey = () => {
+    if (apiKey && !apiKey.startsWith('sk-•')) {
+      save('api_key', apiKey)
+    }
+  }
+
+  const handleSwitchProvider = (provider: string) => {
+    setProviderTab(provider)
+    if (config?.model) {
+      switchProvider({ provider, model: config.model }).catch(console.error)
+    }
+  }
+
+  const handleTemperatureChange = (value: number) => {
+    setTemperature(value)
+    save('temperature', String(value))
+  }
+
+  const handleMaxTokensChange = (value: number) => {
+    setMaxTokens(value)
+    save('max_tokens', String(value))
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto px-md3-xl py-md3-xl pr-8 pb-10 animate-in fade-in duration-700">
@@ -247,26 +347,34 @@ export function ModelsSettingsPage() {
 
         {/* Active Tier Summary */}
         <section className="bg-white border border-md3-outline-variant/30 rounded-xl p-md3-lg shadow-sm">
-          <h3 className="text-headline-md text-md3-on-surface mb-md3-md">Active Tier Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-md3-md">
-            {[
-              { icon: 'diamond', label: 'Pro Tier', options: ['GPT-4o', 'Claude 3.5 Sonnet', 'Llama 3 (70B)'] },
-              { icon: 'star', label: 'Standard Tier', options: ['GPT-4 Turbo', 'Claude 3 Haiku', 'Gemini 1.5 Pro'] },
-              { icon: 'bolt', label: 'Lite Tier', options: ['GPT-3.5 Turbo', 'Llama 3 (8B)', 'Mistral 7B'] },
-            ].map(tier => (
-              <div key={tier.label} className="p-md3-md bg-md3-surface-container-low rounded-xl border border-md3-outline-variant/30 flex flex-col gap-sm">
-                <div className="flex items-center gap-xs">
-                  <span className="material-symbols-outlined text-md3-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>{tier.icon}</span>
-                  <span className="text-label-md font-bold text-md3-primary">{tier.label}</span>
-                </div>
-                <div className="relative">
-                  <select className="w-full bg-md3-surface-container-lowest border border-md3-outline-variant/50 rounded-lg px-sm py-xs text-body-sm text-md3-on-surface outline-none focus:ring-2 focus:ring-md3-primary appearance-none cursor-pointer">
-                    {tier.options.map(o => <option key={o}>{o}</option>)}
-                  </select>
-                  <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-md3-on-surface-variant text-[18px]">expand_more</span>
+          <h3 className="text-headline-md text-md3-on-surface mb-md3-md">Available Models</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-md3-md">
+            {models.length > 0 ? models.slice(0, 6).map((m, i) => (
+              <div key={m.name} className={cn(
+                'p-md3-md rounded-xl flex items-center justify-between transition-all cursor-pointer',
+                i === 0
+                  ? 'border-2 border-md3-primary bg-md3-primary/5'
+                  : 'border border-md3-outline-variant/50 hover:border-md3-primary/50'
+              )}>
+                <div className="flex items-center gap-md3-md">
+                  <div className={cn(
+                    'w-10 h-10 rounded-lg flex items-center justify-center',
+                    i === 0 ? 'bg-md3-primary text-md3-on-primary' : 'bg-md3-surface-container-high text-md3-on-surface-variant'
+                  )}>
+                    <span className="material-symbols-outlined">{i === 0 ? 'auto_awesome' : 'psychology'}</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-xs">
+                      <span className={cn('text-lg', i === 0 ? 'text-md3-primary' : 'text-md3-on-surface')}>{m.name}</span>
+                      {i === 0 && <span className="px-xs py-[2px] bg-md3-primary text-md3-on-primary rounded text-[10px] font-bold">DEFAULT</span>}
+                    </div>
+                    <p className="text-label-sm text-md3-on-surface-variant opacity-70">{m.id}</p>
+                  </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-label-sm text-md3-on-surface-variant col-span-2">Loading models...</p>
+            )}
           </div>
         </section>
 
@@ -274,91 +382,49 @@ export function ModelsSettingsPage() {
         <section className="bg-white border border-md3-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-md3-outline-variant/30 bg-md3-surface-container-low/30 px-md3-lg pt-md3-md">
             <div className="flex gap-lg overflow-x-auto">
-              {['openai', 'anthropic', 'google', 'meta'].map(p => (
+              {['openai', 'anthropic', 'google', 'ollama'].map(p => (
                 <button
                   key={p}
-                  onClick={() => setProviderTab(p)}
+                  onClick={() => handleSwitchProvider(p)}
                   className={cn(
                     'pb-sm px-xs border-b-2 text-label-md whitespace-nowrap outline-none capitalize transition-colors',
                     providerTab === p
                       ? 'border-md3-primary text-md3-primary font-bold'
                       : 'border-transparent text-md3-on-surface-variant hover:text-md3-on-surface cursor-pointer'
                   )}
-                >{p === 'openai' ? 'OpenAI' : p === 'anthropic' ? 'Anthropic' : p === 'google' ? 'Google' : 'Meta'}</button>
+                >{p === 'openai' ? 'OpenAI' : p === 'anthropic' ? 'Anthropic' : p === 'google' ? 'Google' : 'Ollama'}</button>
               ))}
             </div>
           </div>
 
           <div className="p-md3-lg">
-            <div className="flex justify-between items-center mb-md3-lg">
-              <div>
-                <h3 className="text-headline-md text-md3-on-surface">{providerTab === 'openai' ? 'OpenAI' : providerTab === 'anthropic' ? 'Anthropic' : providerTab === 'google' ? 'Google' : 'Meta'} Models</h3>
-                <p className="text-body-sm text-md3-on-surface-variant">Select active models and set your global default.</p>
-              </div>
-              <span className="inline-flex items-center px-sm py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-wider uppercase">Connection Active</span>
-            </div>
-
-            <div className="grid grid-cols-1 gap-md3-md">
-              {/* Default model */}
-              <div className="p-md3-md rounded-xl border-2 border-md3-primary bg-md3-primary/5 flex items-center justify-between transition-all">
-                <div className="flex items-center gap-md3-md">
-                  <div className="w-10 h-10 rounded-lg bg-md3-primary text-md3-on-primary flex items-center justify-center">
-                    <span className="material-symbols-outlined">auto_awesome</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-xs">
-                      <span className="text-headline-md text-md3-primary text-lg">GPT-4o</span>
-                      <span className="px-xs py-[2px] bg-md3-primary text-md3-on-primary rounded text-[10px] font-bold">DEFAULT</span>
-                    </div>
-                    <p className="text-label-sm text-md3-on-surface-variant opacity-70">Multimodal intelligence, high reasoning speed.</p>
-                  </div>
-                </div>
-                <div className="text-right mr-sm">
-                  <span className="block text-label-sm font-bold text-md3-primary">Tier: Pro</span>
-                  <span className="text-[10px] text-md3-on-surface-variant">Active in 12 agents</span>
-                </div>
-              </div>
-
-              {/* Other models */}
-              {[
-                { name: 'GPT-4 Turbo', desc: 'Proven performance for long-context tasks.', icon: 'psychology' },
-                { name: 'GPT-3.5 Turbo', desc: 'Fastest response times for simple automation.', icon: 'bolt' },
-              ].map(m => (
-                <div key={m.name} className="p-md3-md rounded-xl border border-md3-outline-variant/50 flex items-center justify-between hover:border-md3-primary/50 transition-all cursor-pointer">
-                  <div className="flex items-center gap-md3-md">
-                    <div className="w-10 h-10 rounded-lg bg-md3-surface-container-high text-md3-on-surface-variant flex items-center justify-center">
-                      <span className="material-symbols-outlined">{m.icon}</span>
-                    </div>
-                    <div>
-                      <span className="text-headline-md text-md3-on-surface text-lg">{m.name}</span>
-                      <p className="text-label-sm text-md3-on-surface-variant opacity-70">{m.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* API Key */}
-          <div className="bg-md3-surface-container-low/50 p-md3-lg border-t border-md3-outline-variant/30">
+            {/* API Key */}
             <div className="flex items-center gap-sm mb-md3-md">
               <span className="material-symbols-outlined text-md3-primary">key</span>
-              <h4 className="text-label-md font-bold text-md3-on-surface">{providerTab === 'openai' ? 'OpenAI' : providerTab === 'anthropic' ? 'Anthropic' : providerTab === 'google' ? 'Google' : 'Meta'} API Connection</h4>
+              <h4 className="text-label-md font-bold text-md3-on-surface capitalize">{providerTab} API Connection</h4>
             </div>
             <div className="flex gap-md3-md max-w-xl">
               <div className="relative flex-1">
                 <input
                   className="w-full px-md3-md py-sm bg-md3-surface text-md3-on-surface border border-md3-outline-variant/50 rounded-lg focus:ring-2 focus:ring-md3-primary outline-none transition-all text-body-sm"
                   type="password"
-                  defaultValue="sk-••••••••••••••••••••••••"
+                  value={apiKey}
+                  onChange={e => setApiKey(e.target.value)}
+                  onBlur={handleSaveApiKey}
+                  placeholder="Enter API key..."
                 />
                 <button className="absolute right-md3-md top-1/2 -translate-y-1/2 text-md3-on-surface-variant hover:text-md3-primary cursor-pointer">
                   <span className="material-symbols-outlined text-[20px]">visibility</span>
                 </button>
               </div>
-              <button className="px-md3-lg py-sm border border-md3-outline-variant bg-white text-md3-on-surface text-label-md rounded-lg hover:bg-md3-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer">
-                <span className="material-symbols-outlined text-[18px]">sync</span>
-                Test Connection
+              <button
+                onClick={handleTestConnection}
+                className="px-md3-lg py-sm border border-md3-outline-variant bg-white text-md3-on-surface text-label-md rounded-lg hover:bg-md3-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">
+                  {testStatus === 'testing' ? 'progress_activity' : testStatus === 'ok' ? 'check_circle' : testStatus === 'fail' ? 'error' : 'sync'}
+                </span>
+                {testStatus === 'testing' ? 'Testing...' : testStatus === 'ok' ? 'Connected!' : testStatus === 'fail' ? 'Failed' : 'Test Connection'}
               </button>
             </div>
           </div>
@@ -377,7 +443,7 @@ export function ModelsSettingsPage() {
               </div>
               <input
                 type="range" min={0} max={1} step={0.1} value={temperature}
-                onChange={e => setTemperature(Number(e.target.value))}
+                onChange={e => handleTemperatureChange(Number(e.target.value))}
                 className="w-full appearance-none bg-md3-outline-variant/30 h-1 rounded-full cursor-pointer outline-none slider-thumb-primary"
               />
               <div className="flex justify-between mt-xs">
@@ -393,7 +459,7 @@ export function ModelsSettingsPage() {
               </div>
               <input
                 type="range" min={256} max={128000} step={256} value={maxTokens}
-                onChange={e => setMaxTokens(Number(e.target.value))}
+                onChange={e => handleMaxTokensChange(Number(e.target.value))}
                 className="w-full appearance-none bg-md3-outline-variant/30 h-1 rounded-full cursor-pointer outline-none slider-thumb-primary"
               />
               <div className="flex justify-between mt-xs">
@@ -413,6 +479,8 @@ const BAR_HEIGHTS = [40, 60, 45, 70, 85, 55, 40, 75, 90, 65]
 const CACHE_RATIOS = [30, 40, 20, 50, 25, 35, 10, 40, 20, 30]
 
 export function BillingSettingsPage() {
+  const { config } = useConfig()
+
   return (
     <div className="max-w-[1200px] mx-auto px-md3-xl py-md3-xl pb-xl animate-in fade-in duration-700">
       <div className="mb-md3-xl">
@@ -427,32 +495,28 @@ export function BillingSettingsPage() {
             <div>
               <div className="flex justify-between items-start mb-md3-lg">
                 <div>
-                  <span className="bg-md3-primary/10 text-md3-primary text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Active Plan</span>
-                  <h3 className="text-headline-md text-[24px] font-bold">Pro Plan</h3>
+                  <span className="bg-md3-primary/10 text-md3-primary text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider mb-2 inline-block">Active Provider</span>
+                  <h3 className="text-headline-md text-[24px] font-bold capitalize">{config?.provider ?? 'Not Configured'}</h3>
                 </div>
                 <div className="text-right">
-                  <p className="text-headline-md text-[24px] font-bold">$29.00</p>
-                  <p className="text-label-sm text-md3-on-surface-variant">per month</p>
+                  <p className="text-headline-md text-[24px] font-bold">{config?.model ?? '--'}</p>
+                  <p className="text-label-sm text-md3-on-surface-variant">active model</p>
                 </div>
               </div>
               <div className="space-y-4 mb-md3-xl">
                 <div className="flex items-center gap-3 text-md3-on-surface-variant">
-                  <span className="material-symbols-outlined text-md3-primary">event</span>
-                  <span className="text-body-sm">Next renewal: <strong className="text-md3-on-surface">October 12, 2024</strong></span>
+                  <span className="material-symbols-outlined text-md3-primary">api</span>
+                  <span className="text-body-sm">Provider: <strong className="text-md3-on-surface capitalize">{config?.provider ?? '--'}</strong></span>
                 </div>
                 <div className="flex items-center gap-3 text-md3-on-surface-variant">
-                  <span className="material-symbols-outlined text-md3-primary">credit_card</span>
-                  <span className="text-body-sm">Charged to: <strong className="text-md3-on-surface">Visa **** 4242</strong></span>
+                  <span className="material-symbols-outlined text-md3-primary">psychology</span>
+                  <span className="text-body-sm">Model: <strong className="text-md3-on-surface">{config?.model ?? '--'}</strong></span>
                 </div>
               </div>
             </div>
-            <div className="flex gap-3 mt-auto">
-              <button className="flex-1 py-3 px-4 bg-md3-primary text-md3-on-primary rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">Change Plan</button>
-              <button className="px-4 py-3 border border-md3-outline-variant text-md3-on-surface-variant rounded-xl hover:bg-md3-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold">Cancel</button>
-            </div>
           </section>
 
-          {/* Usage Quota Overview */}
+          {/* Usage Overview */}
           <section className="md:col-span-7 glass-card bg-white/70 backdrop-blur-md border border-md3-outline-variant/30 rounded-2xl p-md3-lg shadow-sm">
             <h3 className="text-label-md text-[14px] font-bold text-md3-on-surface-variant uppercase tracking-widest mb-md3-lg">Usage Quota Overview</h3>
             <div className="grid grid-cols-1 gap-md3-lg md:grid-cols-2">
@@ -579,6 +643,30 @@ export function BillingSettingsPage() {
 
 // ─── Advanced Settings ───────────────────────────────────────────────
 export function AdvancedSettingsPage() {
+  const { save } = useConfig()
+  const [longTermMemory, setLongTermMemory] = useState(true)
+  const [anonymousReporting, setAnonymousReporting] = useState(false)
+  const [localEncryption, setLocalEncryption] = useState(true)
+  const [debugConsole, setDebugConsole] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+
+  const handleToggle = (key: string, setter: (v: boolean) => void) => (value: boolean) => {
+    setter(value)
+    save(key, String(value))
+  }
+
+  const handleFactoryReset = () => {
+    if (showResetConfirm) {
+      save('api_key', '')
+      save('provider', 'anthropic')
+      save('model', 'claude-3-5-sonnet-20241022')
+      setShowResetConfirm(false)
+    } else {
+      setShowResetConfirm(true)
+      setTimeout(() => setShowResetConfirm(false), 5000)
+    }
+  }
+
   return (
     <div className="max-w-[1200px] mx-auto px-md3-xl py-md3-xl pb-xl animate-in fade-in duration-700">
       <div className="mb-md3-xl">
@@ -603,7 +691,7 @@ export function AdvancedSettingsPage() {
                 <div className="text-label-sm text-[12px] text-md3-on-surface-variant leading-tight">Allow agent to reference past conversations.</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input defaultChecked className="sr-only peer" type="checkbox" />
+                <input checked={longTermMemory} onChange={e => handleToggle('long_term_memory', setLongTermMemory)(e.target.checked)} className="sr-only peer" type="checkbox" />
                 <div className="w-11 h-6 bg-md3-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-md3-primary" />
               </label>
             </div>
@@ -629,7 +717,7 @@ export function AdvancedSettingsPage() {
                 <div className="text-label-sm text-[12px] text-md3-on-surface-variant leading-tight">Share diagnostic data to improve models.</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input className="sr-only peer" type="checkbox" />
+                <input checked={anonymousReporting} onChange={e => handleToggle('anonymous_reporting', setAnonymousReporting)(e.target.checked)} className="sr-only peer" type="checkbox" />
                 <div className="w-11 h-6 bg-md3-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-md3-secondary" />
               </label>
             </div>
@@ -639,7 +727,7 @@ export function AdvancedSettingsPage() {
                 <div className="text-label-sm text-[12px] text-md3-on-surface-variant leading-tight">Encrypt database with AES-256 standard.</div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input defaultChecked className="sr-only peer" type="checkbox" />
+                <input checked={localEncryption} onChange={e => handleToggle('local_encryption', setLocalEncryption)(e.target.checked)} className="sr-only peer" type="checkbox" />
                 <div className="w-11 h-6 bg-md3-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-md3-secondary" />
               </label>
             </div>
@@ -672,7 +760,7 @@ export function AdvancedSettingsPage() {
             <div className="flex items-center gap-md3-md bg-md3-surface-container-low p-md3-md rounded-xl border border-md3-outline-variant/20 shrink-0">
               <span className="text-label-md text-[14px] text-md3-on-surface">Enable Debug Console</span>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input className="sr-only peer" type="checkbox" />
+                <input checked={debugConsole} onChange={e => handleToggle('debug_console', setDebugConsole)(e.target.checked)} className="sr-only peer" type="checkbox" />
                 <div className="w-11 h-6 bg-md3-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-md3-tertiary" />
               </label>
             </div>
@@ -691,8 +779,11 @@ export function AdvancedSettingsPage() {
                 <p className="text-md3-on-surface-variant text-body-sm max-w-xl">Resetting to factory settings will permanently delete all local agents, conversation history, and fine-tuning parameters. This action cannot be undone.</p>
               </div>
             </div>
-            <button className="px-xl py-md3-md bg-md3-error text-white rounded-xl text-label-md text-[14px] font-bold hover:bg-md3-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer">
-              Reset to Factory Settings
+            <button onClick={handleFactoryReset} className={cn(
+              "px-xl py-md3-md rounded-xl text-label-md text-[14px] font-bold shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer",
+              showResetConfirm ? "bg-md3-error text-white animate-pulse" : "bg-md3-error text-white hover:bg-md3-error/90"
+            )}>
+              {showResetConfirm ? 'Click again to confirm' : 'Reset to Factory Settings'}
             </button>
           </div>
         </div>

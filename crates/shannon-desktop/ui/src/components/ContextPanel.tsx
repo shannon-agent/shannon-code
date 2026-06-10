@@ -1,51 +1,74 @@
-// Context panel — right sidebar showing file context, active skills, and visual analysis
-export function ContextPanel() {
-  const files = [
-    { name: 'Global_Trends_2025.pdf', icon: 'description', color: 'text-md3-tertiary', detail: 'PDF Document • 1.2 MB' },
-    { name: 'Renewable_Forecast_Raw.csv', icon: 'table_chart', color: 'text-md3-primary', detail: 'Spreadsheet • 4.5k rows' },
-    { name: 'arch.md', icon: 'description', color: 'text-md3-tertiary', detail: 'Markdown • 12 KB' },
-    { name: 'config.toml', icon: 'settings', color: 'text-md3-primary', detail: 'Config • 2.1 KB' },
-  ]
+// Context panel — right sidebar showing real session context, active tools, and stats
+import { useState, useEffect } from 'react'
+import { useAppState } from '../context/AppState'
+import { getTools, getWorkingDirInfo } from '../lib/tauri-api'
+import type { ToolInfo } from '../types/tauri-events'
 
-  const skills = [
-    { name: 'Forecasting', icon: 'query_stats' },
-    { name: 'Data Analysis', icon: 'analytics' },
-    { name: 'Reporting', icon: 'summarize' },
-  ]
+export function ContextPanel() {
+  const { messages, usage, activeToolCalls } = useAppState()
+  const [tools, setTools] = useState<ToolInfo[]>([])
+  const [modifiedFiles, setModifiedFiles] = useState<string[]>([])
+  const [branch, setBranch] = useState<string>('')
+
+  useEffect(() => {
+    getTools().then(setTools).catch(() => {})
+    getWorkingDirInfo().then(info => {
+      setModifiedFiles(info.modified_files)
+      setBranch(info.branch)
+    }).catch(() => {})
+  }, [])
+
+  const enabledTools = tools.filter(t => t.enabled)
+  const totalTokens = usage ? usage.inputTokens + usage.outputTokens : 0
+  const toolCallCount = activeToolCalls.length
 
   return (
     <aside className="w-[300px] border-l border-md3-outline-variant/10 glass-panel shrink-0 p-md3-lg overflow-y-auto">
       <div className="space-y-md3-xl">
 
-        {/* File Context */}
+        {/* Working Directory */}
+        {branch && (
+          <section>
+            <div className="flex items-center justify-between mb-md3-md">
+              <h3 className="text-label-md text-md3-on-surface uppercase tracking-wider opacity-60">Working Dir</h3>
+              <span className="px-xs py-[2px] bg-md3-primary/10 text-md3-primary text-[10px] font-bold rounded flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">branch</span>
+                {branch}
+              </span>
+            </div>
+            {modifiedFiles.length > 0 ? (
+              <div className="space-y-sm">
+                {modifiedFiles.slice(0, 6).map((file) => (
+                  <div key={file} className="p-md3-sm bg-md3-surface-container rounded-lg flex items-center gap-md3-sm border border-md3-outline-variant/10">
+                    <span className="material-symbols-outlined text-[16px] text-md3-tertiary">edit_note</span>
+                    <span className="text-label-sm truncate">{file}</span>
+                  </div>
+                ))}
+                {modifiedFiles.length > 6 && (
+                  <p className="text-label-sm text-md3-on-surface-variant opacity-60">+{modifiedFiles.length - 6} more</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-label-sm text-md3-on-surface-variant opacity-50 italic">No modified files</p>
+            )}
+          </section>
+        )}
+
+        {/* Active Tools */}
         <section>
           <div className="flex items-center justify-between mb-md3-md">
-            <h3 className="text-label-md text-md3-on-surface uppercase tracking-wider opacity-60">File Context</h3>
-            <span className="px-xs py-[2px] bg-md3-tertiary/10 text-md3-tertiary text-[10px] font-bold rounded">{files.length} ACTIVE</span>
+            <h3 className="text-label-md text-md3-on-surface uppercase tracking-wider opacity-60">Active Tools</h3>
+            <span className="px-xs py-[2px] bg-md3-tertiary/10 text-md3-tertiary text-[10px] font-bold rounded">{enabledTools.length}</span>
           </div>
-          <div className="space-y-sm">
-            {files.map((file) => (
-              <div key={file.name} className="p-md3-md bg-md3-surface-container rounded-xl flex items-center gap-md3-md border border-md3-outline-variant/10">
-                <span className={cn('material-symbols-outlined text-[20px]', file.color)}>{file.icon}</span>
-                <div className="min-w-0">
-                  <p className="text-label-md truncate">{file.name}</p>
-                  <p className="text-label-sm opacity-60">{file.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Active Skills */}
-        <section>
-          <h3 className="text-label-md text-md3-on-surface uppercase tracking-wider opacity-60 mb-md3-md">Active Skills</h3>
           <div className="flex flex-wrap gap-xs">
-            {skills.map((skill) => (
-              <span key={skill.name} className="px-md3-md py-sm bg-md3-primary/10 text-md3-primary text-label-sm rounded-full border border-md3-primary/20 flex items-center gap-xs">
-                <span className="material-symbols-outlined text-[14px]">{skill.icon}</span>
-                {skill.name}
+            {enabledTools.length > 0 ? enabledTools.slice(0, 8).map(tool => (
+              <span key={tool.name} className="px-md3-sm py-xs bg-md3-primary/10 text-md3-primary text-label-sm rounded-full border border-md3-primary/20 flex items-center gap-xs">
+                <span className="material-symbols-outlined text-[14px]">build</span>
+                {tool.name}
               </span>
-            ))}
+            )) : (
+              <p className="text-label-sm text-md3-on-surface-variant opacity-50 italic">Loading tools...</p>
+            )}
           </div>
         </section>
 
@@ -54,9 +77,10 @@ export function ContextPanel() {
           <h3 className="text-label-md text-md3-on-surface uppercase tracking-wider opacity-60 mb-md3-md">Session Stats</h3>
           <div className="bg-md3-surface-container rounded-xl p-md3-md border border-md3-outline-variant/10 space-y-sm">
             {[
-              { label: 'Messages', value: '--', icon: 'chat' },
-              { label: 'Tokens Used', value: '--', icon: 'data_usage' },
-              { label: 'Tool Calls', value: '--', icon: 'build' },
+              { label: 'Messages', value: String(messages.length), icon: 'chat' },
+              { label: 'Tokens Used', value: totalTokens > 0 ? totalTokens.toLocaleString() : '--', icon: 'data_usage' },
+              { label: 'Tool Calls', value: String(toolCallCount), icon: 'build' },
+              { label: 'Cost', value: usage?.costUsd ? `$${usage.costUsd.toFixed(4)}` : '--', icon: 'payments' },
             ].map((stat) => (
               <div key={stat.label} className="flex items-center justify-between py-xs">
                 <div className="flex items-center gap-sm text-md3-on-surface-variant">
@@ -90,8 +114,4 @@ export function ContextPanel() {
       </div>
     </aside>
   )
-}
-
-function cn(...classes: (string | undefined | false)[]) {
-  return classes.filter(Boolean).join(' ')
 }

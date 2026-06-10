@@ -29,7 +29,7 @@ import type { SessionInfo, McpServerInfo } from './types/tauri-events'
 function AppContent() {
   const { sendMessage, isStreaming, error, clearError } = useStreaming()
   const { theme, setTheme } = useTheme()
-  const { setViewMode } = useAppState()
+  const { setViewMode, viewMode, usage } = useAppState()
   const [currentPage, setCurrentPage] = useState<PageId>('chat')
   const [currentSessionId, setCurrentSessionId] = useState<string>()
   const [sessions, setSessions] = useState<SessionInfo[]>([])
@@ -39,6 +39,8 @@ function AppContent() {
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([])
 
   // Refs for keyboard shortcut handlers
+  const viewModeRef = useRef(viewMode)
+  viewModeRef.current = viewMode
   const sessionsRef = useRef(sessions)
   sessionsRef.current = sessions
   const currentSessionIdRef = useRef(currentSessionId)
@@ -109,7 +111,9 @@ function AppContent() {
       'shannon:command-palette': () => setCommandPaletteOpen(prev => !prev),
       'shannon:new-session': () => handleNewSession(),
       'shannon:close-dialogs': () => setCommandPaletteOpen(false),
-      'shannon:cycle-view-mode': () => setViewMode(prev => prev === 'verbose' ? 'normal' : prev === 'normal' ? 'summary' : 'verbose'),
+      'shannon:cycle-view-mode': () => setViewMode(
+          viewModeRef.current === 'verbose' ? 'normal' : viewModeRef.current === 'normal' ? 'summary' : 'verbose'
+        ),
       'shannon:next-session': () => {
         const s = sessionsRef.current
         const curId = currentSessionIdRef.current
@@ -199,12 +203,16 @@ function AppContent() {
 
   // Chat page: three-column layout with session list + chat + context panel
   const isChatPage = currentPage === 'chat'
+  const tokenUsage = usage ? `${(usage.inputTokens + usage.outputTokens).toLocaleString()} tokens` : undefined
+  const computeTime = usage?.costUsd ? `$${usage.costUsd.toFixed(4)}` : undefined
 
   return (
     <>
       <Layout
         currentPage={currentPage}
         onNavigate={handleNavigate}
+        tokenUsage={tokenUsage}
+        computeTime={computeTime}
         activeAgents={agents.filter(a => a.status === 'running').map(a => a.name)}
       >
         {isChatPage ? (
