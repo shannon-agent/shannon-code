@@ -1,62 +1,54 @@
-// Task scheduler hook with mock Tauri API
-import { useState, useEffect } from 'react'
+// Task scheduler hook wired to real Tauri APIs
+import { useState, useEffect, useCallback } from 'react'
+import { getBackgroundTasks, startBackgroundTask, cancelBackgroundTask } from '../lib/tauri-api'
+import type { BackgroundTaskInfo } from '../types/tauri-events'
 import type { ScheduledTask, TaskStatus } from '../components/TaskScheduler'
 
-// Mock Tauri API - replace with actual Tauri invoke calls
-const mockTauriAPI = {
-  scheduleTask: async (_task: Omit<ScheduledTask, 'id' | 'status'>): Promise<string> => {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 100))
-    return `task-${Date.now()}`
-  },
-  cancelTask: async (_id: string): Promise<boolean> => {
-    await new Promise(resolve => setTimeout(resolve, 50))
-    return true
-  },
-  listTasks: async (): Promise<ScheduledTask[]> => {
-    await new Promise(resolve => setTimeout(resolve, 100))
-    return []
+function mapStatus(status: string): TaskStatus {
+  if (status === 'completed') return 'completed'
+  if (status === 'failed') return 'failed'
+  if (status === 'running') return 'running'
+  return 'scheduled'
+}
+
+function toScheduledTask(info: BackgroundTaskInfo): ScheduledTask {
+  return {
+    id: info.task_id,
+    name: info.prompt.slice(0, 60) + (info.prompt.length > 60 ? '...' : ''),
+    prompt: info.prompt,
+    scheduledTime: new Date(info.started_at),
+    recurrence: 'once' as const,
+    status: mapStatus(info.status),
+    result: info.output || undefined,
   }
 }
 
-/**
- * React hook for managing scheduled tasks
- *
- * Provides CRUD operations for background task scheduling
- * with mock Tauri API integration.
- *
- * @example
- * ```tsx
- * const { tasks, scheduleTask, cancelTask } = useTaskScheduler()
- * ```
- */
 export function useTaskScheduler() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Load tasks on mount
-  useEffect(() => {
-    loadTasks()
-  }, [])
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const loadedTasks = await mockTauriAPI.listTasks()
-      setTasks(loadedTasks)
+      const bgTasks = await getBackgroundTasks()
+      setTasks(bgTasks.map(toScheduledTask))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tasks')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    loadTasks()
+  }, [loadTasks])
 
   const scheduleTask = async (taskData: Omit<ScheduledTask, 'id' | 'status'>) => {
     setError(null)
     try {
-      const id = await mockTauriAPI.scheduleTask(taskData)
+      const id = await startBackgroundTask(taskData.prompt)
       const newTask: ScheduledTask = {
         ...taskData,
         id,
@@ -74,7 +66,7 @@ export function useTaskScheduler() {
   const cancelTask = async (id: string) => {
     setError(null)
     try {
-      const success = await mockTauriAPI.cancelTask(id)
+      const success = await cancelBackgroundTask(id)
       if (success) {
         setTasks(prev => prev.filter(task => task.id !== id))
       }
