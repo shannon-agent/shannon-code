@@ -130,6 +130,14 @@ vi.mock('@tauri-apps/api/core', () => ({
         return Promise.resolve([
           { name: 'filesystem', command: 'npx @modelcontextprotocol/server-filesystem', enabled: true, connected: true, toolCount: 5, tools: [] },
         ])
+      case 'add_mcp_server':
+        return Promise.resolve({ name: 'test-server', command: 'test-cmd', enabled: true, connected: false, toolCount: 0, tools: [], lastConnected: null })
+      case 'remove_mcp_server':
+        return Promise.resolve(true)
+      case 'restart_mcp_server':
+        return Promise.resolve({ name: 'test-server', command: 'test-cmd', enabled: true, connected: true, toolCount: 0, tools: [], lastConnected: null })
+      case 'get_mcp_server_config':
+        return Promise.resolve({ name: 'test-server', command: 'test-cmd', args: [], env: {}, enabled: true })
       case 'respond_permission':
         return Promise.resolve()
       default:

@@ -211,6 +211,45 @@ export async function listMcpServers(): Promise<import('../types/tauri-events').
 }
 
 /**
+ * Add a new MCP server
+ */
+export async function addMcpServer(
+  name: string,
+  command: string,
+  args: string[],
+  env: Record<string, string>,
+): Promise<import('../types/tauri-events').McpServerInfo> {
+  return await invoke('add_mcp_server', { name, command, args, env })
+}
+
+/**
+ * Remove an MCP server by name
+ */
+export async function removeMcpServer(name: string): Promise<boolean> {
+  return await invoke('remove_mcp_server', { name })
+}
+
+/**
+ * Restart an MCP server by name
+ */
+export async function restartMcpServer(name: string): Promise<import('../types/tauri-events').McpServerInfo> {
+  return await invoke('restart_mcp_server', { name })
+}
+
+/**
+ * Get config for a specific MCP server
+ */
+export async function getMcpServerConfig(name: string): Promise<{
+  name: string
+  command: string
+  args: string[]
+  env: Record<string, string>
+  enabled: boolean
+}> {
+  return await invoke('get_mcp_server_config', { name })
+}
+
+/**
  * Get file tree for a directory
  */
 export async function getFileTree(path: string): Promise<FileNode> {

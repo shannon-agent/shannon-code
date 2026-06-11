@@ -1,7 +1,7 @@
 // Page router — maps PageId to rendered content
 import { useState, useEffect, useMemo } from 'react'
 import { cn } from '../lib/utils'
-import { listSkills, listAgents, listMcpServers } from '../lib/tauri-api'
+import { listSkills, listAgents, listMcpServers, addMcpServer, removeMcpServer, restartMcpServer } from '../lib/tauri-api'
 import type { SkillInfo } from '../lib/tauri-api'
 import type { PageId } from './AppSidebar'
 import type { SessionInfo } from '../types/tauri-events'
@@ -296,23 +296,91 @@ function MyAgentsContent() {
 
 // --- Data Sources — matches design/src/components/extensions/DataSources.tsx ---
 
-function DataSourcesContent() {
+export function DataSourcesContent() {
   const [servers, setServers] = useState<McpServerInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newServer, setNewServer] = useState({ name: '', command: '' })
+  const [restarting, setRestarting] = useState<string | null>(null)
 
-  useEffect(() => {
+  const refreshServers = () => {
     listMcpServers()
       .then(setServers)
       .catch(() => {})
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { refreshServers() }, [])
+
+  const handleAddServer = async () => {
+    if (!newServer.name || !newServer.command) return
+    try {
+      await addMcpServer(newServer.name, newServer.command, [], {})
+      setNewServer({ name: '', command: '' })
+      setShowAddForm(false)
+      refreshServers()
+    } catch (err) {
+      console.error('Failed to add server:', err)
+    }
+  }
+
+  const handleRemoveServer = async (name: string) => {
+    try {
+      await removeMcpServer(name)
+      refreshServers()
+    } catch (err) {
+      console.error('Failed to remove server:', err)
+    }
+  }
+
+  const handleRestartServer = async (name: string) => {
+    setRestarting(name)
+    try {
+      await restartMcpServer(name)
+      refreshServers()
+    } catch (err) {
+      console.error('Failed to restart server:', err)
+    } finally {
+      setRestarting(null)
+    }
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto px-md3-lg py-md3-xl">
       <div className="mb-md3-lg">
         <h2 className="text-headline-lg text-[28px] font-bold text-md3-on-surface">Data Sources</h2>
         <p className="text-body-md text-[15px] text-md3-on-surface-variant max-w-2xl">Manage MCP server connections that provide tools and data to your agents.</p>
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="mt-md3-md px-md3-md py-sm bg-md3-primary text-md3-on-primary rounded-lg text-label-md font-bold hover:bg-md3-primary/90 transition-all cursor-pointer"
+        >
+          + Add Server
+        </button>
       </div>
+
+      {showAddForm && (
+        <div className="bg-md3-surface-container-lowest border border-md3-outline-variant/50 rounded-xl p-md3-lg mb-md3-lg shadow-sm">
+          <h3 className="text-label-lg font-bold text-md3-on-surface mb-md3-md">Add MCP Server</h3>
+          <div className="space-y-sm">
+            <input
+              placeholder="Server name (e.g., filesystem)"
+              value={newServer.name}
+              onChange={e => setNewServer(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-md3-md py-sm bg-md3-surface-container border border-md3-outline-variant rounded-lg text-body-sm text-md3-on-surface"
+            />
+            <input
+              placeholder="Command (e.g., npx @modelcontextprotocol/server-filesystem /path)"
+              value={newServer.command}
+              onChange={e => setNewServer(prev => ({ ...prev, command: e.target.value }))}
+              className="w-full px-md3-md py-sm bg-md3-surface-container border border-md3-outline-variant rounded-lg text-body-sm text-md3-on-surface font-mono"
+            />
+            <div className="flex gap-sm pt-sm">
+              <button onClick={handleAddServer} disabled={!newServer.name || !newServer.command} className="px-md3-md py-sm bg-md3-primary text-md3-on-primary rounded-lg text-label-md font-bold disabled:opacity-50 cursor-pointer">Add</button>
+              <button onClick={() => { setShowAddForm(false); setNewServer({ name: '', command: '' }) }} className="px-md3-md py-sm border border-md3-outline-variant rounded-lg text-label-md text-md3-on-surface cursor-pointer">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-md3-xl">
@@ -423,13 +491,30 @@ function DataSourcesContent() {
                 </span>
               </div>
               <div className="flex items-center justify-between pt-sm border-t border-md3-outline-variant/30">
-                <span className="text-label-sm text-[12px] text-md3-on-surface-variant truncate max-w-[60%]" title={server.command}>{server.command}</span>
-                <span className={cn(
-                  'text-label-sm text-[12px] font-bold',
-                  server.connected ? 'text-emerald-600' : 'text-md3-error'
-                )}>
-                  {server.connected ? 'Healthy' : 'Disconnected'}
-                </span>
+                <span className="text-label-sm text-[12px] text-md3-on-surface-variant truncate max-w-[40%]" title={server.command}>{server.command}</span>
+                <div className="flex items-center gap-xs">
+                  <span className={cn(
+                    'text-label-sm text-[12px] font-bold',
+                    server.connected ? 'text-emerald-600' : 'text-md3-error'
+                  )}>
+                    {server.connected ? 'Healthy' : 'Disconnected'}
+                  </span>
+                  <button
+                    onClick={() => handleRestartServer(server.name)}
+                    disabled={restarting === server.name}
+                    title="Restart server"
+                    className="p-1 rounded hover:bg-md3-surface-container-high transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-md3-on-surface-variant">{restarting === server.name ? 'progress_activity' : 'refresh'}</span>
+                  </button>
+                  <button
+                    onClick={() => handleRemoveServer(server.name)}
+                    title="Remove server"
+                    className="p-1 rounded hover:bg-md3-error/10 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[16px] text-md3-error">delete</span>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
