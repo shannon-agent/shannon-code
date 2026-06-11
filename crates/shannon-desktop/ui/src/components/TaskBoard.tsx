@@ -1,6 +1,7 @@
 // Task board — Scheduled tasks with calendar, execution log, and efficiency metrics
 import { useState, useMemo } from 'react'
 import { cn } from '../lib/utils'
+import { startBackgroundTask } from '../lib/tauri-api'
 
 export interface TaskItem {
   id: string
@@ -126,13 +127,19 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null)
   const [successTaskId, setSuccessTaskId] = useState<string | null>(null)
 
-  const handleRun = (taskId: string) => {
+  const handleRun = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
     setRunningTaskId(taskId)
-    setTimeout(() => {
+    try {
+      await startBackgroundTask(task.description || task.subject)
       setRunningTaskId(null)
       setSuccessTaskId(taskId)
       setTimeout(() => setSuccessTaskId(null), 2000)
-    }, 1500)
+      onRefresh?.()
+    } catch {
+      setRunningTaskId(null)
+    }
   }
 
   const filtered = useMemo(() => {
