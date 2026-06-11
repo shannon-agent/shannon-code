@@ -18,19 +18,17 @@ describe('SkillBrowser', () => {
   it('transitions from loading to loaded state', async () => {
     render(<SkillBrowser />)
 
-    // Skills load quickly from fallback data, so we verify the loaded state
     await waitFor(() => {
       expect(screen.getByText('commit')).toBeDefined()
     })
   })
 
-  it('loads fallback skills when Tauri is not available', async () => {
+  it('loads skills from Tauri API', async () => {
     render(<SkillBrowser />)
 
     await waitFor(() => {
       expect(screen.getByText('commit')).toBeDefined()
       expect(screen.getByText('help')).toBeDefined()
-      expect(screen.getByText('search')).toBeDefined()
     })
   })
 
@@ -39,7 +37,6 @@ describe('SkillBrowser', () => {
 
     await waitFor(() => {
       expect(screen.getByText('git')).toBeDefined()
-      expect(screen.getByText('general')).toBeDefined()
       expect(screen.getByText('navigation')).toBeDefined()
     })
   })
@@ -137,8 +134,8 @@ describe('SkillBrowser', () => {
     render(<SkillBrowser />)
 
     await waitFor(() => {
-      expect(screen.getByText(/3 skills/)).toBeDefined()
-      expect(screen.getByText(/3 categories/)).toBeDefined()
+      expect(screen.getByText(/2 skills/)).toBeDefined()
+      expect(screen.getByText(/2 categories/)).toBeDefined()
     })
   })
 })

@@ -1,6 +1,6 @@
 // Tests for Settings page components
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { GeneralSettingsPage, ThemeSettingsPage, ModelsSettingsPage, BillingSettingsPage, AdvancedSettingsPage } from '../SettingsPanel'
 import { ThemeProvider } from '../../context/ThemeContext'
 
@@ -16,7 +16,12 @@ vi.mock('../../lib/tauri-api', () => ({
   getTools: vi.fn(() => Promise.resolve([
     { name: 'bash', description: 'Run shell commands', enabled: true },
     { name: 'file_read', description: 'Read file contents', enabled: true },
-  ]))
+  ])),
+  listModels: vi.fn(() => Promise.resolve([
+    { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet', provider: 'anthropic' },
+    { id: 'gpt-4', name: 'GPT-4', provider: 'openai' },
+  ])),
+  switchProvider: vi.fn(() => Promise.resolve()),
 }))
 
 const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -86,10 +91,9 @@ describe('ModelsSettingsPage', () => {
     expect(screen.getByText('High Quality')).toBeDefined()
   })
 
-  it('renders Active Tier Summary', () => {
+  it('renders Available Models section', () => {
     render(<ModelsSettingsPage />, { wrapper })
-    expect(screen.getByText('Active Tier Summary')).toBeDefined()
-    expect(screen.getByText('Pro Tier')).toBeDefined()
+    expect(screen.getByText('Available Models')).toBeDefined()
   })
 
   it('renders Global Parameters', () => {
@@ -106,10 +110,13 @@ describe('BillingSettingsPage', () => {
     expect(screen.getByText(/Usage & Billing/)).toBeDefined()
   })
 
-  it('renders Current Plan section', () => {
+  it('renders Current Plan section', async () => {
     render(<BillingSettingsPage />, { wrapper })
-    expect(screen.getByText('Pro Plan')).toBeDefined()
-    expect(screen.getAllByText(/\$29\.00/).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Active Provider')).toBeDefined()
+    // Provider name loads async from config, appears in multiple places
+    await waitFor(() => {
+      expect(screen.getAllByText('anthropic').length).toBeGreaterThanOrEqual(1)
+    })
   })
 
   it('renders Billing History', () => {

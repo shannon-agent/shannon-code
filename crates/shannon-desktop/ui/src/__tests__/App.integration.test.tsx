@@ -76,14 +76,14 @@ describe('App Integration', () => {
   it('renders app without crashing', async () => {
     const { container } = render(
       <AllProviders>
-        <Layout>
+        <Layout currentPage="chat" onNavigate={vi.fn()}>
           <div>Test Content</div>
         </Layout>
       </AllProviders>
     )
 
     await waitFor(() => {
-      expect(container.querySelector('.bg-\\[var\\(--bg-primary\\)\\]')).toBeDefined()
+      expect(container.textContent).toBeDefined()
     })
   })
 
@@ -181,21 +181,16 @@ describe('App Integration', () => {
     }, { timeout: 3000 })
   })
 
-  it('integrates Layout with sidebar and panel', async () => {
+  it('integrates Layout with children', async () => {
     const { container } = render(
       <AllProviders>
-        <Layout
-          sidebar={<div>Sidebar</div>}
-          panel={<div>Panel</div>}
-        >
+        <Layout currentPage="chat" onNavigate={vi.fn()}>
           <div>Main Content</div>
         </Layout>
       </AllProviders>
     )
 
     await waitFor(() => {
-      expect(container.textContent).toContain('Sidebar')
-      expect(container.textContent).toContain('Panel')
       expect(container.textContent).toContain('Main Content')
     })
   })

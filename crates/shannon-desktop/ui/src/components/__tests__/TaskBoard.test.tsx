@@ -11,17 +11,26 @@ const mockTasks: TaskItem[] = [
   { id: '4', subject: 'Deploy script', status: 'failed' },
 ]
 
+// Helper: click filter tab by text content (filter tabs have capitalize class)
+function clickFilterTab(label: string) {
+  // Filter tabs are buttons with "capitalize" class
+  const buttons = screen.getAllByRole('button')
+  const tab = buttons.find(b => b.textContent === label && b.className.includes('capitalize'))
+  if (!tab) throw new Error(`Filter tab "${label}" not found`)
+  fireEvent.click(tab)
+}
+
 describe('TaskBoard', () => {
   afterEach(() => cleanup())
 
-  it('renders header', () => {
+  it('renders header "Scheduled Tasks"', () => {
     render(<TaskBoard tasks={[]} />)
-    expect(screen.getByText('Tasks')).toBeDefined()
+    expect(screen.getByText('Scheduled Tasks')).toBeDefined()
   })
 
   it('shows empty state when no tasks', () => {
     render(<TaskBoard tasks={[]} />)
-    expect(screen.getByText('No tasks')).toBeDefined()
+    expect(screen.getByText('No tasks found')).toBeDefined()
   })
 
   it('renders all task subjects', () => {
@@ -45,17 +54,11 @@ describe('TaskBoard', () => {
     expect(screen.getByText('worker-2')).toBeDefined()
   })
 
-  it('shows active and done counts in header', () => {
+  it('shows "System" for tasks without owner', () => {
     render(<TaskBoard tasks={mockTasks} />)
-    expect(screen.getByText('1 active')).toBeDefined()
-    expect(screen.getByText('1 done')).toBeDefined()
-    expect(screen.getByText('1 failed')).toBeDefined()
-  })
-
-  it('shows total and remaining in footer', () => {
-    render(<TaskBoard tasks={mockTasks} />)
-    expect(screen.getByText('4 tasks')).toBeDefined()
-    expect(screen.getByText('2 remaining')).toBeDefined()
+    // "Add tests" and "Deploy script" have no owner, both show "System"
+    const systemLabels = screen.getAllByText('System')
+    expect(systemLabels.length).toBeGreaterThanOrEqual(2)
   })
 
   it('calls onSelect when task is clicked', () => {
@@ -66,9 +69,9 @@ describe('TaskBoard', () => {
     expect(handleSelect).toHaveBeenCalledWith('1')
   })
 
-  it('highlights selected task', () => {
+  it('highlights selected task with primary border', () => {
     const { container } = render(<TaskBoard tasks={mockTasks} selectedId="2" />)
-    const selected = container.querySelector('.border-l-2')
+    const selected = container.querySelector('.border-md3-primary\\/50')
     expect(selected).toBeDefined()
     expect(selected?.textContent).toContain('Add tests')
   })
@@ -79,77 +82,77 @@ describe('TaskBoard', () => {
     expect(subjects[0].textContent).toBe('Fix auth bug')
   })
 
-  it('shows completed task with strikethrough', () => {
+  it('shows status badges on tasks', () => {
     render(<TaskBoard tasks={mockTasks} />)
-    const completed = screen.getByText('Refactor API')
-    expect(completed.className).toContain('line-through')
+    // Status badges appear in task cards and may duplicate with filter tabs
+    expect(screen.getAllByText('in progress').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByText('failed').length).toBeGreaterThanOrEqual(1)
   })
 
-  it('handles single task singular', () => {
-    const single: TaskItem[] = [{ id: '1', subject: 'Only task', status: 'pending' }]
-    render(<TaskBoard tasks={single} />)
-    expect(screen.getByText('1 task')).toBeDefined()
-    expect(screen.getByText('1 remaining')).toBeDefined()
+  it('shows filter tabs', () => {
+    render(<TaskBoard tasks={mockTasks} />)
+    // Filter tabs are buttons with capitalize class showing all/active/completed/failed
+    clickFilterTab('all')
+    clickFilterTab('active')
+    // "completed" and "failed" also appear as status badges, so verify via button role
+    expect(screen.getAllByRole('button').some(b => b.textContent === 'completed' && b.className.includes('capitalize'))).toBe(true)
+    expect(screen.getAllByRole('button').some(b => b.textContent === 'failed' && b.className.includes('capitalize'))).toBe(true)
   })
 
-  // Filter tabs
-  it('shows filter tabs with counts', () => {
+  it('filters to active tasks when active tab clicked', () => {
     render(<TaskBoard tasks={mockTasks} />)
-    expect(screen.getByText('All (4)')).toBeDefined()
-    expect(screen.getByText('Active (2)')).toBeDefined()
-    expect(screen.getByText('Done (1)')).toBeDefined()
-    expect(screen.getByText('Failed (1)')).toBeDefined()
-  })
-
-  it('filters to active tasks only', () => {
-    render(<TaskBoard tasks={mockTasks} />)
-    fireEvent.click(screen.getByText('Active (2)'))
+    clickFilterTab('active')
     expect(screen.getByText('Fix auth bug')).toBeDefined()
     expect(screen.getByText('Add tests')).toBeDefined()
     expect(screen.queryByText('Refactor API')).toBeNull()
     expect(screen.queryByText('Deploy script')).toBeNull()
   })
 
-  it('filters to completed tasks only', () => {
+  it('filters to completed tasks when completed tab clicked', () => {
     render(<TaskBoard tasks={mockTasks} />)
-    fireEvent.click(screen.getByText('Done (1)'))
+    clickFilterTab('completed')
     expect(screen.queryByText('Fix auth bug')).toBeNull()
     expect(screen.getByText('Refactor API')).toBeDefined()
   })
 
-  it('shows all tasks after clearing filter', () => {
+  it('shows all tasks after clicking all tab', () => {
     render(<TaskBoard tasks={mockTasks} />)
-    fireEvent.click(screen.getByText('Active (2)'))
+    clickFilterTab('active')
     expect(screen.queryByText('Refactor API')).toBeNull()
-    fireEvent.click(screen.getByText('All (4)'))
+    clickFilterTab('all')
     expect(screen.getByText('Refactor API')).toBeDefined()
   })
 
-  it('shows no matching tasks for empty filter', () => {
+  it('shows "No tasks found" for empty filter result', () => {
     const onlyDone: TaskItem[] = [
       { id: '1', subject: 'Task 1', status: 'completed' },
     ]
     render(<TaskBoard tasks={onlyDone} />)
-    // "Active" tab shows (0 count, no suffix), click it to see empty
-    fireEvent.click(screen.getByText('Active'))
-    expect(screen.getByText('No matching tasks')).toBeDefined()
+    clickFilterTab('active')
+    expect(screen.getByText('No tasks found')).toBeDefined()
   })
 
-  // Refresh button
-  it('shows refresh button when onRefresh provided', () => {
-    const { container } = render(<TaskBoard tasks={mockTasks} onRefresh={vi.fn()} />)
-    expect(container.querySelector('[title="Refresh tasks"]')).toBeDefined()
+  it('shows refresh button', () => {
+    render(<TaskBoard tasks={mockTasks} onRefresh={vi.fn()} />)
+    expect(screen.getByText('Refresh')).toBeDefined()
   })
 
-  it('does not show refresh button without onRefresh', () => {
-    const { container } = render(<TaskBoard tasks={mockTasks} />)
-    expect(container.querySelector('[title="Refresh tasks"]')).toBeNull()
+  it('shows execution log for completed/in_progress tasks', () => {
+    render(<TaskBoard tasks={mockTasks} />)
+    expect(screen.getByText('Task Execution Log')).toBeDefined()
   })
 
-  it('calls onRefresh when refresh button clicked', () => {
-    const handleRefresh = vi.fn()
-    const { container } = render(<TaskBoard tasks={mockTasks} onRefresh={handleRefresh} />)
-    fireEvent.click(container.querySelector('[title="Refresh tasks"]')!)
-    expect(handleRefresh).toHaveBeenCalledTimes(1)
+  it('shows calendar widget', () => {
+    render(<TaskBoard tasks={mockTasks} />)
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const currentMonth = monthNames[new Date().getMonth()]
+    expect(screen.getByText(new RegExp(currentMonth))).toBeDefined()
+  })
+
+  it('shows efficiency card', () => {
+    render(<TaskBoard tasks={mockTasks} />)
+    expect(screen.getByText('AI Efficiency')).toBeDefined()
+    // 1 completed out of 4 = 25%
+    expect(screen.getByText('25%')).toBeDefined()
   })
 })

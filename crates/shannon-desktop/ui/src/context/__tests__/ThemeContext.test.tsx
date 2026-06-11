@@ -61,14 +61,14 @@ describe('ThemeContext', () => {
     expect(result.current.themes).toContain('slate')
   })
 
-  it('defaults to tokyo-night theme', () => {
+  it('defaults to material theme', () => {
     const wrapper = ({ children }: { children: React.ReactNode }) => (
       <ThemeProvider>{children}</ThemeProvider>
     )
 
     const { result } = renderHook(() => useTheme(), { wrapper })
 
-    expect(result.current.theme).toBe('tokyo-night')
+    expect(result.current.theme).toBe('material')
   })
 
   it('can change theme', () => {
@@ -109,7 +109,7 @@ describe('ThemeContext', () => {
     renderHook(() => useTheme(), { wrapper })
 
     await waitFor(() => {
-      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'tokyo-night')
+      expect(document.documentElement.setAttribute).toHaveBeenCalledWith('data-theme', 'material')
     })
   })
 

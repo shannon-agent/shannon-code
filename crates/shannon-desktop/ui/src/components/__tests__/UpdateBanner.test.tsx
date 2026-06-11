@@ -120,9 +120,11 @@ describe('UpdateBanner', () => {
       expect(screen.getByText('Download & Install')).toBeInTheDocument()
     })
 
-    // Click close button (X icon)
-    const closeBtn = screen.getByRole('button', { name: '' })
-    fireEvent.click(closeBtn)
+    // Click close button (X icon — ghost button with close icon)
+    const closeButtons = screen.getAllByRole('button')
+    const closeBtn = closeButtons.find(b => b.querySelector('.material-symbols-outlined')?.textContent === 'close')
+    expect(closeBtn).toBeDefined()
+    fireEvent.click(closeBtn!)
 
     await waitFor(() => {
       expect(container.innerHTML).toBe('')
