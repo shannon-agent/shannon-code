@@ -22,13 +22,6 @@ interface TaskSchedulerProps {
   onViewResult?: (id: string) => void
 }
 
-/**
- * Task scheduler UI for scheduling background tasks
- * - Schedule form: prompt text, datetime picker, recurrence dropdown
- * - Task list table: name, schedule, status badge, actions
- * - Status badges: scheduled(yellow), running(blue), completed(green), failed(red)
- * - Tokyo Night styling
- */
 export function TaskScheduler({
   tasks,
   onScheduleTask,
@@ -59,10 +52,10 @@ export function TaskScheduler({
 
   const getStatusBadge = (status: TaskStatus) => {
     const styles = {
-      scheduled: 'bg-[#e0af68]/20 text-[#e0af68]',
-      running: 'bg-[#7aa2f7]/20 text-[#7aa2f7]',
-      completed: 'bg-[#9ece6a]/20 text-[#9ece6a]',
-      failed: 'bg-[#f7768e]/20 text-[#f7768e]'
+      scheduled: 'bg-amber-100 text-amber-700',
+      running: 'bg-blue-100 text-blue-700',
+      completed: 'bg-emerald-100 text-emerald-700',
+      failed: 'bg-red-100 text-red-700'
     }
 
     const icons = {
@@ -93,10 +86,10 @@ export function TaskScheduler({
     <div className="space-y-4">
       {/* Header with Add button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-[#c0caf5] text-lg font-semibold">Scheduled Tasks</h2>
+        <h2 className="text-md3-on-surface text-lg font-semibold">Scheduled Tasks</h2>
         <button
           onClick={() => setShowScheduleForm(!showScheduleForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded-lg hover:bg-[#7aa2f7]/80 transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-md3-primary text-md3-on-primary rounded-lg hover:brightness-110 transition-colors font-medium"
         >
           <Plus size={18} />
           Schedule Task
@@ -105,51 +98,51 @@ export function TaskScheduler({
 
       {/* Schedule Form */}
       {showScheduleForm && (
-        <div className="p-4 bg-[#24283b] border border-[#414868] rounded-lg">
-          <h3 className="text-[#c0caf5] font-semibold mb-3">Schedule New Task</h3>
+        <div className="p-4 bg-md3-surface-container border border-md3-outline-variant rounded-xl">
+          <h3 className="text-md3-on-surface font-semibold mb-3">Schedule New Task</h3>
           <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-sm text-[#a9b1d6] mb-1">Task Name</label>
+              <label className="block text-sm text-md3-on-surface-variant mb-1">Task Name</label>
               <input
                 type="text"
                 value={newTask.name}
                 onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
                 placeholder="e.g., Daily Summary"
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7]"
+                className="w-full px-3 py-2 bg-md3-surface-container-highest border border-md3-outline-variant rounded-lg text-md3-on-surface placeholder-md3-on-surface-variant/50 focus:outline-none focus:border-md3-primary"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm text-[#a9b1d6] mb-1">Prompt</label>
+              <label className="block text-sm text-md3-on-surface-variant mb-1">Prompt</label>
               <textarea
                 value={newTask.prompt}
                 onChange={(e) => setNewTask({ ...newTask, prompt: e.target.value })}
                 placeholder="Enter the task prompt..."
                 rows={3}
-                className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7aa2f7] resize-none"
+                className="w-full px-3 py-2 bg-md3-surface-container-highest border border-md3-outline-variant rounded-lg text-md3-on-surface placeholder-md3-on-surface-variant/50 focus:outline-none focus:border-md3-primary resize-none"
                 required
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm text-[#a9b1d6] mb-1">Scheduled Time</label>
+                <label className="block text-sm text-md3-on-surface-variant mb-1">Scheduled Time</label>
                 <input
                   type="datetime-local"
                   value={newTask.scheduledTime}
                   onChange={(e) => setNewTask({ ...newTask, scheduledTime: e.target.value })}
-                  className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] focus:outline-none focus:border-[#7aa2f7]"
+                  className="w-full px-3 py-2 bg-md3-surface-container-highest border border-md3-outline-variant rounded-lg text-md3-on-surface focus:outline-none focus:border-md3-primary"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-[#a9b1d6] mb-1">Recurrence</label>
+                <label className="block text-sm text-md3-on-surface-variant mb-1">Recurrence</label>
                 <select
                   value={newTask.recurrence}
                   onChange={(e) => setNewTask({ ...newTask, recurrence: e.target.value as 'once' | 'daily' | 'weekly' })}
-                  className="w-full px-3 py-2 bg-[#1a1b26] border border-[#414868] rounded-lg text-[#c0caf5] focus:outline-none focus:border-[#7aa2f7]"
+                  className="w-full px-3 py-2 bg-md3-surface-container-highest border border-md3-outline-variant rounded-lg text-md3-on-surface focus:outline-none focus:border-md3-primary"
                 >
                   <option value="once">Once</option>
                   <option value="daily">Daily</option>
@@ -161,14 +154,14 @@ export function TaskScheduler({
             <div className="flex gap-2 pt-2">
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#7aa2f7] text-[#1a1b26] rounded-lg hover:bg-[#7aa2f7]/80 transition-colors font-medium"
+                className="px-4 py-2 bg-md3-primary text-md3-on-primary rounded-lg hover:brightness-110 transition-colors font-medium"
               >
                 Schedule Task
               </button>
               <button
                 type="button"
                 onClick={() => setShowScheduleForm(false)}
-                className="px-4 py-2 bg-[#414868] text-[#c0caf5] rounded-lg hover:bg-[#565f89] transition-colors"
+                className="px-4 py-2 bg-md3-surface-container-high text-md3-on-surface rounded-lg hover:bg-md3-surface-container-high/80 transition-colors"
               >
                 Cancel
               </button>
@@ -178,35 +171,35 @@ export function TaskScheduler({
       )}
 
       {/* Tasks Table */}
-      <div className="bg-[#1f2335] border border-[#414868] rounded-lg overflow-hidden">
+      <div className="bg-md3-surface-container-low border border-md3-outline-variant rounded-xl overflow-hidden">
         {tasks.length === 0 ? (
-          <div className="text-center py-8 text-[#565f89]">
+          <div className="text-center py-8 text-md3-on-surface-variant/60">
             No scheduled tasks
           </div>
         ) : (
           <table className="w-full">
-            <thead className="bg-[#24283b] border-b border-[#414868]">
+            <thead className="bg-md3-surface-container border-b border-md3-outline-variant">
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-[#a9b1d6]">Task</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-[#a9b1d6]">Schedule</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-[#a9b1d6]">Recurrence</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold text-[#a9b1d6]">Status</th>
-                <th className="px-4 py-2 text-right text-sm font-semibold text-[#a9b1d6]">Actions</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-md3-on-surface-variant">Task</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-md3-on-surface-variant">Schedule</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-md3-on-surface-variant">Recurrence</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-md3-on-surface-variant">Status</th>
+                <th className="px-4 py-2 text-right text-sm font-semibold text-md3-on-surface-variant">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#2a2f44]">
+            <tbody className="divide-y divide-md3-outline-variant/20">
               {tasks.map((task) => (
-                <tr key={task.id} className="hover:bg-[#24283b]/50">
+                <tr key={task.id} className="hover:bg-md3-surface-container/50">
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-[#565f89]" />
-                      <span className="text-[#c0caf5] font-medium">{task.name}</span>
+                      <Calendar size={16} className="text-md3-on-surface-variant/60" />
+                      <span className="text-md3-on-surface font-medium">{task.name}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#a9b1d6]">
+                  <td className="px-4 py-3 text-sm text-md3-on-surface-variant">
                     {formatDate(task.scheduledTime)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-[#a9b1d6] capitalize">
+                  <td className="px-4 py-3 text-sm text-md3-on-surface-variant capitalize">
                     {task.recurrence}
                   </td>
                   <td className="px-4 py-3">
@@ -217,7 +210,7 @@ export function TaskScheduler({
                       {task.status === 'completed' && onViewResult && (
                         <button
                           onClick={() => onViewResult(task.id)}
-                          className="p-1.5 rounded bg-[#24283b] text-[#7aa2f7] hover:bg-[#2a2f44] transition-colors"
+                          className="p-1.5 rounded bg-md3-surface-container text-md3-primary hover:bg-md3-surface-container-high transition-colors"
                           title="View result"
                         >
                           <Eye size={14} />
@@ -226,7 +219,7 @@ export function TaskScheduler({
                       {task.status !== 'running' && (
                         <button
                           onClick={() => onCancelTask(task.id)}
-                          className="p-1.5 rounded bg-[#24283b] text-[#f7768e] hover:bg-[#2a2f44] transition-colors"
+                          className="p-1.5 rounded bg-md3-surface-container text-md3-error hover:bg-md3-surface-container-high transition-colors"
                           title="Cancel task"
                         >
                           <Trash2 size={14} />
@@ -243,7 +236,7 @@ export function TaskScheduler({
 
       {/* Stats Footer */}
       {tasks.length > 0 && (
-        <div className="flex items-center gap-4 text-sm text-[#565f89] pt-2 border-t border-[#2a2f44]">
+        <div className="flex items-center gap-4 text-sm text-md3-on-surface-variant/60 pt-2 border-t border-md3-outline-variant/20">
           <span>{tasks.length} total tasks</span>
           <span>•</span>
           <span>{tasks.filter(t => t.status === 'scheduled').length} scheduled</span>

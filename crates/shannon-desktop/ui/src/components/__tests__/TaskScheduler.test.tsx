@@ -56,9 +56,9 @@ describe('TaskScheduler', () => {
     const completedBadge = screen.getByText('Completed')
     const failedBadge = screen.getByText('Failed')
 
-    expect(scheduledBadge.className).toContain('text-[#e0af68]')
-    expect(completedBadge.className).toContain('text-[#9ece6a]')
-    expect(failedBadge.className).toContain('text-[#f7768e]')
+    expect(scheduledBadge.className).toContain('text-amber-700')
+    expect(completedBadge.className).toContain('text-emerald-700')
+    expect(failedBadge.className).toContain('text-red-700')
   })
 
   it('shows schedule form when button clicked', () => {

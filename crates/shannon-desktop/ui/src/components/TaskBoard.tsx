@@ -33,43 +33,52 @@ const TASK_ICONS = ['newspaper', 'payments', 'search_check', 'code', 'storage', 
 function CalendarWidget() {
   const [view, setView] = useState<'month' | 'week'>('month')
   const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const firstDay = new Date(year, month, 1).getDay()
-  const offset = firstDay === 0 ? 6 : firstDay - 1 // Monday start
+  const [calYear, setCalYear] = useState(today.getFullYear())
+  const [calMonth, setCalMonth] = useState(today.getMonth())
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+  const firstDay = new Date(calYear, calMonth, 1).getDay()
+  const offset = firstDay === 0 ? 6 : firstDay - 1
   const todayDate = today.getDate()
+  const isCurrentMonth = calYear === today.getFullYear() && calMonth === today.getMonth()
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1) }
+    else setCalMonth(calMonth - 1)
+  }
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1) }
+    else setCalMonth(calMonth + 1)
+  }
 
   const days: (number | null)[] = []
   if (view === 'month') {
     for (let i = 0; i < offset; i++) days.push(null)
     for (let i = 1; i <= daysInMonth; i++) days.push(i)
   } else {
-    // Week view: show 7 days around today
-    const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1 // Monday=0
+    const dayOfWeek = new Date(calYear, calMonth, 1).getDay() === 0 ? 6 : new Date(calYear, calMonth, 1).getDay() - 1
     for (let i = 0; i < 7; i++) {
-      const d = todayDate - dayOfWeek + i
+      const d = 1 - dayOfWeek + i
       if (d >= 1 && d <= daysInMonth) days.push(d)
       else days.push(null)
     }
   }
 
-  const eventDays = [todayDate, Math.min(todayDate + 7, daysInMonth)]
+  const eventDays = isCurrentMonth ? [todayDate, Math.min(todayDate + 7, daysInMonth)] : []
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
   return (
     <div className="bg-white border border-md3-outline-variant/30 rounded-2xl p-md3-lg shadow-sm">
       <div className="flex items-center justify-between mb-md3-lg">
         <div>
-          <h4 className="text-headline-md text-[18px] text-md3-on-surface">{monthNames[month]} {year}</h4>
+          <h4 className="text-headline-md text-[18px] text-md3-on-surface">{monthNames[calMonth]} {calYear}</h4>
         </div>
         <div className="flex items-center gap-sm">
           <div className="flex rounded-lg border border-md3-outline-variant/30 overflow-hidden">
             <button onClick={() => setView('month')} className={cn('px-sm py-1 text-label-sm transition-colors', view === 'month' ? 'bg-md3-primary text-md3-on-primary' : 'text-md3-on-surface-variant hover:bg-md3-surface-container-high/50')}>Month</button>
             <button onClick={() => setView('week')} className={cn('px-sm py-1 text-label-sm transition-colors', view === 'week' ? 'bg-md3-primary text-md3-on-primary' : 'text-md3-on-surface-variant hover:bg-md3-surface-container-high/50')}>Week</button>
           </div>
-          <span className="material-symbols-outlined text-md3-on-surface-variant text-[20px] cursor-pointer hover:text-md3-primary transition-colors">chevron_left</span>
-          <span className="material-symbols-outlined text-md3-on-surface-variant text-[20px] cursor-pointer hover:text-md3-primary transition-colors">chevron_right</span>
+          <button onClick={prevMonth} className="material-symbols-outlined text-md3-on-surface-variant text-[20px] cursor-pointer hover:text-md3-primary transition-colors">chevron_left</button>
+          <button onClick={nextMonth} className="material-symbols-outlined text-md3-on-surface-variant text-[20px] cursor-pointer hover:text-md3-primary transition-colors">chevron_right</button>
         </div>
       </div>
 

@@ -56,6 +56,7 @@ export function GoalsPage() {
   const [agents, setAgents] = useState<TreeStep[]>([])
   const [loading, setLoading] = useState(true)
   const [activeGoalIdx, setActiveGoalIdx] = useState(0)
+  const [menuOpenIdx, setMenuOpenIdx] = useState<number | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -246,9 +247,18 @@ export function GoalsPage() {
                       </div>
                       <p className="text-md3-on-surface-variant max-w-lg">{node.description}</p>
                     </div>
-                    <button className="p-sm text-md3-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span className="material-symbols-outlined">more_vert</span>
-                    </button>
+                    <div className="relative">
+                      <button onClick={() => setMenuOpenIdx(menuOpenIdx === i ? null : i)} className="p-sm text-md3-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity hover:bg-md3-surface-container-high/30 rounded-lg">
+                        <span className="material-symbols-outlined">more_vert</span>
+                      </button>
+                      {menuOpenIdx === i && (
+                        <div className="absolute right-0 top-8 z-20 bg-md3-surface-container rounded-xl border border-md3-outline-variant/20 shadow-lg py-sm min-w-[140px]">
+                          <button onClick={() => setMenuOpenIdx(null)} className="w-full text-left px-md3-md py-sm text-label-md text-md3-on-surface hover:bg-md3-surface-container-high/30 flex items-center gap-sm">View Details</button>
+                          <button onClick={() => setMenuOpenIdx(null)} className="w-full text-left px-md3-md py-sm text-label-md text-md3-on-surface hover:bg-md3-surface-container-high/30 flex items-center gap-sm">Reassign</button>
+                          <button onClick={() => setMenuOpenIdx(null)} className="w-full text-left px-md3-md py-sm text-label-md text-md3-error hover:bg-md3-surface-container-high/30 flex items-center gap-sm">Remove</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )

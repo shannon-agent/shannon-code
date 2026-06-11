@@ -223,6 +223,7 @@ function MyAgentsContent() {
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
 
   const loadAgents = () => {
     setLoading(true)
@@ -301,12 +302,34 @@ function MyAgentsContent() {
           })}
 
           {/* Add New Agent */}
-          <div className="border-2 border-dashed border-md3-outline-variant p-md3-lg rounded-xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-md3-primary/50 transition-colors">
+          <div onClick={() => setShowAddForm(true)} className="border-2 border-dashed border-md3-outline-variant p-md3-lg rounded-xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-md3-primary/50 transition-colors">
             <div className="w-12 h-12 rounded-full bg-md3-surface-container flex items-center justify-center text-md3-on-surface-variant group-hover:bg-md3-primary/10 group-hover:text-md3-primary transition-colors mb-md3-md">
               <span className="material-symbols-outlined text-[32px]">add</span>
             </div>
             <h3 className="text-body-lg text-[16px] font-bold text-md3-on-surface">New Specialization</h3>
             <p className="text-label-md text-[14px] text-md3-on-surface-variant max-w-[200px]">Define a custom prompt or import a model to create a new agent.</p>
+          </div>
+        </div>
+      )}
+
+      {showAddForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowAddForm(false)}>
+          <div className="bg-md3-surface-container rounded-2xl p-md3-xl w-full max-w-md shadow-xl border border-md3-outline-variant/20" onClick={e => e.stopPropagation()}>
+            <h3 className="text-headline-md text-md3-on-surface mb-md3-lg">Add Agent Specialization</h3>
+            <div className="space-y-md3-md">
+              <div>
+                <label className="text-label-sm text-md3-on-surface-variant mb-1 block">Agent Name</label>
+                <input placeholder="e.g. Code Reviewer" className="w-full px-md3-md py-sm rounded-xl border border-md3-outline-variant/50 bg-md3-surface text-md3-on-surface text-body-md focus:outline-none focus:border-md3-primary" />
+              </div>
+              <div>
+                <label className="text-label-sm text-md3-on-surface-variant mb-1 block">System Prompt</label>
+                <textarea placeholder="Describe the agent's role and behavior..." rows={3} className="w-full px-md3-md py-sm rounded-xl border border-md3-outline-variant/50 bg-md3-surface text-md3-on-surface text-body-md focus:outline-none focus:border-md3-primary resize-none" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-sm mt-md3-lg">
+              <button onClick={() => setShowAddForm(false)} className="px-md3-md py-sm rounded-xl border border-md3-outline-variant/50 text-label-md text-md3-on-surface-variant hover:bg-md3-surface-container-high/30 transition-colors">Cancel</button>
+              <button onClick={() => setShowAddForm(false)} className="px-md3-md py-sm rounded-xl bg-md3-primary text-md3-on-primary text-label-md font-bold hover:brightness-110 transition-all">Create</button>
+            </div>
           </div>
         </div>
       )}
