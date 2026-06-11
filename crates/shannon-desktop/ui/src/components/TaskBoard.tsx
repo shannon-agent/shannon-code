@@ -126,11 +126,13 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
   const [filter, setFilter] = useState<TaskFilter>('all')
   const [runningTaskId, setRunningTaskId] = useState<string | null>(null)
   const [successTaskId, setSuccessTaskId] = useState<string | null>(null)
+  const [errorTaskId, setErrorTaskId] = useState<string | null>(null)
 
   const handleRun = async (taskId: string) => {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
     setRunningTaskId(taskId)
+    setErrorTaskId(null)
     try {
       await startBackgroundTask(task.description || task.subject)
       setRunningTaskId(null)
@@ -139,6 +141,8 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
       onRefresh?.()
     } catch {
       setRunningTaskId(null)
+      setErrorTaskId(taskId)
+      setTimeout(() => setErrorTaskId(null), 3000)
     }
   }
 
@@ -252,7 +256,13 @@ export function TaskBoard({ tasks, onSelect, selectedId, onRefresh }: TaskBoardP
                             Done
                           </button>
                         )}
-                        {task.status === 'pending' && runningTaskId !== task.id && successTaskId !== task.id && (
+                        {task.status === 'pending' && errorTaskId === task.id && (
+                          <button className="bg-md3-error text-white px-md3-md py-sm rounded-lg text-label-md flex items-center gap-xs animate-in fade-in duration-300">
+                            <span className="material-symbols-outlined text-[18px]">error</span>
+                            Failed
+                          </button>
+                        )}
+                        {task.status === 'pending' && runningTaskId !== task.id && successTaskId !== task.id && errorTaskId !== task.id && (
                           <button onClick={(e) => { e.stopPropagation(); handleRun(task.id) }} className="bg-md3-primary text-md3-on-primary px-md3-md py-sm rounded-lg text-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all">
                             <span className="material-symbols-outlined text-[18px]">play_arrow</span>
                             Run

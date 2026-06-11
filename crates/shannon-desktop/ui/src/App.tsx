@@ -66,8 +66,8 @@ function AppContent() {
 
   // Load agents, tasks, MCP on mount + listen for updates
   useEffect(() => {
-    listAgents().then(setAgents).catch(() => {})
-    listMcpServers().then(setMcpServers).catch(() => {})
+    listAgents().then(setAgents).catch(err => console.error('Failed to load agents:', err))
+    listMcpServers().then(setMcpServers).catch(err => console.error('Failed to load MCP servers:', err))
     listTasks().then(apiTasks => {
       setTasks(apiTasks.map(t => ({
         id: t.id,
@@ -83,8 +83,8 @@ function AppContent() {
 
     ;(async () => {
       unlistenAgents = await listen('background-tasks-updated', () => {
-        listAgents().then(setAgents).catch(() => {})
-        listMcpServers().then(setMcpServers).catch(() => {})
+        listAgents().then(setAgents).catch(err => console.error('Failed to refresh agents:', err))
+        listMcpServers().then(setMcpServers).catch(err => console.error('Failed to refresh MCP servers:', err))
       })
       unlistenTasks = await listen('background-tasks-updated', () => {
         listTasks().then(apiTasks => {
@@ -95,7 +95,7 @@ function AppContent() {
             status: (t.status === 'in_progress' ? 'in_progress' : t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending') as import('./components/TaskBoard').TaskItem['status'],
             owner: t.assignee,
           })))
-        }).catch(() => {})
+        }).catch(err => console.error('Failed to refresh tasks:', err))
       })
     })()
 

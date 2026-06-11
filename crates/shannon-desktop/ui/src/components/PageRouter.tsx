@@ -132,13 +132,18 @@ function SkillsHubContent() {
   const [activeTab, setActiveTab] = useState('All')
   const [skills, setSkills] = useState<SkillInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadSkills = () => {
+    setLoading(true)
+    setError(null)
     listSkills()
       .then(setSkills)
-      .catch(() => {})
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load skills'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadSkills() }, [])
 
   const skillsByCategory = useMemo(() => {
     const grouped: Record<string, SkillInfo[]> = {}
@@ -167,6 +172,11 @@ function SkillsHubContent() {
 
         {loading ? (
           <div className="text-center py-xl text-md3-on-surface-variant">Loading skills...</div>
+        ) : error ? (
+          <div className="text-center py-xl">
+            <p className="text-md3-error mb-sm">{error}</p>
+            <button onClick={loadSkills} className="px-md3-md py-sm bg-md3-primary text-md3-on-primary rounded-lg text-label-md font-bold cursor-pointer">Retry</button>
+          </div>
         ) : skills.length === 0 ? (
           <div className="text-center py-xl text-md3-on-surface-variant">No skills available</div>
         ) : (
@@ -212,13 +222,18 @@ const AGENT_COLORS = [
 function MyAgentsContent() {
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadAgents = () => {
+    setLoading(true)
+    setError(null)
     listAgents()
       .then(setAgents)
-      .catch(() => {})
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load agents'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadAgents() }, [])
 
   return (
     <div className="max-w-[1200px] mx-auto px-md3-lg py-md3-xl">
@@ -237,6 +252,11 @@ function MyAgentsContent() {
 
       {loading ? (
         <div className="text-center py-xl text-md3-on-surface-variant">Loading agents...</div>
+      ) : error ? (
+        <div className="text-center py-xl">
+          <p className="text-md3-error mb-sm">{error}</p>
+          <button onClick={loadAgents} className="px-md3-md py-sm bg-md3-primary text-md3-on-primary rounded-lg text-label-md font-bold cursor-pointer">Retry</button>
+        </div>
       ) : agents.length === 0 ? (
         <div className="text-center py-xl text-md3-on-surface-variant">No agents available</div>
       ) : (
@@ -299,14 +319,17 @@ function MyAgentsContent() {
 export function DataSourcesContent() {
   const [servers, setServers] = useState<McpServerInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [newServer, setNewServer] = useState({ name: '', command: '' })
   const [restarting, setRestarting] = useState<string | null>(null)
 
   const refreshServers = () => {
+    setLoading(true)
+    setError(null)
     listMcpServers()
       .then(setServers)
-      .catch(() => {})
+      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load servers'))
       .finally(() => setLoading(false))
   }
 
@@ -386,6 +409,12 @@ export function DataSourcesContent() {
         <div className="flex items-center justify-center py-md3-xl">
           <span className="material-symbols-outlined animate-spin text-md3-primary">progress_activity</span>
           <span className="ml-sm text-md3-on-surface-variant">Loading servers...</span>
+        </div>
+      ) : error ? (
+        <div className="text-center py-md3-xl">
+          <span className="material-symbols-outlined text-[48px] text-md3-error">error</span>
+          <p className="text-body-md text-md3-error mt-sm">{error}</p>
+          <button onClick={refreshServers} className="mt-md3-md px-md3-md py-sm bg-md3-primary text-md3-on-primary rounded-lg text-label-md font-bold cursor-pointer">Retry</button>
         </div>
       ) : servers.length === 0 ? (
         <div className="text-center py-md3-xl">
