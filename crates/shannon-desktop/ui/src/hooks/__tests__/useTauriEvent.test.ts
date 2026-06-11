@@ -31,8 +31,9 @@ describe('useTauriEvent', () => {
   it('calls handler with event payload', async () => {
     const { listen } = await import('@tauri-apps/api/event')
 
-    let capturedHandler: ((event: { payload: unknown }) => void) | null = null
-    vi.mocked(listen).mockImplementation((event, handler) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let capturedHandler: any = null
+    vi.mocked(listen).mockImplementation((_event: string, handler: (e: any) => void) => {
       capturedHandler = handler
       return Promise.resolve(vi.fn())
     })

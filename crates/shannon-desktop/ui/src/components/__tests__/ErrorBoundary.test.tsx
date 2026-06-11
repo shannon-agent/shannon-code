@@ -1,5 +1,5 @@
 // Tests for ErrorBoundary component
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { ErrorBoundary } from '../ErrorBoundary'
 
@@ -39,7 +39,7 @@ describe('ErrorBoundary', () => {
   })
 
   it('shows retry button', () => {
-    const { container } = render(
+    render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
       </ErrorBoundary>

@@ -45,7 +45,8 @@ export function UpdateBanner() {
     // Emit event to trigger update download
     // This will be handled by the Tauri backend
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(window.__TAURI__ as any)?.emit?.('download-update', {})
+    const tauri = (window as unknown as Record<string, unknown>).__TAURI__ as Record<string, unknown> | undefined
+    if (tauri?.emit) (tauri.emit as (event: string, data?: unknown) => void)('download-update', {})
   }
 
   if (!updateInfo) {

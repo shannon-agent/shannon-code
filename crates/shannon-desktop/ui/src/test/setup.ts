@@ -1,15 +1,15 @@
 // Test setup with Tauri API mocks
 import '@testing-library/jest-dom'
 import { cleanup } from '@testing-library/react'
-import { afterEach, vi } from 'vitest'
+import { afterEach, beforeAll, afterAll, vi } from 'vitest'
 
 afterEach(() => {
   cleanup()
   // Reset window.__TAURI__ that some tests set via Object.defineProperty
   // (configurable:false prevents delete, so set to undefined instead)
-  if (window.__TAURI__) {
+  if ((window as unknown as Record<string, unknown>).__TAURI__) {
     try {
-      (window as Record<string, unknown>).__TAURI__ = undefined
+      (window as unknown as Record<string, unknown>).__TAURI__ = undefined
     } catch {
       // non-writable, ignore
     }
@@ -18,7 +18,7 @@ afterEach(() => {
 
 // Mock @tauri-apps/api/core invoke
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn((cmd: string, args?: unknown) => {
+  invoke: vi.fn((cmd: string, _args?: unknown) => {
     // Mock responses for different commands
     switch (cmd) {
       case 'send_message':
@@ -140,7 +140,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 // Mock @tauri-apps/api/event listen
 vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn((event: string, handler: (event: { payload: unknown }) => void) => {
+  listen: vi.fn((_event: string, _handler: (event: { payload: unknown }) => void) => {
     // Return unlisten function
     return Promise.resolve(() => {
       // Cleanup function
@@ -159,14 +159,14 @@ window.dispatchEvent = vi.fn((event: Event) => {
 })
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn(() => ({
+;(globalThis as unknown as Record<string, unknown>).ResizeObserver = vi.fn(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn()
 }))
 
 // Mock IntersectionObserver
-global.IntersectionObserver = vi.fn(() => ({
+;(globalThis as unknown as Record<string, unknown>).IntersectionObserver = vi.fn(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn()

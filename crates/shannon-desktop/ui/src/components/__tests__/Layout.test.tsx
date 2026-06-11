@@ -39,7 +39,7 @@ describe('Layout', () => {
   it('renders AppSidebar with currentPage and onNavigate', () => {
     const onNavigate = vi.fn()
     const { container } = render(
-      <Layout currentPage="settings" onNavigate={onNavigate}>
+      <Layout currentPage="settings-general" onNavigate={onNavigate}>
         <div>Content</div>
       </Layout>
     )

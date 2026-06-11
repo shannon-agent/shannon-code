@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useKeyboardNavigation, useFocusTrap, useRovingTabIndex, useLiveRegion } from '../useKeyboardNavigation'
+import { useKeyboardNavigation, useRovingTabIndex, useLiveRegion } from '../useKeyboardNavigation'
 
 describe('useKeyboardNavigation', () => {
   it('calls action when shortcut key is pressed', () => {

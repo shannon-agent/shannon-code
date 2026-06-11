@@ -7,8 +7,8 @@ vi.mock('../../lib/tauri-api', () => ({
     { task_id: 't-1', prompt: 'Run tests', status: 'running', started_at: Date.now(), completed_at: null, output: '' },
     { task_id: 't-2', prompt: 'Build project', status: 'completed', started_at: Date.now() - 1000, completed_at: Date.now(), output: 'Success' },
   ])),
-  startBackgroundTask: vi.fn((prompt: string) => Promise.resolve(`new-${Date.now()}`)),
-  cancelBackgroundTask: vi.fn((id: string) => Promise.resolve(true)),
+  startBackgroundTask: vi.fn((_prompt: string) => Promise.resolve(`new-${Date.now()}`)),
+  cancelBackgroundTask: vi.fn((_id: string) => Promise.resolve(true)),
 }))
 
 describe('useTaskScheduler', () => {

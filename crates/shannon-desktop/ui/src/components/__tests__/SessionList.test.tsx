@@ -14,7 +14,7 @@ vi.mock('../../lib/tauri-api', () => ({
 }))
 
 // Mock window.confirm
-global.confirm = vi.fn(() => true)
+;(globalThis as unknown as Record<string, unknown>).confirm = vi.fn(() => true)
 
 describe('SessionList', () => {
   it('renders session list', async () => {

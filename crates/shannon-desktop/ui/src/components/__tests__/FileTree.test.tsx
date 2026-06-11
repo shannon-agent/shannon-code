@@ -26,8 +26,6 @@ vi.mock('../../lib/tauri-api', () => ({
   })),
 }))
 
-import { getFileTree, getWorkingDirInfo } from '../../lib/tauri-api'
-
 describe('FileTree', () => {
   beforeEach(() => {
     vi.clearAllMocks()

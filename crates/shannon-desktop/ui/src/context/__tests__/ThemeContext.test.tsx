@@ -4,13 +4,10 @@ import { renderHook, cleanup, act, waitFor } from '@testing-library/react'
 import { ThemeProvider, useTheme } from '../ThemeContext'
 
 describe('ThemeContext', () => {
-  let mockDocumentElement: HTMLElement
-
   beforeEach(() => {
     // Mock documentElement
-    mockDocumentElement = document.documentElement
-    vi.spyOn(document.documentElement, 'setAttribute').mockImplementation((attr: string, value: string) => {
-      if (attr === 'data-theme') {
+    vi.spyOn(document.documentElement, 'setAttribute').mockImplementation((_attr: string, _value: string) => {
+      if (_attr === 'data-theme') {
         // Mock theme attribute setting
       }
     })

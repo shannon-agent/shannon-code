@@ -74,7 +74,7 @@ describe('TerminalPane', () => {
   })
 
   it('disables input while command is running', () => {
-    let resolveCmd: () => void = () => {}
+    let resolveCmd: (value: string) => void = () => {}
     const handleRun = vi.fn(() => new Promise<string>(resolve => { resolveCmd = resolve }))
     render(<TerminalPane onRunCommand={handleRun} />)
 
@@ -84,7 +84,7 @@ describe('TerminalPane', () => {
 
     // Input should show running state
     expect(screen.getByText('...')).toBeDefined()
-    resolveCmd()
+    resolveCmd('')
   })
 
   it('navigates command history with arrow keys', async () => {
@@ -114,7 +114,7 @@ describe('TerminalPane', () => {
     // Navigate up to previous command
     fireEvent.keyDown(input, { key: 'ArrowUp' })
     // Most recent command should be 'cmd2' or 'cmd1' depending on state
-    expect(input.value).toBeTruthy()
+    expect((input as HTMLInputElement).value).toBeTruthy()
 
     // Navigate back down
     fireEvent.keyDown(input, { key: 'ArrowDown' })

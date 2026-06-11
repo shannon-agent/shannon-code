@@ -84,7 +84,7 @@ export function AppSidebar({ currentPage, onNavigate }: AppSidebarProps) {
   const [workingDir, setWorkingDir] = useState<string>('')
 
   useEffect(() => {
-    getWorkingDirInfo().then(info => setWorkingDir(info.working_dir)).catch(() => {})
+    getWorkingDirInfo().then(info => setWorkingDir(info.root)).catch(() => {})
   }, [])
 
   const projectName = workingDir ? workingDir.split('/').pop() || workingDir : 'Shannon Core'

@@ -78,8 +78,8 @@ export function CommandPalette({
   // Load skills from backend
   const loadSkills = async () => {
     try {
-      if (window.__TAURI__) {
-        const result = await window.__TAURI__.invoke('list_skills')
+      if ((window as unknown as Record<string, unknown>).__TAURI__) {
+        const result = await (window as unknown as { __TAURI__: { invoke: (cmd: string) => Promise<unknown> } }).__TAURI__.invoke('list_skills')
         setSkills(result as SkillInfo[])
       } else {
         setSkills([

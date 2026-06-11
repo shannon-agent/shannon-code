@@ -50,8 +50,8 @@ export function useKeyboardNavigation(
 
   useEffect(() => {
     const target = scope || document
-    target.addEventListener('keydown', handleKeyDown)
-    return () => target.removeEventListener('keydown', handleKeyDown)
+    target.addEventListener('keydown', handleKeyDown as EventListener)
+    return () => target.removeEventListener('keydown', handleKeyDown as EventListener)
   }, [handleKeyDown, scope])
 }
 

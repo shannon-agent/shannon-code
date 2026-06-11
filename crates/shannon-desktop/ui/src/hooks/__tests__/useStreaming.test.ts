@@ -1,6 +1,6 @@
 // Tests for useStreaming hook
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useStreaming } from '../useStreaming'
 import { sendMessage } from '../../lib/tauri-api'
 import { EVENT_NAMES } from '../../types/tauri-events'

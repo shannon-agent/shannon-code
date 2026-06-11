@@ -1,6 +1,6 @@
 // Integration test for App component
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, waitFor, fireEvent } from '@testing-library/react'
 import { AppStateProvider, useAppState } from '../context/AppState'
 import { Layout } from '../components/Layout'
 import { ChatMessage } from '../components/ChatMessage'

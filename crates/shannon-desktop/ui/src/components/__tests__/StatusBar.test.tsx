@@ -52,13 +52,13 @@ describe('StatusBar', () => {
     })
 
     it('shows percentage based on token usage', () => {
-      mockAppState.usage = { inputTokens: 40000, outputTokens: 40000 }
+      mockAppState.usage = { inputTokens: 40000, outputTokens: 40000 } as NonNullable<typeof mockAppState.usage>
       render(<StatusBar />)
       expect(screen.getByText('40%')).toBeDefined()
     })
 
     it('renders context usage bar with correct percentage', () => {
-      mockAppState.usage = { inputTokens: 50000, outputTokens: 30000 }
+      mockAppState.usage = { inputTokens: 50000, outputTokens: 30000 } as NonNullable<typeof mockAppState.usage>
       render(<StatusBar />)
       // The percentage text should be visible
       expect(screen.getByText('40%')).toBeDefined()
