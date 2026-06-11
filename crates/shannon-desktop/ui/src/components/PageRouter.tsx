@@ -219,7 +219,7 @@ const AGENT_COLORS = [
   { iconBg: 'bg-md3-tertiary/10', iconColor: 'text-md3-tertiary' },
 ]
 
-function MyAgentsContent() {
+export function MyAgentsContent() {
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

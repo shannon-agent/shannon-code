@@ -114,4 +114,26 @@ describe('GoalsPage', () => {
       expect(screen.getByPlaceholderText('Search goals...')).toBeDefined()
     })
   })
+
+  it('shows dropdown menu when more_vert button is clicked', async () => {
+    render(<GoalsPage />)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Fix auth bug').length).toBeGreaterThanOrEqual(1)
+    })
+
+    // Find and click the more_vert button on the first task tree item
+    const moreButtons = screen.getAllByRole('button').filter(b => b.textContent?.includes('more_vert'))
+    expect(moreButtons.length).toBeGreaterThan(0)
+    fireEvent.click(moreButtons[0])
+
+    // Dropdown should show menu items
+    expect(screen.getByText('View Details')).toBeDefined()
+    expect(screen.getByText('Reassign')).toBeDefined()
+    expect(screen.getByText('Remove')).toBeDefined()
+
+    // Click a menu item to close
+    fireEvent.click(screen.getByText('View Details'))
+    expect(screen.queryByText('Reassign')).toBeNull()
+  })
 })

@@ -34,6 +34,7 @@ function AppContent() {
   const [currentSessionId, setCurrentSessionId] = useState<string>()
   const [sessions, setSessions] = useState<SessionInfo[]>([])
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [agents, setAgents] = useState<import('./components/AgentDashboard').AgentInfo[]>([])
   const [tasks, setTasks] = useState<import('./components/TaskBoard').TaskItem[]>([])
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([])
@@ -214,6 +215,7 @@ function AppContent() {
         tokenUsage={tokenUsage}
         computeTime={computeTime}
         activeAgents={agents.filter(a => a.status === 'running').map(a => a.name)}
+        sidebarCollapsed={sidebarCollapsed}
       >
         {isChatPage ? (
           <div className="flex h-full">
@@ -290,7 +292,7 @@ function AppContent() {
         onNewSession={handleNewSession}
         onOpenSettings={() => setCurrentPage('settings-general')}
         onSwitchModel={() => setCurrentPage('settings-models')}
-        onToggleSidebar={() => {}}
+        onToggleSidebar={() => setSidebarCollapsed(prev => !prev)}
         onToggleTheme={cycleTheme}
         onSessionSelect={handleSessionSelect}
       />

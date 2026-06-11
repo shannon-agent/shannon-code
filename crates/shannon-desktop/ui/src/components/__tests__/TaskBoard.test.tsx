@@ -149,6 +149,28 @@ describe('TaskBoard', () => {
     expect(screen.getByText(new RegExp(currentMonth))).toBeDefined()
   })
 
+  it('navigates calendar months with chevron buttons', () => {
+    render(<TaskBoard tasks={mockTasks} />)
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const currentMonth = new Date().getMonth()
+
+    // Click previous month
+    const prevBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('chevron_left'))
+    expect(prevBtn).toBeDefined()
+    fireEvent.click(prevBtn!)
+
+    const prevMonthName = currentMonth === 0 ? monthNames[11] : monthNames[currentMonth - 1]
+    expect(screen.getByText(new RegExp(prevMonthName))).toBeDefined()
+
+    // Click next to go back, then next again for next month
+    const nextBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('chevron_right'))
+    fireEvent.click(nextBtn!)
+    fireEvent.click(nextBtn!)
+
+    const nextMonthName = monthNames[(currentMonth + 1) % 12]
+    expect(screen.getByText(new RegExp(nextMonthName))).toBeDefined()
+  })
+
   it('shows efficiency card', () => {
     render(<TaskBoard tasks={mockTasks} />)
     expect(screen.getByText('AI Efficiency')).toBeDefined()

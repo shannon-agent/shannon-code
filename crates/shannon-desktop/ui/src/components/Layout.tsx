@@ -12,6 +12,7 @@ interface LayoutProps {
   tokenUsage?: string
   computeTime?: string
   activeAgents?: string[]
+  sidebarCollapsed?: boolean
 }
 
 export function Layout({
@@ -21,19 +22,27 @@ export function Layout({
   tokenUsage,
   computeTime,
   activeAgents,
+  sidebarCollapsed,
 }: LayoutProps) {
+  const sidebarWidth = sidebarCollapsed ? 0 : 280
+
   return (
     <div className="bg-md3-background text-md3-on-background overflow-hidden h-screen flex">
       <UpdateBanner />
 
       {/* Fixed sidebar */}
-      <AppSidebar currentPage={currentPage} onNavigate={onNavigate} />
+      {!sidebarCollapsed && (
+        <AppSidebar currentPage={currentPage} onNavigate={onNavigate} />
+      )}
 
       {/* Fixed header */}
       <AppHeader currentPage={currentPage} />
 
       {/* Main content area */}
-      <main className="ml-[280px] mt-16 mb-8 flex-1 flex flex-col relative w-[calc(100%-280px)] overflow-hidden">
+      <main
+        className="mt-16 mb-8 flex-1 flex flex-col relative overflow-hidden transition-[margin] duration-300"
+        style={{ marginLeft: sidebarWidth, width: `calc(100% - ${sidebarWidth}px)` }}
+      >
         {children}
       </main>
 

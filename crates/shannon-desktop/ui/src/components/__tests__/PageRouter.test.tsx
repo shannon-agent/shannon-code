@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { DataSourcesContent } from '../PageRouter'
+import { DataSourcesContent, MyAgentsContent } from '../PageRouter'
 
 // Mock the tauri-api imports
 vi.mock('../../lib/tauri-api', () => ({
@@ -15,6 +15,13 @@ vi.mock('../../lib/tauri-api', () => ({
   restartMcpServer: vi.fn(() => Promise.resolve(
     { name: 'filesystem', command: 'npx fs-server', enabled: true, connected: true, tool_count: 5, tools: [], last_connected: null }
   )),
+  listAgents: vi.fn(() => Promise.resolve([
+    { id: 'agent-1', name: 'Researcher', model: 'claude-sonnet-4-6', status: 'running', task: 'Analyzing codebase' },
+    { id: 'agent-2', name: 'Engineer', model: 'claude-sonnet-4-6', status: 'completed', task: 'Build feature' },
+  ])),
+  listSkills: vi.fn(() => Promise.resolve([
+    { name: 'commit', description: 'Create git commit', trigger: '/commit', source: 'builtin', category: 'git' },
+  ])),
 }))
 
 describe('DataSourcesContent', () => {
@@ -119,5 +126,62 @@ describe('DataSourcesContent', () => {
 
     fireEvent.click(screen.getByText('Cancel'))
     expect(screen.queryByText('Add MCP Server')).toBeNull()
+  })
+})
+
+describe('MyAgentsContent', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('renders My Agents heading', async () => {
+    render(<MyAgentsContent />)
+    expect(screen.getByText('My Agents')).toBeDefined()
+  })
+
+  it('shows agents from API', async () => {
+    render(<MyAgentsContent />)
+    await waitFor(() => {
+      expect(screen.getByText('Researcher')).toBeDefined()
+      expect(screen.getByText('Engineer')).toBeDefined()
+    })
+  })
+
+  it('opens add agent dialog when New Specialization clicked', async () => {
+    render(<MyAgentsContent />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Researcher')).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByText('New Specialization'))
+    expect(screen.getByText('Add Agent Specialization')).toBeDefined()
+    expect(screen.getByPlaceholderText('e.g. Code Reviewer')).toBeDefined()
+  })
+
+  it('closes add agent dialog on Cancel', async () => {
+    render(<MyAgentsContent />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Researcher')).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByText('New Specialization'))
+    expect(screen.getByText('Add Agent Specialization')).toBeDefined()
+
+    fireEvent.click(screen.getByText('Cancel'))
+    expect(screen.queryByText('Add Agent Specialization')).toBeNull()
+  })
+
+  it('closes add agent dialog on Create', async () => {
+    render(<MyAgentsContent />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Researcher')).toBeDefined()
+    })
+
+    fireEvent.click(screen.getByText('New Specialization'))
+    fireEvent.click(screen.getByText('Create'))
+    expect(screen.queryByText('Add Agent Specialization')).toBeNull()
   })
 })
