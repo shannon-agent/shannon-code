@@ -76,8 +76,8 @@ export default function ExtensionsHub() {
               />
             </div>
             <div className="flex bg-surface-container-low rounded-lg p-xs gap-xs">
-              <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
-              <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
+              <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
+              <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
             </div>
             <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
               {filteredSkills.length} Skills

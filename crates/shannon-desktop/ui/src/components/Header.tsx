@@ -128,10 +128,10 @@ export function Header() {
             )}
           </div>
 
-          <Button variant="ghost" aria-label="Notifications" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors relative">
+          <Button variant="ghost" aria-label="Notifications" title="View notifications" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors relative">
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">notifications</span>
           </Button>
-          <Button variant="ghost" aria-label="Help" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" onClick={() => window.dispatchEvent(new CustomEvent('shannon:toggle-help'))}>
+          <Button variant="ghost" aria-label="Help" title="Get help" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" onClick={() => window.dispatchEvent(new CustomEvent('shannon:toggle-help'))}>
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">help</span>
           </Button>
           <div className="h-8 w-8 rounded-full overflow-hidden bg-surface-container flex items-center justify-center ring-2 ring-primary/10">

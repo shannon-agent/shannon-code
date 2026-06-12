@@ -183,13 +183,8 @@ export default function BillingSettings() {
                 </div>
               </>
             ) : (
-              <div className="h-48 flex items-end justify-between gap-2 px-2">
-                {[40,60,45,70,85,55,40,75,90,65].map((h, i) => (
-                  <div key={i} className="w-full flex flex-col justify-end group relative cursor-pointer hover:brightness-110 transition-all" style={{ height: `${h}%` }}>
-                    <div className="w-full bg-primary flex-1 rounded-t-sm transition-all duration-1000 ease-out"></div>
-                    <div className="w-full bg-secondary h-[30%] transition-all duration-1000 ease-out"></div>
-                  </div>
-                ))}
+              <div className="h-48 flex items-center justify-center">
+                <p className="text-body-sm text-on-surface-variant">No cost data yet. Usage data will appear here once available.</p>
               </div>
             )}
           </section>

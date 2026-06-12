@@ -204,6 +204,7 @@ export default function Tasks() {
                   return (
                     <div
                       key={day}
+                      title={dayTasks.length > 0 ? `${dayTasks.length} task${dayTasks.length > 1 ? 's' : ''}` : undefined}
                       className={`min-h-[80px] p-xs rounded-lg border cursor-pointer transition-all ${
                         isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary/20' :
                         isToday ? 'border-primary/30 bg-primary/5' :

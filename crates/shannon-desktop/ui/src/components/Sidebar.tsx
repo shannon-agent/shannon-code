@@ -87,7 +87,7 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
       {/* Drag handle */}
       <div
         className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
-        aria-label="Resize sidebar"
+        aria-label="Resize sidebar" title="Drag to resize sidebar"
         onMouseDown={handleMouseDown}
       />
       <div className="flex items-center gap-3 mb-xl px-2">
