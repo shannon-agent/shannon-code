@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
@@ -21,7 +22,8 @@ export default function ModelsSettings() {
     try {
       await api.switchProvider({ provider: status.provider, model: modelId })
       await Promise.all([refreshModels(), refreshStatus()])
-    } catch (e) { console.warn("ModelsSettings error:", e) }
+      toast.success(`Switched to ${modelId}`)
+    } catch (e) { console.warn("ModelsSettings error:", e); toast.error('Failed to switch model') }
     setSwitching(null)
   }
 
@@ -110,7 +112,7 @@ export default function ModelsSettings() {
                 <h3 className="font-headline-md text-on-surface">Available Models</h3>
                 <p className="text-body-sm text-on-surface-variant">Select a model to set as your global default.</p>
               </div>
-              <span className="inline-flex items-center px-sm py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold tracking-wider uppercase">
+              <span className="inline-flex items-center px-sm py-1 bg-primary/10 text-primary rounded-full text-[10px] font-bold tracking-wider uppercase">
                 {models.length} Available
               </span>
             </div>

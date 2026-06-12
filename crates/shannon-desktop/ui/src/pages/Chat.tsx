@@ -331,7 +331,7 @@ export default function Chat() {
 
       {/* Delete Confirmation Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setDeleteTarget(null)}>
+        <div className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setDeleteTarget(null)} onKeyDown={e => { if (e.key === 'Escape') setDeleteTarget(null) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-sm mb-md">
               <span className="material-symbols-outlined text-error text-[24px]">delete</span>
@@ -441,7 +441,7 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
   const { sendMessage } = useApp()
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.content).catch(() => {})
+    navigator.clipboard.writeText(message.content).catch(() => toast.error('Copy failed'))
   }
 
   const handleRegenerate = () => {

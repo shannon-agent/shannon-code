@@ -41,7 +41,7 @@ export default function OPC() {
   useEffect(() => { setFocusText(currentFocus) }, [currentFocus])
 
   const handleSaveFocus = () => {
-    import('@/lib/tauri-api').then(api => api.configure({ key: 'strategic_focus', value: focusText })).catch(() => {})
+    import('@/lib/tauri-api').then(api => api.configure({ key: 'strategic_focus', value: focusText })).catch(() => toast.error('Failed to save focus'))
     setEditingFocus(false)
   }
 

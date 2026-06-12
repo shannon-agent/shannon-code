@@ -14,9 +14,14 @@ export default function DataSources() {
   const [newArgs, setNewArgs] = useState('')
   const [restarting, setRestarting] = useState<string | null>(null)
   const [removeTarget, setRemoveTarget] = useState<string | null>(null)
+  const [validationErrors, setValidationErrors] = useState<{ name?: string; command?: string }>({})
 
   const handleAdd = async () => {
-    if (!newName.trim() || !newCommand.trim()) return
+    const errors: { name?: string; command?: string } = {}
+    if (!newName.trim()) errors.name = 'Name is required'
+    if (!newCommand.trim()) errors.command = 'Command is required'
+    if (Object.keys(errors).length > 0) { setValidationErrors(errors); return }
+    setValidationErrors({})
     try {
       await api.addMcpServer(newName.trim(), newCommand.trim(), newArgs.trim() ? newArgs.trim().split(/\s+/) : [], {})
       setNewName('')
@@ -63,13 +68,19 @@ export default function DataSources() {
         <div className="mb-lg bg-surface-container-lowest border border-primary/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-md">Add MCP Server</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
-            <Input className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm font-body-sm" placeholder="Name (e.g. my-server)" value={newName} onChange={e => setNewName(e.target.value)} />
-            <Input className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm font-body-sm" placeholder="Command (e.g. npx my-mcp-server)" value={newCommand} onChange={e => setNewCommand(e.target.value)} />
+            <div>
+              <Input className={`bg-surface-container-lowest border rounded-lg px-md py-sm font-body-sm ${validationErrors.name ? 'border-error' : 'border-outline-variant/50'}`} placeholder="Name (e.g. my-server)" value={newName} onChange={e => { setNewName(e.target.value); setValidationErrors({}) }} />
+              {validationErrors.name ? <p className="text-error text-label-sm mt-xs">{validationErrors.name}</p> : null}
+            </div>
+            <div>
+              <Input className={`bg-surface-container-lowest border rounded-lg px-md py-sm font-body-sm ${validationErrors.command ? 'border-error' : 'border-outline-variant/50'}`} placeholder="Command (e.g. npx my-mcp-server)" value={newCommand} onChange={e => { setNewCommand(e.target.value); setValidationErrors({}) }} />
+              {validationErrors.command ? <p className="text-error text-label-sm mt-xs">{validationErrors.command}</p> : null}
+            </div>
             <Input className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm font-body-sm" placeholder="Args (space-separated, optional)" value={newArgs} onChange={e => setNewArgs(e.target.value)} />
           </div>
           <div className="flex gap-sm">
             <Button className="px-lg py-sm bg-primary text-white rounded-lg font-label-md cursor-pointer" onClick={handleAdd}>Add Server</Button>
-            <Button className="px-lg py-sm border border-outline-variant rounded-lg font-label-md text-on-surface cursor-pointer" onClick={() => setAdding(false)}>Cancel</Button>
+            <Button className="px-lg py-sm border border-outline-variant rounded-lg font-label-md text-on-surface cursor-pointer" onClick={() => { setAdding(false); setValidationErrors({}) }}>Cancel</Button>
           </div>
         </div>
       )}
@@ -108,7 +119,7 @@ export default function DataSources() {
 
       {/* Remove Confirmation Modal */}
       {removeTarget && (
-        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setRemoveTarget(null)}>
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setRemoveTarget(null)} onKeyDown={e => { if (e.key === 'Escape') setRemoveTarget(null) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-sm mb-md">
               <span className="material-symbols-outlined text-error text-[24px]">delete</span>

@@ -133,7 +133,7 @@ export function Header() {
 
       {/* Permission Modal */}
       {permissionRequest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm" onKeyDown={e => { if (e.key === 'Escape') respondPermission(permissionRequest.request_id, false) }}>
           <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/20 p-xl max-w-md w-full mx-md" role="dialog" aria-modal="true">
             <div className="flex items-center gap-md mb-lg">
               <div className="h-10 w-10 rounded-full bg-tertiary-container flex items-center justify-center">
@@ -144,10 +144,10 @@ export function Header() {
                 <p className="text-body-sm text-on-surface-variant">Review the tool invocation below</p>
               </div>
               <span className={`px-sm py-xs rounded-full font-label-sm font-bold uppercase tracking-wider ${
-                permissionRequest.risk === 'critical' ? 'bg-red-100 text-red-700' :
-                permissionRequest.risk === 'high' ? 'bg-orange-100 text-orange-700' :
-                permissionRequest.risk === 'medium' ? 'bg-amber-100 text-amber-700' :
-                'bg-green-100 text-green-700'
+                permissionRequest.risk === 'critical' ? 'bg-error/10 text-error' :
+                permissionRequest.risk === 'high' ? 'bg-orange-500/10 text-orange-600' :
+                permissionRequest.risk === 'medium' ? 'bg-amber-500/10 text-amber-600' :
+                'bg-green-500/10 text-green-600'
               }`}>{permissionRequest.risk}</span>
             </div>
             <div className="p-md bg-surface-container-low rounded-xl mb-lg space-y-sm">

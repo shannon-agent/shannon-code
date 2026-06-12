@@ -14,6 +14,7 @@ export default function MyAgents() {
   const [agentPrompt, setAgentPrompt] = useState('')
   const [agentTools, setAgentTools] = useState<Record<string, boolean>>({ bash: true, read: true, write: true })
   const [showMenu, setShowMenu] = useState<string | null>(null)
+  const [nameError, setNameError] = useState('')
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -169,11 +170,12 @@ export default function MyAgents() {
                 <div className="space-y-sm">
                   <label className="text-label-md text-on-surface-variant">Name</label>
                   <input
-                    className="w-full p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    className={`w-full p-sm bg-surface-container-low rounded-lg border text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/30 ${nameError ? 'border-error' : 'border-outline-variant/30'}`}
                     placeholder="e.g. Research Assistant"
                     value={agentName}
-                    onChange={e => setAgentName(e.target.value)}
+                    onChange={e => { setAgentName(e.target.value); setNameError('') }}
                   />
+                  {nameError ? <p className="text-error text-label-sm">{nameError}</p> : null}
                 </div>
                 <div className="space-y-sm">
                   <label className="text-label-md text-on-surface-variant">Model</label>
@@ -215,18 +217,17 @@ export default function MyAgents() {
                 </div>
                 <div className="flex gap-sm">
                   <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={() => {
-                    if (agentName.trim()) {
-                      const tools = Object.entries(agentTools).filter(([, v]) => v).map(([k]) => k)
-                      const config = { name: agentName, model: agentModel || undefined, systemPrompt: agentPrompt, tools }
-                      sendMessage(`Create agent: ${JSON.stringify(config)}`)
-                      setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true })
-                      setShowAddAgent(false)
-                    }
+                    if (!agentName.trim()) { setNameError('Agent name is required'); return }
+                    const tools = Object.entries(agentTools).filter(([, v]) => v).map(([k]) => k)
+                    const config = { name: agentName, model: agentModel || undefined, systemPrompt: agentPrompt, tools }
+                    sendMessage(`Create agent: ${JSON.stringify(config)}`)
+                    setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true }); setNameError('')
+                    setShowAddAgent(false)
                   }}>
                     Create Agent
                   </Button>
                   <Button variant="ghost" className="py-2 px-md rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => {
-                    setShowAddAgent(false); setAgentName(''); setAgentModel(''); setAgentPrompt('')
+                    setShowAddAgent(false); setAgentName(''); setAgentModel(''); setAgentPrompt(''); setNameError('')
                   }}>
                     Cancel
                   </Button>

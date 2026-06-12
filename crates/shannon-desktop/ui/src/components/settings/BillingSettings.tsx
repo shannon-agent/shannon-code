@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import { CardSkeleton } from '@/components/SkeletonLoader'
@@ -37,9 +38,9 @@ export default function BillingSettings() {
 
   useEffect(() => {
     Promise.all([
-      api.getBillingPlan().then(setPlan).catch(() => {}),
-      api.getCostHistory(30).then(setCostHistory).catch(() => {}),
-      api.getBillingHistory().then(setBillingHistory).catch(() => {}),
+      api.getBillingPlan().then(setPlan).catch(() => toast.error('Failed to load billing plan')),
+      api.getCostHistory(30).then(setCostHistory).catch(() => toast.error('Failed to load cost history')),
+      api.getBillingHistory().then(setBillingHistory).catch(() => toast.error('Failed to load billing history')),
     ]).finally(() => setLoading(false))
   }, [])
 
@@ -259,7 +260,7 @@ export default function BillingSettings() {
 
       {/* Cancel Subscription Modal */}
       {showCancelConfirm && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowCancelConfirm(false)}>
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowCancelConfirm(false)} onKeyDown={e => { if (e.key === 'Escape') setShowCancelConfirm(false) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-sm mb-md">
               <span className="material-symbols-outlined text-error text-[24px]">warning</span>
@@ -276,7 +277,7 @@ export default function BillingSettings() {
 
       {/* Change Plan Modal */}
       {showChangePlan && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowChangePlan(false)}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowChangePlan(false)} onKeyDown={e => { if (e.key === 'Escape') setShowChangePlan(false) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-md w-full mx-lg shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg">
               <h3 className="font-headline-md text-on-surface">Change Plan</h3>
@@ -298,7 +299,7 @@ export default function BillingSettings() {
 
       {/* Legal Modal */}
       {showLegal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowLegal(false)}>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowLegal(false)} onKeyDown={e => { if (e.key === 'Escape') setShowLegal(false) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-lg w-full mx-lg shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg">
               <h3 className="font-headline-md text-on-surface">Legal &amp; Privacy</h3>
