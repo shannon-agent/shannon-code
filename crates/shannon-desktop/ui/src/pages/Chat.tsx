@@ -493,7 +493,7 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
           )}
         </div>
         <div className="flex gap-sm">
-          <Button aria-label="Like message" onClick={() => setLiked(!liked)} className={`flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container transition-colors ${liked ? 'text-primary' : 'text-on-surface-variant'}`}>
+          <Button aria-label="Like message" aria-pressed={liked} onClick={() => setLiked(!liked)} className={`flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container transition-colors ${liked ? 'text-primary' : 'text-on-surface-variant'}`}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{liked ? 'thumb_up' : 'thumb_up_off_alt'}</span>
           </Button>
           <Button aria-label="Copy message" onClick={handleCopy} className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">

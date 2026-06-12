@@ -250,8 +250,8 @@ export default function BillingSettings() {
           <p className="font-body-sm text-[14px] text-on-surface-variant">Need to scale further? Contact our <a className="text-primary font-bold hover:underline cursor-pointer">Enterprise Team</a> for custom quotas.</p>
         </div>
         <div className="flex items-center justify-center gap-6">
-          <a className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onClick={() => setShowLegal(true)}>Legal &amp; Terms</a>
-          <a className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onClick={() => setShowLegal(true)}>Privacy Policy</a>
+          <button className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onClick={() => setShowLegal(true)}>Legal &amp; Terms</button>
+          <button className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onClick={() => setShowLegal(true)}>Privacy Policy</button>
         </div>
       </footer>
 
