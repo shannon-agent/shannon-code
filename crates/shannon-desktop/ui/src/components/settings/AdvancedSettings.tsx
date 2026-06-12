@@ -16,6 +16,7 @@ export default function AdvancedSettings() {
   const [showLogs, setShowLogs] = useState(false)
   const [showApiKeys, setShowApiKeys] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
   const handleToggle = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value)
@@ -66,7 +67,7 @@ export default function AdvancedSettings() {
             </div>
             <Button
               className="w-full py-md border border-outline-variant/50 rounded-xl text-on-surface font-label-md font-bold text-[14px] hover:bg-surface-container-low transition-colors active:scale-[0.99] cursor-pointer"
-              onClick={handleClearCache}
+              onClick={() => setShowClearConfirm(true)}
               disabled={clearing}
             >
               {clearing ? <span className="material-symbols-outlined animate-spin mr-sm text-[18px]">progress_activity</span> : null}
@@ -188,6 +189,23 @@ export default function AdvancedSettings() {
             <Button className="w-full py-md bg-primary text-on-primary rounded-xl font-label-md cursor-pointer" onClick={() => setShowApiKeys(false)}>
               Go to Model Settings
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Cache Confirmation */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowClearConfirm(false)} onKeyDown={e => { if (e.key === 'Escape') setShowClearConfirm(false) }}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-md">
+              <span className="material-symbols-outlined text-amber-600 text-[24px]">cleaning_services</span>
+              <h3 className="font-headline-md text-on-surface">Clear Session Cache</h3>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-lg">This will clear all cached session data. Active sessions will not be affected.</p>
+            <div className="flex justify-end gap-sm">
+              <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowClearConfirm(false)}>Cancel</Button>
+              <Button className="px-lg py-sm rounded-xl bg-amber-600 text-white hover:bg-amber-700" onClick={handleClearCache} disabled={clearing}>{clearing ? 'Clearing...' : 'Clear Cache'}</Button>
+            </div>
           </div>
         </div>
       )}
