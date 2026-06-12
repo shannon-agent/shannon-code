@@ -148,10 +148,10 @@ describe('OPC page', () => {
     expect(screen.getByText('idle')).toBeInTheDocument()
   })
 
-  it('renders Empty Archive in Deprecated column', () => {
+  it('renders empty state in Deprecated column', () => {
     resetCtx()
     renderOPC()
-    expect(screen.getByText('Empty Archive')).toBeInTheDocument()
+    expect(screen.getByText('No deprecated tasks.')).toBeInTheDocument()
   })
 
   it('renders Empty state for empty columns', () => {

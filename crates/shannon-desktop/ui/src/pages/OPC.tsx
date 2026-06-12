@@ -121,7 +121,7 @@ export default function OPC() {
                 {agents.map(agent => {
                   const isActive = agent.status === 'active' || agent.status === 'running'
                   return (
-                    <div key={agent.id} className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
+                    <div key={agent.id} role="button" tabIndex={0} aria-label={`${agent.name} — ${agent.status}`} className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
                       <div className="flex items-center justify-between mb-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -240,7 +240,7 @@ export default function OPC() {
               {/* Deprecated */}
               <KanbanColumn title="Deprecated" color="bg-outline-variant" count={deprecatedTasks.length}>
                 <div className="flex items-center justify-center p-xl mt-xl">
-                  <p className="font-label-sm text-[12px] text-on-surface-variant italic opacity-60">Empty Archive</p>
+                  <EmptyState icon="archive" title="No deprecated tasks." description="Completed or cancelled tasks will appear here." />
                 </div>
               </KanbanColumn>
 

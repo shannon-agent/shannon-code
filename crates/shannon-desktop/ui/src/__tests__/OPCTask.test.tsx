@@ -132,7 +132,7 @@ describe('OPCTask', () => {
     ctx.tasks = [{ id: '1', title: 'Test', status: 'running' }]
     renderOPCTask()
     fireEvent.click(screen.getByText('Request Revision'))
-    expect(screen.getByPlaceholderText(/Describe the revision/)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Describe what needs to change/)).toBeInTheDocument()
   })
 
   it('shows Related Tasks in sidebar', () => {

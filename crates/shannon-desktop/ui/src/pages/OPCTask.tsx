@@ -1,6 +1,7 @@
 import { useApp } from '@/context/AppContext'
 import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
+import { toast } from 'sonner'
 
 export default function OPCTask() {
   const { tasks, agents, usage, respondPermission } = useApp()
@@ -141,14 +142,14 @@ export default function OPCTask() {
                 <div className="flex flex-col gap-sm">
                   <button
                     className="w-full px-md py-sm rounded-xl bg-primary text-on-primary font-label-md hover:brightness-110 transition-all flex items-center justify-center gap-sm"
-                    onClick={() => respondPermission(taskId, true)}
+                    onClick={() => { respondPermission(taskId, true); toast.success('Approved — execution will continue') }}
                   >
                     <span className="material-symbols-outlined text-[18px]">check_circle</span>
                     Approve Final Merge
                   </button>
                   <button
                     className="w-full px-md py-sm rounded-xl border border-red-300 text-red-600 font-label-md hover:bg-red-50 transition-all flex items-center justify-center gap-sm"
-                    onClick={() => respondPermission(taskId, false)}
+                    onClick={() => { respondPermission(taskId, false); toast.info('Rollback requested') }}
                   >
                     <span className="material-symbols-outlined text-[18px]">undo</span>
                     Rollback
@@ -166,7 +167,7 @@ export default function OPCTask() {
                       <textarea
                         className="w-full px-md py-sm rounded-xl border border-outline-variant/50 bg-surface-container-lowest text-body-sm text-on-surface resize-none focus:outline-none focus:border-primary transition-colors"
                         rows={3}
-                        placeholder="Describe the revision needed..."
+                        placeholder="Describe what needs to change (e.g., 'Refactor to use async/await', 'Add error handling for edge cases')..."
                         value={revisionNote}
                         onChange={e => setRevisionNote(e.target.value)}
                       />
@@ -174,6 +175,7 @@ export default function OPCTask() {
                         className="self-end px-md py-xs rounded-lg bg-primary/10 text-primary font-label-sm hover:bg-primary/20 transition-colors"
                         onClick={() => {
                           respondPermission(taskId, false, revisionNote || undefined)
+                          toast.success('Revision request submitted')
                           setRevisionNote('')
                           setShowRevisionInput(null)
                         }}

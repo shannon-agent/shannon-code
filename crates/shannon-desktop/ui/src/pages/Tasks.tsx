@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
 import { Pagination } from '@/components/ui/pagination'
@@ -22,6 +23,7 @@ export default function Tasks() {
   const [showNewTask, setShowNewTask] = useState(false)
   const [newTaskPrompt, setNewTaskPrompt] = useState('')
   const [taskPage, setTaskPage] = useState(1)
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null)
   const TASKS_PER_PAGE = 10
 
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? backgroundTasks.find(t => t.task_id === selectedTaskId) : null
@@ -45,15 +47,18 @@ export default function Tasks() {
       await api.startBackgroundTask(newTaskPrompt.trim())
       setNewTaskPrompt('')
       setShowNewTask(false)
+      toast.success('Task created')
       await refreshTasks()
-    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to start task') }
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to start task'); toast.error('Failed to create task') }
   }
 
   const handleCancelTask = async (id: string) => {
     try {
       setErrorMsg(null)
       await api.cancelBackgroundTask(id)
-    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to cancel task') }
+      toast.success('Task cancelled')
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to cancel task'); toast.error('Failed to cancel task') }
+    setCancelTarget(null)
     await refreshTasks()
   }
 
@@ -147,16 +152,19 @@ export default function Tasks() {
           <div className="bg-surface-container-lowest border border-primary/30 rounded-xl p-lg mb-lg flex flex-col gap-md shadow-sm">
             <h3 className="font-body-lg font-bold text-on-surface">Create Background Task</h3>
             <textarea
-              className="w-full h-20 p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className={`w-full h-20 p-sm bg-surface-container-low rounded-lg border text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 ${!newTaskPrompt.trim() ? 'border-outline-variant/30' : 'border-primary/30'}`}
               placeholder="Describe the task for background execution..."
               value={newTaskPrompt}
               onChange={e => setNewTaskPrompt(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStartTask() } }}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && newTaskPrompt.trim()) { e.preventDefault(); handleStartTask() } }}
               autoFocus
             />
-            <div className="flex gap-sm">
-              <Button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={handleStartTask}>Create Task</Button>
-              <Button variant="ghost" className="px-md py-sm rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => { setShowNewTask(false); setNewTaskPrompt('') }}>Cancel</Button>
+            <div className="flex items-center justify-between">
+              <span className="font-label-sm text-on-surface-variant">{newTaskPrompt.length > 0 ? `${newTaskPrompt.length} chars` : ''}</span>
+              <div className="flex gap-sm">
+                <Button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer disabled:opacity-50" onClick={handleStartTask} disabled={!newTaskPrompt.trim()}>Create Task</Button>
+                <Button variant="ghost" className="px-md py-sm rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => { setShowNewTask(false); setNewTaskPrompt('') }}>Cancel</Button>
+              </div>
             </div>
           </div>
         )}
@@ -354,7 +362,7 @@ export default function Tasks() {
                       </div>
                       <div className="flex items-center gap-sm">
                         {task.status === 'running' || task.status === 'in_progress' ? (
-                          <Button aria-label="Cancel task" className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" onClick={() => handleCancelTask(task.id)}>
+                          <Button aria-label="Cancel task" className="p-2 rounded-lg hover:bg-error/10 text-error transition-colors cursor-pointer" onClick={e => { e.stopPropagation(); setCancelTarget(task.id) }}>
                             <span className="material-symbols-outlined" aria-hidden="true">stop_circle</span>
                           </Button>
                         ) : null}
@@ -403,7 +411,7 @@ export default function Tasks() {
                             {bt.output ? <pre className="mt-sm text-body-sm text-on-surface bg-surface-container-low p-sm rounded-lg max-h-[120px] overflow-auto">{bt.output}</pre> : null}
                           </div>
                           {bt.status === 'running' ? (
-                            <Button aria-label="Cancel background task" className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant cursor-pointer" onClick={() => handleCancelTask(bt.task_id)}>
+                            <Button aria-label="Cancel background task" className="p-2 rounded-lg hover:bg-error/10 text-error cursor-pointer" onClick={() => setCancelTarget(bt.task_id)}>
                               <span className="material-symbols-outlined" aria-hidden="true">stop_circle</span>
                             </Button>
                           ) : null}
@@ -548,6 +556,23 @@ export default function Tasks() {
                   <p className="font-body-md text-on-surface mt-xs">{(selectedTask as any).assignee}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Confirmation Modal */}
+      {cancelTarget && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={() => setCancelTarget(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl p-xl max-w-sm w-full mx-md" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-lg">
+              <span className="material-symbols-outlined text-error text-[24px]">warning</span>
+              <h3 className="font-headline-md text-on-surface">Cancel Task?</h3>
+            </div>
+            <p className="text-body-sm text-on-surface-variant mb-lg">This will stop the running task. Any progress will be lost.</p>
+            <div className="flex gap-sm justify-end">
+              <Button className="px-md py-sm rounded-lg border border-outline-variant text-on-surface-variant font-label-md cursor-pointer" onClick={() => setCancelTarget(null)}>Keep Running</Button>
+              <Button className="px-md py-sm rounded-lg bg-error text-on-error font-label-md cursor-pointer hover:brightness-110" onClick={() => handleCancelTask(cancelTarget)}>Cancel Task</Button>
             </div>
           </div>
         </div>
