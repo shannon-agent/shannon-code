@@ -253,6 +253,7 @@ export default function Chat() {
           {error && (
             <div className="mx-auto max-w-md p-md bg-error/10 border border-error/20 rounded-xl text-center">
               <p className="text-body-sm text-error">{error}</p>
+              <Button variant="ghost" className="mt-sm text-error hover:bg-error/10 text-label-md cursor-pointer" onClick={() => { if (input.trim()) handleSend() }}>Retry</Button>
             </div>
           )}
 
@@ -354,7 +355,7 @@ export default function Chat() {
       )}
 
       {/* Right Sidebar - Context */}
-      <aside className="w-[300px] border-l border-outline-variant/10 glass-panel shrink-0 p-lg overflow-y-auto bg-surface-container-lowest/50 hidden lg:block">
+      <aside aria-label="Context panel" className="w-[300px] border-l border-outline-variant/10 glass-panel shrink-0 p-lg overflow-y-auto bg-surface-container-lowest/50 hidden lg:block">
         <div className="space-y-xl">
           {/* Token Usage */}
           {usage && (
