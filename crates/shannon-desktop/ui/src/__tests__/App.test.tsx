@@ -50,7 +50,7 @@ describe('App routing', () => {
   it('renders layout with sidebar on all routes', async () => {
     renderRoute('/chat')
     await waitFor(() => {
-      expect(screen.getByText('Shannon')).toBeInTheDocument()
+      expect(screen.getAllByText('Shannon').length).toBeGreaterThanOrEqual(1)
     })
   })
 

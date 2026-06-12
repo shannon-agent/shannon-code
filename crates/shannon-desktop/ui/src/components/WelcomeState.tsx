@@ -33,6 +33,11 @@ export default function WelcomeState({ onSelectPrompt }: WelcomeStateProps) {
             </button>
           ))}
         </div>
+        <div className="mt-xl flex items-center justify-center gap-lg text-on-surface-variant opacity-50">
+          <span className="flex items-center gap-xs text-label-sm"><kbd className="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono text-[11px]">Cmd+K</kbd> Commands</span>
+          <span className="flex items-center gap-xs text-label-sm"><kbd className="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono text-[11px]">?</kbd> Shortcuts</span>
+          <span className="flex items-center gap-xs text-label-sm"><kbd className="px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono text-[11px]">Alt+Up</kbd> History</span>
+        </div>
       </div>
     </div>
   )

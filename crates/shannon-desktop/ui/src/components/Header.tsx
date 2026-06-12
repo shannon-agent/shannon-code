@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApp } from '@/context/AppContext';
+import { useSidebar } from './Layout';
 import * as api from '@/lib/tauri-api';
 
 const TITLE_MAP: [string, string][] = [
@@ -26,6 +27,7 @@ function getTitle(pathname: string): string {
 export function Header() {
   const location = useLocation();
   const { status, models, permissionRequest, respondPermission } = useApp();
+  const { toggle: toggleSidebar } = useSidebar();
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,9 @@ export function Header() {
   return (
     <>
       <header className="fixed top-0 right-0 z-40 flex justify-between items-center h-16 px-lg bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/10" style={{ left: 'var(--sidebar-w)' }}>
+        <Button variant="ghost" aria-label="Toggle sidebar" className="md:hidden p-2 mr-sm text-on-surface-variant hover:text-primary" onClick={toggleSidebar}>
+          <span className="material-symbols-outlined text-[24px]">menu</span>
+        </Button>
         <div className="flex items-center gap-md relative w-full overflow-hidden">
           {isOpcTask ? (
             <div className="flex items-center gap-2">

@@ -5,6 +5,7 @@ import rehypeHighlight from 'rehype-highlight'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Pagination } from '@/components/ui/pagination'
 import WelcomeState from '@/components/WelcomeState'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
@@ -25,6 +26,7 @@ export default function Chat() {
   const [attachedFiles, setAttachedFiles] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
+  const [sessionPage, setSessionPage] = useState(1)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -69,6 +71,10 @@ export default function Chat() {
     const bPin = pinnedIds.has(b.id) ? 1 : 0
     return bPin - aPin
   })
+
+  const SESSIONS_PER_PAGE = 10
+  const sessionTotalPages = Math.ceil(sortedSessions.length / SESSIONS_PER_PAGE)
+  const pagedSessions = sortedSessions.slice((sessionPage - 1) * SESSIONS_PER_PAGE, sessionPage * SESSIONS_PER_PAGE)
 
   const togglePin = (id: string) => {
     setPinnedIds(prev => {
@@ -121,7 +127,7 @@ export default function Chat() {
           {filteredSessions.length === 0 && (
             <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No sessions</p>
           )}
-          {sortedSessions.map(session => (
+          {pagedSessions.map(session => (
             <div
               key={session.id}
               className={`p-sm rounded-lg cursor-pointer group ${
@@ -180,6 +186,7 @@ export default function Chat() {
             </div>
           ))}
         </ScrollArea>
+        <Pagination page={sessionPage} totalPages={sessionTotalPages} onPageChange={setSessionPage} />
       </aside>
 
       {/* Main Chat Canvas */}

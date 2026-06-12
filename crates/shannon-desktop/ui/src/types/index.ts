@@ -136,6 +136,7 @@ export interface DesktopConfig {
   theme?: string
   mcp_servers?: McpServerConfig[]
   approval_mode?: string
+  version?: string
 }
 
 export interface SendMessageResponse {

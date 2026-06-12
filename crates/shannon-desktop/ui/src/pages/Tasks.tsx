@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
+import { Pagination } from '@/components/ui/pagination'
 import { CardSkeleton } from '@/components/SkeletonLoader'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
@@ -20,6 +21,8 @@ export default function Tasks() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [showNewTask, setShowNewTask] = useState(false)
   const [newTaskPrompt, setNewTaskPrompt] = useState('')
+  const [taskPage, setTaskPage] = useState(1)
+  const TASKS_PER_PAGE = 10
 
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? backgroundTasks.find(t => t.task_id === selectedTaskId) : null
 
@@ -32,6 +35,8 @@ export default function Tasks() {
   }
 
   const filteredTasks = tasks.filter(t => statusMatchesFilter(t.status))
+  const taskTotalPages = Math.ceil(filteredTasks.length / TASKS_PER_PAGE)
+  const pagedFilteredTasks = filteredTasks.slice((taskPage - 1) * TASKS_PER_PAGE, taskPage * TASKS_PER_PAGE)
 
   const handleStartTask = async () => {
     if (!newTaskPrompt.trim()) return
@@ -314,7 +319,7 @@ export default function Tasks() {
               />
             ) : null}
 
-            {filteredTasks.map(task => {
+            {pagedFilteredTasks.map(task => {
               const badge = statusBadge(task.status)
               const isRunning = running === task.id
               return (
@@ -378,6 +383,7 @@ export default function Tasks() {
               )
             })}
 
+            <Pagination page={taskPage} totalPages={taskTotalPages} onPageChange={setTaskPage} />
             {/* Background Tasks Execution Log */}
             {backgroundTasks.length > 0 ? (
               <div className="pt-lg">

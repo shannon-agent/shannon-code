@@ -21,7 +21,7 @@ function wrap(ui: React.ReactElement) {
 describe('Layout', () => {
   it('renders sidebar', () => {
     render(wrap(<Layout />))
-    expect(screen.getByText('Shannon')).toBeInTheDocument()
+    expect(screen.getAllByText('Shannon').length).toBeGreaterThanOrEqual(1)
   })
 
   it('renders outlet content', () => {

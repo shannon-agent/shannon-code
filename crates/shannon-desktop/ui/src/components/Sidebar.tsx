@@ -4,13 +4,15 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '../lib/utils';
 import { useApp } from '@/context/AppContext';
+import { useSidebar } from './Layout';
 
 const MIN_W = 200
 const MAX_W = 400
 const DEFAULT_W = 280
 const STORAGE_KEY = 'shannon-sidebar-width'
 
-export const Sidebar = memo(function Sidebar() {
+export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
+  const { close: closeMobile } = useSidebar();
   const [opcOpen, setOpcOpen] = useState(true);
   const [extensionsOpen, setExtensionsOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -75,8 +77,13 @@ export const Sidebar = memo(function Sidebar() {
         : "text-on-surface-variant hover:text-primary"
     );
 
+  const handleNavClick = () => { if (mobile) closeMobile() }
+
   return (
-    <aside data-sidebar className="fixed left-0 top-0 h-full bg-surface-container-lowest/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md z-50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]" style={{ width }}>
+    <aside data-sidebar className={cn(
+      "fixed left-0 top-0 h-full bg-surface-container-lowest/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] transition-transform duration-300",
+      mobile ? "z-[70] w-[280px]" : "z-50",
+    )} style={mobile ? undefined : { width }}>
       {/* Drag handle */}
       <div
         className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
@@ -102,17 +109,17 @@ export const Sidebar = memo(function Sidebar() {
 
       <nav aria-label="Main navigation" className="flex-1 space-y-1">
         <ScrollArea className="h-full">
-        <NavLink to="/chat" className={getNavClass}>
+        <NavLink to="/chat" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">chat_bubble</span>
            <span className="flex-1">Chat</span>
            <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘1</kbd>
         </NavLink>
-        <NavLink to="/goals" className={getNavClass}>
+        <NavLink to="/goals" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">ads_click</span>
            <span className="flex-1">Goals</span>
            <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘2</kbd>
         </NavLink>
-        <NavLink to="/tasks" className={getNavClass}>
+        <NavLink to="/tasks" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">task_alt</span>
            <span className="flex-1">Scheduled</span>
            <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘3</kbd>
