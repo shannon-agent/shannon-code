@@ -10,6 +10,9 @@ export default function Tasks() {
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
   const [showFilters, setShowFilters] = useState(false)
   const [calendarView, setCalendarView] = useState(false)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+
+  const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? backgroundTasks.find(t => t.task_id === selectedTaskId) : null
 
   const handleStartTask = async () => {
     const taskPrompt = window.prompt('Enter a task prompt for background execution:')
@@ -121,7 +124,7 @@ export default function Tasks() {
               const badge = statusBadge(task.status)
               const isRunning = running === task.id
               return (
-                <div key={task.id} className="glass-panel border border-outline-variant/10 rounded-xl p-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group bg-white/80">
+                <div key={task.id} className="glass-panel border border-outline-variant/10 rounded-xl p-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group bg-white/80 cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-md">
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -305,6 +308,49 @@ export default function Tasks() {
           </div>
         </div>
       </div>
+
+      {/* Task Detail Drawer */}
+      {selectedTask && (
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedTaskId(null)}>
+          <div className="bg-black/20 absolute inset-0" />
+          <div className="relative w-[400px] bg-white shadow-2xl border-l border-outline-variant/20 p-xl overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-lg">
+              <h3 className="font-headline-md text-on-surface font-bold">Task Detail</h3>
+              <button aria-label="Close drawer" className="p-sm rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={() => setSelectedTaskId(null)}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="space-y-md">
+              <div>
+                <span className="text-label-sm text-on-surface-variant">Title</span>
+                <p className="font-body-lg text-on-surface font-bold mt-xs">{'title' in selectedTask ? selectedTask.title : (selectedTask as any).prompt?.slice(0, 80) ?? 'Background Task'}</p>
+              </div>
+              <div>
+                <span className="text-label-sm text-on-surface-variant">Status</span>
+                <p className="font-body-md text-on-surface mt-xs capitalize">{selectedTask.status}</p>
+              </div>
+              {'description' in selectedTask && selectedTask.description && (
+                <div>
+                  <span className="text-label-sm text-on-surface-variant">Description</span>
+                  <p className="font-body-md text-on-surface mt-xs">{(selectedTask as any).description}</p>
+                </div>
+              )}
+              {'priority' in selectedTask && selectedTask.priority && (
+                <div>
+                  <span className="text-label-sm text-on-surface-variant">Priority</span>
+                  <p className="font-body-md text-on-surface mt-xs capitalize">{(selectedTask as any).priority}</p>
+                </div>
+              )}
+              {'assignee' in selectedTask && selectedTask.assignee && (
+                <div>
+                  <span className="text-label-sm text-on-surface-variant">Assignee</span>
+                  <p className="font-body-md text-on-surface mt-xs">{(selectedTask as any).assignee}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

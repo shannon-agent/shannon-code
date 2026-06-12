@@ -94,4 +94,9 @@ vi.mock('@/lib/tauri-api', () => ({
   cancelBackgroundTask: vi.fn().mockResolvedValue(true),
   listAgents: vi.fn().mockResolvedValue([]),
   listTasks: vi.fn().mockResolvedValue([]),
+  getBillingPlan: vi.fn().mockResolvedValue({ name: 'Free', price: 0, token_limit: 100000, features: ['Basic models', '5 sessions'] }),
+  getCostHistory: vi.fn().mockResolvedValue([]),
+  getBillingHistory: vi.fn().mockResolvedValue([]),
+  getFileContext: vi.fn().mockResolvedValue([]),
+  getTaskDetail: vi.fn().mockResolvedValue({ id: '1', title: 'Test', status: 'pending' }),
 }))

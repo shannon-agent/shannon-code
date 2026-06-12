@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useApp } from '@/context/AppContext'
-import type { ChatMessage, ToolCall } from '@/types'
+import * as api from '@/lib/tauri-api'
+import type { ChatMessage, ToolCall, FileContext } from '@/types'
 
 export default function Chat() {
   const {
@@ -16,11 +17,16 @@ export default function Chat() {
   const [sessionSearch, setSessionSearch] = useState('')
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [fileContext, setFileContext] = useState<FileContext[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streamingText])
+
+  useEffect(() => {
+    api.getFileContext().then(setFileContext).catch(() => {})
+  }, [messages])
 
   const handleSend = () => {
     const trimmed = input.trim()
@@ -261,6 +267,30 @@ export default function Chat() {
                   <div key={tc.tool_use_id} className="p-sm bg-surface-container rounded-xl flex items-center gap-sm border border-outline-variant/10">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${tc.status === 'running' ? 'bg-amber-500 animate-pulse' : tc.status === 'error' ? 'bg-error' : 'bg-green-500'}`}></span>
                     <p className="text-label-md truncate">{tc.tool_name}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* File Context */}
+          {fileContext.length > 0 && (
+            <section>
+              <h3 className="font-label-md text-on-surface uppercase tracking-wider opacity-60 mb-md">
+                Context Files
+                <span className="ml-xs px-xs py-[2px] bg-secondary/10 text-secondary text-[10px] font-bold rounded">{fileContext.length}</span>
+              </h3>
+              <div className="space-y-sm">
+                {fileContext.map(fc => (
+                  <div key={fc.path} className="p-sm bg-surface-container rounded-xl border border-outline-variant/10">
+                    <div className="flex items-center gap-sm mb-xs">
+                      <span className="material-symbols-outlined text-[16px] text-primary" aria-hidden="true">description</span>
+                      <p className="text-label-md text-on-surface truncate flex-1" title={fc.path}>{fc.name}</p>
+                    </div>
+                    <div className="flex items-center gap-md text-label-sm text-on-surface-variant">
+                      <span>{fc.language}</span>
+                      <span>{fc.lines} lines</span>
+                    </div>
                   </div>
                 ))}
               </div>

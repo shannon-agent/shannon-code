@@ -268,6 +268,40 @@ export interface AgentInfo {
   duration?: number
 }
 
+// --- Billing Types ---
+
+export interface BillingPlan {
+  name: string
+  price: number
+  token_limit: number
+  features: string[]
+}
+
+export interface CostRecord {
+  date: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+}
+
+export interface BillingHistory {
+  id: string
+  date: string
+  description: string
+  amount: number
+  status: 'paid' | 'pending' | 'failed'
+}
+
+// --- Context Types ---
+
+export interface FileContext {
+  path: string
+  name: string
+  language: string
+  lines: number
+  relevant_lines?: { start: number; end: number }[]
+}
+
 // --- Enums ---
 
 export type ViewMode = 'verbose' | 'normal' | 'summary'

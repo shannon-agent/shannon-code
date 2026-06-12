@@ -181,3 +181,29 @@ export async function listAgents(): Promise<AgentInfo[]> {
 export async function listTasks(): Promise<TaskItem[]> {
   return invoke('list_tasks')
 }
+
+// --- Billing ---
+
+export async function getBillingPlan(): Promise<import('@/types').BillingPlan> {
+  return invoke('get_billing_plan')
+}
+
+export async function getCostHistory(days: number): Promise<import('@/types').CostRecord[]> {
+  return invoke('get_cost_history', { days })
+}
+
+export async function getBillingHistory(): Promise<import('@/types').BillingHistory[]> {
+  return invoke('get_billing_history')
+}
+
+// --- File Context ---
+
+export async function getFileContext(): Promise<import('@/types').FileContext[]> {
+  return invoke('get_file_context')
+}
+
+// --- Task Detail ---
+
+export async function getTaskDetail(id: string): Promise<TaskItem> {
+  return invoke('get_task_detail', { id })
+}
