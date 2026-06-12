@@ -101,7 +101,7 @@ export default function ExtensionsHub() {
               <h4 className="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">{cat}</h4>
               <div className="flex flex-wrap gap-md">
                 {sortedSkills(cat).map(skill => (
-                  <div key={skill.name} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm" onClick={() => setSelectedSkill(selectedSkill?.name === skill.name ? null : skill)}>
+                  <div key={skill.name} role="button" tabIndex={0} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={() => setSelectedSkill(selectedSkill?.name === skill.name ? null : skill)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedSkill(selectedSkill?.name === skill.name ? null : skill) } }}>
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorForCategory(cat)}`}>
                       <span className="material-symbols-outlined">{iconForCategory(cat)}</span>
                     </div>

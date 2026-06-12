@@ -121,7 +121,7 @@ export default function OPC() {
                 {agents.map(agent => {
                   const isActive = agent.status === 'active' || agent.status === 'running'
                   return (
-                    <div key={agent.id} role="button" tabIndex={0} aria-label={`${agent.name} — ${agent.status}`} className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
+                    <div key={agent.id} role="button" tabIndex={0} aria-label={`${agent.name} — ${agent.status}`} className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group" onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') e.currentTarget.click() }}>
                       <div className="flex items-center justify-between mb-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -176,7 +176,7 @@ export default function OPC() {
               </KanbanColumn>
 
               {/* Pending */}
-              <KanbanColumn title="Pending" color="bg-orange-500" count={pendingTasks.length}>
+              <KanbanColumn title="Pending" color="bg-secondary" count={pendingTasks.length}>
                 {pendingTasks.map(task => (
                   <div key={task.id} className="bg-surface-container-lowest rounded-xl p-md border border-error/20 shadow-sm mb-3 ring-1 ring-error/5 cursor-grab active:cursor-grabbing hover:border-error/40 transition-colors relative">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-error rounded-l-xl" />
@@ -276,7 +276,7 @@ function KanbanColumn({ title, color, count, children }: { title: string; color:
 
 function KanbanCard({ task }: { task: { id: string; title: string; description?: string; assignee?: string; priority?: string } }) {
   return (
-    <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 shadow-sm mb-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group/card focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" tabIndex={0}>
+    <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 shadow-sm mb-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group/card focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" tabIndex={0} role="button" onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location.hash = `/opc/task/${task.id}` } }}>
       <div className="flex justify-between items-start mb-2">
         <span className="font-label-sm text-[10px] font-bold text-on-surface-variant tracking-wider">{task.id.slice(0, 8)}</span>
         {task.priority ? (

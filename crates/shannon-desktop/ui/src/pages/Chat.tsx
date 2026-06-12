@@ -378,7 +378,7 @@ export default function Chat() {
                   const total = usage.input_tokens + usage.output_tokens
                   const max = (usage as any).max_tokens ?? 200000
                   const pct = Math.min(100, (total / max) * 100)
-                  const barColor = pct > 80 ? 'bg-error' : pct > 50 ? 'bg-amber-500' : 'bg-primary'
+                  const barColor = pct > 80 ? 'bg-error' : pct > 50 ? 'bg-secondary' : 'bg-primary'
                   return (
                     <div className="pt-sm border-t border-outline-variant/10">
                       <div className="flex justify-between text-label-sm text-on-surface-variant mb-xs">
@@ -406,7 +406,7 @@ export default function Chat() {
               <div className="space-y-sm">
                 {activeToolCalls.map(tc => (
                   <div key={tc.tool_use_id} className="p-sm bg-surface-container rounded-xl flex items-center gap-sm border border-outline-variant/10">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${tc.status === 'running' ? 'bg-amber-500 animate-pulse' : tc.status === 'error' ? 'bg-error' : 'bg-green-500'}`}></span>
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${tc.status === 'running' ? 'bg-secondary animate-pulse' : tc.status === 'error' ? 'bg-error' : 'bg-tertiary'}`}></span>
                     <p className="text-label-md truncate">{tc.tool_name}</p>
                   </div>
                 ))}
@@ -524,7 +524,7 @@ const HighlightText = memo(function HighlightText({ text, query }: { text: strin
 const ToolCallDisplay = memo(function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
   const [expanded, setExpanded] = useState(false)
   const statusIcon = toolCall.status === 'running' ? 'hourglass_empty' : toolCall.status === 'error' ? 'error' : 'check_circle'
-  const statusColor = toolCall.status === 'running' ? 'text-amber-500' : toolCall.status === 'error' ? 'text-error' : 'text-green-500'
+  const statusColor = toolCall.status === 'running' ? 'text-secondary' : toolCall.status === 'error' ? 'text-error' : 'text-tertiary'
 
   return (
     <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant/10">

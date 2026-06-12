@@ -49,7 +49,7 @@ export default function BillingSettings() {
   const inputTokens = usage?.input_tokens ?? 0
   const outputTokens = usage?.output_tokens ?? 0
   const totalTokens = inputTokens + outputTokens
-  const cacheHitRate = usage?.cache_hit_rate ?? 0.68
+  const cacheHitRate = usage?.cache_hit_rate ?? 0
   const maxCost = Math.max(...costHistory.map(c => c.cost_usd), 0.01)
 
   return (
@@ -274,7 +274,7 @@ export default function BillingSettings() {
 
       {/* Change Plan Modal */}
       {showChangePlan && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowChangePlan(false)} onKeyDown={e => { if (e.key === 'Escape') setShowChangePlan(false) }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowChangePlan(false)} onKeyDown={e => { if (e.key === 'Escape') setShowChangePlan(false) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-md w-full mx-lg shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg">
               <h3 className="font-headline-md text-on-surface">Change Plan</h3>
@@ -296,7 +296,7 @@ export default function BillingSettings() {
 
       {/* Legal Modal */}
       {showLegal && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowLegal(false)} onKeyDown={e => { if (e.key === 'Escape') setShowLegal(false) }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setShowLegal(false)} onKeyDown={e => { if (e.key === 'Escape') setShowLegal(false) }}>
           <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-lg w-full mx-lg shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-lg">
               <h3 className="font-headline-md text-on-surface">Legal &amp; Privacy</h3>

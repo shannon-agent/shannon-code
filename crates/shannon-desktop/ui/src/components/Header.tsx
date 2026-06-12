@@ -100,7 +100,7 @@ export function Header() {
               className="flex items-center gap-sm px-md py-sm rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-all"
               onClick={() => { setModelOpen(!modelOpen); setModelFocus(-1) }}
             >
-              <span className={`w-2 h-2 rounded-full shrink-0 ${status?.querying ? 'bg-amber-500 animate-pulse' : 'bg-tertiary'}`}></span>
+              <span className={`w-2 h-2 rounded-full shrink-0 ${status?.querying ? 'bg-secondary animate-pulse' : 'bg-tertiary'}`}></span>
               <span className="font-label-sm text-[12px] whitespace-nowrap max-w-[120px] truncate">{status?.model || 'No model'}</span>
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
             </Button>
@@ -154,9 +154,9 @@ export function Header() {
               </div>
               <span className={`px-sm py-xs rounded-full font-label-sm font-bold uppercase tracking-wider ${
                 permissionRequest.risk === 'critical' ? 'bg-error/10 text-error' :
-                permissionRequest.risk === 'high' ? 'bg-orange-500/10 text-orange-600' :
-                permissionRequest.risk === 'medium' ? 'bg-amber-500/10 text-amber-600' :
-                'bg-tertiary/10 text-green-600'
+                permissionRequest.risk === 'high' ? 'bg-secondary/10 text-secondary' :
+                permissionRequest.risk === 'medium' ? 'bg-secondary/10 text-secondary' :
+                'bg-tertiary/10 text-tertiary'
               }`}>{permissionRequest.risk}</span>
             </div>
             <div className="p-md bg-surface-container-low rounded-xl mb-lg space-y-sm">

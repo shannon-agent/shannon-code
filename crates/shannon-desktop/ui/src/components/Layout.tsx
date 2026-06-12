@@ -60,14 +60,14 @@ export function Layout() {
           <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-sm">
             {usage ? (
               <>
-                <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-tertiary shrink-0" />
                 <span>{(usage.input_tokens + usage.output_tokens).toLocaleString()} tokens</span>
                 <span className="text-outline-variant">·</span>
                 <span className="text-primary">${usage.cost_usd.toFixed(4)}</span>
               </>
             ) : status ? (
               <>
-                <span className={`w-2 h-2 rounded-full shrink-0 ${status.querying ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`} />
+                <span className={`w-2 h-2 rounded-full shrink-0 ${status.querying ? 'bg-secondary animate-pulse' : 'bg-tertiary'}`} />
                 <span>{status.provider}</span>
                 <span className="text-outline-variant">·</span>
                 <span className="truncate max-w-[140px]">{status.model}</span>

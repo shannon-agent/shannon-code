@@ -29,7 +29,7 @@ export default function MyAgents() {
 
   const statusFor = (status: string) => {
     switch (status) {
-      case 'active': case 'running': return { color: 'bg-green-500 animate-pulse', bg: 'bg-primary/10 text-primary', label: 'Active' }
+      case 'active': case 'running': return { color: 'bg-tertiary animate-pulse', bg: 'bg-primary/10 text-primary', label: 'Active' }
       case 'idle': return { color: 'bg-outline', bg: 'bg-surface-container-high text-on-surface-variant', label: 'Idle' }
       case 'error': return { color: 'bg-error', bg: 'bg-error/10 text-error', label: 'Error' }
       default: return { color: 'bg-outline', bg: 'bg-surface-container-high text-on-surface-variant', label: status }

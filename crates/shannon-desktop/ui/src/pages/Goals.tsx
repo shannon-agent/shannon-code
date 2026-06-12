@@ -153,7 +153,7 @@ export default function Goals() {
                 return (
                   <div key={task.id} className={`flex items-start gap-lg ${!isActive && !isDone ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                     <div className="mt-4 flex flex-col items-center">
-                      <div className={`w-4 h-4 rounded-full z-10 ${isDone ? 'border-2 border-emerald-500 bg-background' : isActive ? 'border-2 border-primary bg-primary shadow-lg' : 'border-2 border-outline-variant bg-surface-container-highest'}`} />
+                      <div className={`w-4 h-4 rounded-full z-10 ${isDone ? 'border-2 border-tertiary bg-background' : isActive ? 'border-2 border-primary bg-primary shadow-lg' : 'border-2 border-outline-variant bg-surface-container-highest'}`} />
                     </div>
                     <div className={`flex-1 glass-card p-lg rounded-xl transition-all ${isActive ? 'bg-surface-container-lowest border-primary/30 ring-1 ring-primary/10 shadow-lg' : isDone ? 'bg-surface-container-lowest/70' : 'bg-surface-container-lowest/50'}`}>
                       <div className="flex items-center gap-md mb-xs">
