@@ -132,11 +132,11 @@ export default function OPC() {
                             <div className="font-label-sm text-[11px] text-on-surface-variant">{agent.model || 'Default Model'}</div>
                           </div>
                         </div>
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500 animate-pulse' : 'bg-outline-variant'}`} />
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-tertiary animate-pulse' : 'bg-outline-variant'}`} />
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className={`w-1 h-3 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-outline-variant'}`} />
-                        <span className={`font-label-sm text-[12px] ${isActive ? 'text-green-600' : 'text-on-surface-variant italic opacity-80'}`}>
+                        <div className={`w-1 h-3 rounded-full shrink-0 ${isActive ? 'bg-tertiary' : 'bg-outline-variant'}`} />
+                        <span className={`font-label-sm text-[12px] ${isActive ? 'text-tertiary' : 'text-on-surface-variant italic opacity-80'}`}>
                           {agent.task || agent.status}
                         </span>
                       </div>
@@ -223,12 +223,12 @@ export default function OPC() {
               </KanbanColumn>
 
               {/* Done */}
-              <KanbanColumn title="Done" color="bg-green-500" count={doneTasks.length}>
+              <KanbanColumn title="Done" color="bg-tertiary" count={doneTasks.length}>
                 {doneTasks.map(task => (
-                  <Link key={task.id} to="/opc/task" className="block bg-surface-container-lowest rounded-xl p-3 border border-green-500/20 shadow-sm mb-3 cursor-pointer hover:bg-surface-bright transition-colors bg-green-50/30">
+                  <Link key={task.id} to="/opc/task" className="block bg-surface-container-lowest rounded-xl p-3 border border-tertiary/20 shadow-sm mb-3 cursor-pointer hover:bg-surface-bright transition-colors bg-tertiary/5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
+                        <span className="material-symbols-outlined text-[16px] text-tertiary">check_circle</span>
                         <span className="font-label-md text-[13px] text-on-surface">{task.title}</span>
                       </div>
                       <span className="font-label-sm text-[10px] text-on-surface-variant">Done</span>

@@ -75,7 +75,7 @@ export default function Tasks() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case 'completed': return { bg: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-500', label: 'Completed', icon: 'check_circle', tip: 'Task finished successfully' }
+      case 'completed': return { bg: 'bg-tertiary/10 text-tertiary border-tertiary/20', dot: 'bg-tertiary', label: 'Completed', icon: 'check_circle', tip: 'Task finished successfully' }
       case 'running': case 'in_progress': return { bg: 'bg-primary/10 text-primary border-primary/20', dot: 'bg-primary animate-pulse', label: 'Running', icon: 'autorenew', tip: 'Task is currently executing' }
       case 'failed': case 'error': return { bg: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Failed', icon: 'error', tip: 'Task encountered an error' }
       case 'pending': return { bg: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/30', dot: 'bg-outline', label: 'Pending', icon: 'schedule', tip: 'Waiting to be executed' }
@@ -218,7 +218,7 @@ export default function Tasks() {
                         {dayTasks.slice(0, 3).map((t, ti) => (
                           <div key={ti} className={`h-1 rounded-full ${
                             t.status === 'running' || t.status === 'in_progress' ? 'bg-primary' :
-                            t.status === 'completed' ? 'bg-emerald-500' :
+                            t.status === 'completed' ? 'bg-tertiary' :
                             'bg-outline-variant'
                           }`} />
                         ))}
@@ -368,7 +368,7 @@ export default function Tasks() {
                           </Button>
                         ) : null}
                         <Button
-                          className={`text-on-primary px-md py-sm rounded-lg font-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer ${isRunning ? 'bg-emerald-500' : 'bg-primary'}`}
+                          className={`text-on-primary px-md py-sm rounded-lg font-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer ${isRunning ? 'bg-tertiary' : 'bg-primary'}`}
                           onClick={() => handleRunNow(task.id)}
                           disabled={isRunning}
                         >
@@ -402,10 +402,10 @@ export default function Tasks() {
                     const badge = statusBadge(bt.status)
                     return (
                       <div key={bt.task_id} className="relative">
-                        <div className={`absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 bg-surface-container-lowest z-10 ${bt.status === 'running' ? 'border-blue-500 animate-pulse' : bt.status === 'completed' ? 'border-emerald-500' : bt.status === 'failed' ? 'border-red-500' : 'border-outline-variant'}`} />
+                        <div className={`absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 bg-surface-container-lowest z-10 ${bt.status === 'running' ? 'border-primary animate-pulse' : bt.status === 'completed' ? 'border-tertiary' : bt.status === 'failed' ? 'border-error' : 'border-outline-variant'}`} />
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <p className={`font-label-sm text-label-sm mb-1 ${badge.bg.includes('blue') ? 'text-blue-500' : badge.bg.includes('emerald') ? 'text-emerald-600' : badge.bg.includes('red') ? 'text-error' : 'text-on-surface-variant'}`}>
+                            <p className={`font-label-sm text-label-sm mb-1 ${badge.bg.includes('primary') ? 'text-primary' : badge.bg.includes('tertiary') ? 'text-tertiary' : badge.bg.includes('error') ? 'text-error' : 'text-on-surface-variant'}`}>
                               {formatDate(bt.started_at)} — {badge.label.toUpperCase()}
                             </p>
                             <p className="text-on-surface-variant text-body-sm italic">{bt.prompt}</p>

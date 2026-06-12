@@ -78,7 +78,7 @@ export default function Goals() {
               <div className="px-sm space-y-1">
                 {filteredCompleted.map(task => (
                   <div key={task.id} className="w-full flex items-center gap-sm p-md rounded-xl opacity-60">
-                    <span className="material-symbols-outlined text-green-500 text-[16px]">check_circle</span>
+                    <span className="material-symbols-outlined text-tertiary text-[16px]">check_circle</span>
                     <span className="font-label-md text-on-surface truncate">{task.title}</span>
                   </div>
                 ))}
@@ -159,7 +159,7 @@ export default function Goals() {
                       <div className="flex items-center gap-md mb-xs">
                         <h4 className={`font-headline-md ${isActive ? 'text-primary' : isDone ? 'text-on-surface' : 'text-on-surface-variant'}`}>{task.title}</h4>
                         <span className={`px-sm py-xs font-label-sm rounded-lg flex items-center gap-1 ${
-                          isDone ? 'bg-green-100 text-green-700' : isActive ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'
+                          isDone ? 'bg-tertiary/10 text-tertiary' : isActive ? 'bg-primary/10 text-primary' : 'bg-surface-container-high text-on-surface-variant'
                         }`}>
                           <span className="material-symbols-outlined text-[14px]">{isDone ? 'check_circle' : isActive ? 'sync' : 'lock'}</span>
                           {isDone ? 'Done' : isActive ? 'In Progress' : 'Pending'}
@@ -169,11 +169,11 @@ export default function Goals() {
                       <div className="flex items-center gap-md mt-sm">
                         <div className="flex-1 h-1.5 bg-outline-variant/10 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-green-500' : isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
+                            className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-tertiary' : isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
                             style={{ width: `${isDone ? 100 : isActive ? (task.progress ?? 0) : 0}%` }}
                           />
                         </div>
-                        <span className={`font-label-sm text-[11px] ${isDone ? 'text-green-600' : isActive ? 'text-primary' : 'text-on-surface-variant'}`}>
+                        <span className={`font-label-sm text-[11px] ${isDone ? 'text-tertiary' : isActive ? 'text-primary' : 'text-on-surface-variant'}`}>
                           {isDone ? '100%' : isActive ? `${task.progress ?? 0}%` : '0%'}
                         </span>
                       </div>
@@ -216,13 +216,13 @@ export default function Goals() {
                           <span className="material-symbols-outlined text-primary text-[14px]">psychology</span>
                         </div>
                         <div className="node-connector w-px flex-1 min-h-[24px]" />
-                        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
-                          <span className="material-symbols-outlined text-amber-600 text-[14px]">pending</span>
+                        <div className="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center">
+                          <span className="material-symbols-outlined text-on-surface-variant text-[14px]">pending</span>
                         </div>
                       </div>
                       <div className="flex flex-col gap-sm pt-xs">
                         <span className="font-label-sm text-on-surface-variant">Analyzing task requirements</span>
-                        <span className="font-label-sm text-amber-600">Awaiting your approval</span>
+                        <span className="font-label-sm text-on-surface-variant">Awaiting your approval</span>
                       </div>
                     </div>
 
@@ -260,7 +260,7 @@ export default function Goals() {
           <div className="space-y-sm">
             <div className="flex justify-between"><span className="text-body-sm text-on-surface-variant">Active</span><span className="font-label-md text-primary font-bold">{activeTasks.length}</span></div>
             <div className="flex justify-between"><span className="text-body-sm text-on-surface-variant">Pending</span><span className="font-label-md text-on-surface font-bold">{pendingTasks.length}</span></div>
-            <div className="flex justify-between"><span className="text-body-sm text-on-surface-variant">Completed</span><span className="font-label-md text-green-600 font-bold">{completedTasks.length}</span></div>
+            <div className="flex justify-between"><span className="text-body-sm text-on-surface-variant">Completed</span><span className="font-label-md text-tertiary font-bold">{completedTasks.length}</span></div>
           </div>
         </div>
       </aside>

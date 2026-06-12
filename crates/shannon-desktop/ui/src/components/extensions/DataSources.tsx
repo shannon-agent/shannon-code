@@ -146,9 +146,9 @@ function McpServerCard({ server, restarting, onRestart, onRemove }: {
   onRestart: (name: string) => void
   onRemove: (name: string) => void
 }) {
-  const statusColor = server.connected ? 'bg-green-500' : 'bg-error'
+  const statusColor = server.connected ? 'bg-tertiary' : 'bg-error'
   const statusText = server.connected ? 'Connected' : 'Disconnected'
-  const statusBg = server.connected ? 'bg-green-100 text-green-700 border-green-200' : 'bg-error/10 text-error border-error/20'
+  const statusBg = server.connected ? 'bg-tertiary/10 text-tertiary border-tertiary/20' : 'bg-error/10 text-error border-error/20'
 
   return (
     <div className={`col-span-12 md:col-span-6 lg:col-span-4 bg-surface-container-lowest border rounded-xl p-md shadow-sm hover:shadow-md transition-shadow ${server.connected ? 'border-outline-variant/50' : 'border-error/20'}`}>

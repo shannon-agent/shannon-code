@@ -217,10 +217,10 @@ export default function BillingSettings() {
                       <td className="py-4 px-2 text-right">${bh.amount.toFixed(2)}</td>
                       <td className="py-4 px-2 text-center">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
-                          bh.status === 'paid' ? 'bg-green-100 text-green-700' : bh.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'
+                          bh.status === 'paid' ? 'bg-tertiary/10 text-tertiary' : bh.status === 'pending' ? 'bg-surface-container-high text-on-surface-variant' : 'bg-error/10 text-error'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            bh.status === 'paid' ? 'bg-green-500' : bh.status === 'pending' ? 'bg-amber-500' : 'bg-red-500'
+                            bh.status === 'paid' ? 'bg-tertiary' : bh.status === 'pending' ? 'bg-on-surface-variant/40' : 'bg-error'
                           }`}></span>
                           {bh.status}
                         </span>

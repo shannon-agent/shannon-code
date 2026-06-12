@@ -74,7 +74,7 @@ export default function OPCTask() {
                   <p className="font-body-md text-on-surface-variant">{task.description ?? 'No description provided.'}</p>
                   <div className="flex items-center gap-md mt-md">
                     <span className={`px-sm py-xs rounded-full font-label-sm text-[11px] font-bold uppercase tracking-wider ${
-                      task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      task.status === 'completed' ? 'bg-tertiary/10 text-tertiary' :
                       task.status === 'running' || task.status === 'in_progress' ? 'bg-primary/10 text-primary' :
                       task.status === 'failed' ? 'bg-error/10 text-error' :
                       'bg-surface-container text-on-surface-variant'
@@ -128,11 +128,11 @@ export default function OPCTask() {
 
             {/* Human-in-the-Loop Review */}
             {hasRunningTasks && (
-              <div className="glass-card bg-surface-container-lowest/80 rounded-2xl p-xl border border-amber-200/40 shadow-sm">
+              <div className="glass-card bg-surface-container-lowest/80 rounded-2xl p-xl border border-outline-variant/40 shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
-                  <span className="material-symbols-outlined text-[20px] text-amber-600">verified_user</span>
+                  <span className="material-symbols-outlined text-[20px] text-on-surface-variant">verified_user</span>
                   <h3 className="font-headline-md text-[20px] font-bold text-on-surface">Human-in-the-Loop Review</h3>
-                  <span className="ml-auto w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="ml-auto w-2.5 h-2.5 rounded-full bg-primary animate-pulse" />
                 </div>
 
                 <p className="text-body-sm text-on-surface-variant mb-lg">
@@ -148,7 +148,7 @@ export default function OPCTask() {
                     Approve Final Merge
                   </button>
                   <button
-                    className="w-full px-md py-sm rounded-xl border border-red-300 text-red-600 font-label-md hover:bg-red-50 transition-all flex items-center justify-center gap-sm"
+                    className="w-full px-md py-sm rounded-xl border border-error/30 text-error font-label-md hover:bg-error/10 transition-all flex items-center justify-center gap-sm"
                     onClick={() => { respondPermission(taskId, false); toast.info('Rollback requested') }}
                   >
                     <span className="material-symbols-outlined text-[18px]">undo</span>
@@ -244,7 +244,7 @@ export default function OPCTask() {
                   </div>
                   <div>
                     <div className="font-label-md text-[14px] font-bold text-on-surface mb-0.5 group-hover:text-primary transition-colors">{t.title}</div>
-                    <span className={`font-label-sm text-[11px] ${t.status === 'completed' ? 'text-green-600' : t.status === 'in_progress' || t.status === 'running' ? 'text-primary' : 'text-on-surface-variant'}`}>{t.status}</span>
+                    <span className={`font-label-sm text-[11px] ${t.status === 'completed' ? 'text-tertiary' : t.status === 'in_progress' || t.status === 'running' ? 'text-primary' : 'text-on-surface-variant'}`}>{t.status}</span>
                   </div>
                 </div>
               ))}
