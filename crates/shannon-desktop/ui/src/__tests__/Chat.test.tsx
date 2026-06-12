@@ -73,7 +73,7 @@ describe('Chat page', () => {
   it('renders no sessions message when empty', () => {
     resetCtx()
     renderChat()
-    expect(screen.getByText('No sessions')).toBeInTheDocument()
+    expect(screen.getByText('No sessions yet')).toBeInTheDocument()
   })
 
   it('calls createSession when New Chat is clicked', () => {

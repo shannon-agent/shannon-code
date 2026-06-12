@@ -39,7 +39,10 @@ export default function Goals() {
           </div>
           <div className="px-sm space-y-1">
             {filteredActive.length === 0 && filteredPending.length === 0 ? (
-              <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No tasks</p>
+              <div className="text-center py-lg opacity-70">
+                <span className="material-symbols-outlined text-on-surface-variant text-[28px]">task_alt</span>
+                <p className="text-body-sm text-on-surface-variant mt-xs">No tasks</p>
+              </div>
             ) : null}
             {filteredActive.map(task => {
               const progress = task.progress ?? Math.round((task.status === 'completed' ? 100 : task.status === 'in_progress' || task.status === 'running' ? 0 : 0))
@@ -112,7 +115,10 @@ export default function Goals() {
                 Active Agents ({agents.length})
               </h3>
               {agents.length === 0 ? (
-                <p className="text-body-sm text-on-surface-variant">No agents active.</p>
+                <div className="text-center py-md opacity-70">
+                  <span className="material-symbols-outlined text-on-surface-variant text-[24px]">smart_toy</span>
+                  <p className="text-body-sm text-on-surface-variant mt-xs">No agents active</p>
+                </div>
               ) : (
                 <div className="space-y-lg relative">
                   <div className="absolute left-[15px] top-6 bottom-6 w-px border-l border-dashed border-primary/30" />

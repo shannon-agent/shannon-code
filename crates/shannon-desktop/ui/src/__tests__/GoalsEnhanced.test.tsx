@@ -71,7 +71,7 @@ describe('Goals Enhanced', () => {
   it('shows no agents active message', () => {
     resetCtx()
     renderGoals()
-    expect(screen.getByText('No agents active.')).toBeInTheDocument()
+    expect(screen.getByText('No agents active')).toBeInTheDocument()
   })
 
   it('renders agents when present', () => {

@@ -128,7 +128,10 @@ export default function Chat() {
         </div>
         <ScrollArea className="flex-1 p-sm space-y-xs">
           {filteredSessions.length === 0 && (
-            <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No sessions</p>
+            <div className="text-center py-lg opacity-70">
+              <span className="material-symbols-outlined text-on-surface-variant text-[32px]">chat_bubble_outline</span>
+              <p className="text-body-sm text-on-surface-variant mt-xs">No sessions yet</p>
+            </div>
           )}
           {pagedSessions.map(session => (
             <div
