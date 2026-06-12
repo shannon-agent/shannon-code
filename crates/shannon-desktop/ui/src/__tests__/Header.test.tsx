@@ -1,42 +1,69 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { AppProvider } from '@/context/AppContext'
 import { MemoryRouter } from 'react-router-dom'
 import { Header } from '@/components/Header'
 
+const mockCtx = vi.hoisted(() => ({
+  status: { model: 'claude-sonnet-4-6', provider: 'anthropic', querying: false } as any,
+  models: [
+    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet', provider: 'anthropic', context_window: 200000 },
+    { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', context_window: 128000 },
+  ],
+  permissionRequest: null as any,
+  respondPermission: vi.fn(),
+}))
+
+vi.mock('@/context/AppContext', () => ({
+  useApp: () => mockCtx,
+}))
+
 function wrap(ui: React.ReactElement, { route = '/chat' } = {}) {
   return (
-    <AppProvider>
-      <MemoryRouter initialEntries={[route]}>
-        {ui}
-      </MemoryRouter>
-    </AppProvider>
+    <MemoryRouter initialEntries={[route]}>
+      {ui}
+    </MemoryRouter>
   )
 }
 
 describe('Header component', () => {
+  beforeEach(() => {
+    mockCtx.status = { model: 'claude-sonnet-4-6', provider: 'anthropic', querying: false }
+    mockCtx.models = [
+      { id: 'claude-sonnet-4-6', name: 'Claude Sonnet', provider: 'anthropic', context_window: 200000 },
+      { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai', context_window: 128000 },
+    ]
+    mockCtx.permissionRequest = null
+    mockCtx.respondPermission = vi.fn()
+  })
+
   it('renders page title based on route', () => {
     render(wrap(<Header />, { route: '/chat' }))
     expect(screen.getByText('Chat')).toBeInTheDocument()
   })
 
-  it('renders model selector button that shows model after loading', async () => {
+  it('renders model selector with current model name', () => {
     render(wrap(<Header />, { route: '/chat' }))
-    // After async load, button text changes from "No model" to actual model ID
-    await waitFor(() => {
-      expect(screen.getByText('claude-sonnet-4-6')).toBeInTheDocument()
-    })
+    expect(screen.getByText('claude-sonnet-4-6')).toBeInTheDocument()
   })
 
   it('opens model dropdown with model names on click', async () => {
     render(wrap(<Header />, { route: '/chat' }))
-    // Wait for status to load, then click the model button
-    const modelButton = await screen.findByText('claude-sonnet-4-6')
-    fireEvent.click(modelButton)
-    // Dropdown should show model name (not ID)
+    fireEvent.click(screen.getByText('claude-sonnet-4-6'))
     await waitFor(() => {
       expect(screen.getByText('Claude Sonnet')).toBeInTheDocument()
+      expect(screen.getByText('GPT-4o')).toBeInTheDocument()
     })
+  })
+
+  it('switches model when option is clicked', async () => {
+    const api = await import('@/lib/tauri-api')
+    render(wrap(<Header />, { route: '/chat' }))
+    fireEvent.click(screen.getByText('claude-sonnet-4-6'))
+    await waitFor(() => {
+      expect(screen.getByText('GPT-4o')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('GPT-4o'))
+    expect(api.switchProvider).toHaveBeenCalled()
   })
 
   it('renders OPC title on /opc route', () => {
@@ -52,5 +79,40 @@ describe('Header component', () => {
   it('renders user avatar placeholder', () => {
     render(wrap(<Header />, { route: '/chat' }))
     expect(screen.getByText('person')).toBeInTheDocument()
+  })
+
+  it('renders permission modal when permission request is present', () => {
+    mockCtx.permissionRequest = { request_id: 'p1', tool: 'bash', risk: 'high', input: { cmd: 'rm -rf' } }
+    render(wrap(<Header />, { route: '/chat' }))
+    expect(screen.getByText('Permission Request')).toBeInTheDocument()
+    expect(screen.getByText('bash')).toBeInTheDocument()
+    expect(screen.getByText('Allow')).toBeInTheDocument()
+    expect(screen.getByText('Deny')).toBeInTheDocument()
+  })
+
+  it('renders Goals title on /goals route', () => {
+    render(wrap(<Header />, { route: '/goals' }))
+    expect(screen.getByText('Goals')).toBeInTheDocument()
+  })
+
+  it('renders Tasks title on /tasks route', () => {
+    render(wrap(<Header />, { route: '/tasks' }))
+    expect(screen.getByText('Tasks')).toBeInTheDocument()
+  })
+
+  it('renders Settings title on /settings route', () => {
+    render(wrap(<Header />, { route: '/settings/general' }))
+    expect(screen.getByText('Settings')).toBeInTheDocument()
+  })
+
+  it('renders Extensions title on /extensions route', () => {
+    render(wrap(<Header />, { route: '/extensions/skills' }))
+    expect(screen.getByText('Extensions')).toBeInTheDocument()
+  })
+
+  it('renders notifications and help buttons', () => {
+    render(wrap(<Header />, { route: '/chat' }))
+    expect(screen.getByLabelText('Notifications')).toBeInTheDocument()
+    expect(screen.getByLabelText('Help')).toBeInTheDocument()
   })
 })

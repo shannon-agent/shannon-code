@@ -84,11 +84,11 @@ export default function Tasks() {
             <p className="text-on-surface-variant mt-xs">Manage and monitor your automated intelligence workflows.</p>
           </div>
           <div className="flex gap-sm">
-            <Button onClick={() => setShowFilters(!showFilters)} className={`px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${showFilters ? 'ring-2 ring-primary' : ''}`}>
+            <Button onClick={() => setShowFilters(!showFilters)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${showFilters ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">filter_list</span>
               Filters
             </Button>
-            <Button onClick={() => setCalendarView(!calendarView)} className={`px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${calendarView ? 'ring-2 ring-primary' : ''}`}>
+            <Button onClick={() => setCalendarView(!calendarView)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${calendarView ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">calendar_month</span>
               {calendarView ? 'List View' : 'Month View'}
             </Button>
@@ -124,7 +124,7 @@ export default function Tasks() {
               const badge = statusBadge(task.status)
               const isRunning = running === task.id
               return (
-                <div key={task.id} className="glass-panel border border-outline-variant/10 rounded-xl p-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group bg-white/80 cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
+                <div key={task.id} className="glass-panel border border-outline-variant/10 rounded-xl p-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group bg-surface-container-lowest/80 cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-md">
                       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -193,7 +193,7 @@ export default function Tasks() {
                     const badge = statusBadge(bt.status)
                     return (
                       <div key={bt.task_id} className="relative">
-                        <div className={`absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 bg-white z-10 ${bt.status === 'running' ? 'border-blue-500 animate-pulse' : bt.status === 'completed' ? 'border-emerald-500' : bt.status === 'failed' ? 'border-red-500' : 'border-outline-variant'}`} />
+                        <div className={`absolute -left-[41px] top-1 w-4 h-4 rounded-full border-2 bg-surface-container-lowest z-10 ${bt.status === 'running' ? 'border-blue-500 animate-pulse' : bt.status === 'completed' ? 'border-emerald-500' : bt.status === 'failed' ? 'border-red-500' : 'border-outline-variant'}`} />
                         <div className="flex justify-between items-start mb-1">
                           <div>
                             <p className={`font-label-sm text-label-sm mb-1 ${badge.bg.includes('blue') ? 'text-blue-500' : badge.bg.includes('emerald') ? 'text-emerald-600' : badge.bg.includes('red') ? 'text-error' : 'text-on-surface-variant'}`}>
@@ -219,7 +219,7 @@ export default function Tasks() {
           {/* Sidebar */}
           <div className="col-span-12 lg:col-span-4 space-y-gutter">
             {/* Calendar Widget */}
-            <div className="bg-white border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
               <div className="flex items-center justify-between mb-lg">
                 <div>
                   <h4 className="font-headline-md text-[18px] text-on-surface">Schedule</h4>
@@ -277,8 +277,8 @@ export default function Tasks() {
                 <h4 className="font-label-md text-on-primary/80 uppercase tracking-widest mb-md">AI Efficiency</h4>
                 <div className="text-display-lg text-[40px] mb-xs">{efficiencyPct}%</div>
                 <p className="font-body-sm text-on-primary/70">Autonomous tasks completed without human intervention this week.</p>
-                <div className="mt-lg h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white" style={{ width: `${efficiencyPct}%` }} />
+                <div className="mt-lg h-2 bg-surface-container-lowest/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-surface-container-lowest" style={{ width: `${efficiencyPct}%` }} />
                 </div>
               </div>
               <div className="absolute -right-8 -bottom-8 opacity-20 transform rotate-12 pointer-events-none">
@@ -313,7 +313,7 @@ export default function Tasks() {
       {selectedTask && (
         <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedTaskId(null)}>
           <div className="bg-black/20 absolute inset-0" />
-          <div className="relative w-[400px] bg-white shadow-2xl border-l border-outline-variant/20 p-xl overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="relative w-[400px] bg-surface-container-lowest shadow-2xl border-l border-outline-variant/20 p-xl overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">
               <h3 className="font-headline-md text-on-surface font-bold">Task Detail</h3>
               <button aria-label="Close drawer" className="p-sm rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={() => setSelectedTaskId(null)}>

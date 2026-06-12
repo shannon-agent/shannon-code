@@ -70,7 +70,7 @@ export default function ExtensionsHub() {
               <h4 className="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">{cat}</h4>
               <div className="flex flex-wrap gap-md">
                 {skills.filter(s => (s.category ?? 'Uncategorized') === cat).map(skill => (
-                  <div key={skill.name} className="group cursor-pointer bg-white border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm">
+                  <div key={skill.name} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorForCategory(cat)}`}>
                       <span className="material-symbols-outlined">{iconForCategory(cat)}</span>
                     </div>

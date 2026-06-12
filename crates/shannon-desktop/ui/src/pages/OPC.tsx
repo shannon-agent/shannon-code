@@ -48,7 +48,7 @@ export default function OPC() {
       <div className="max-w-[1600px] mx-auto animate-in fade-in duration-700">
 
         {/* Mission Statement */}
-        <div className="bg-white/70 backdrop-blur-md rounded-2xl p-xl mb-lg border border-outline-variant/30 relative shadow-sm">
+        <div className="bg-surface-container-lowest/70 backdrop-blur-md rounded-2xl p-xl mb-lg border border-outline-variant/30 relative shadow-sm">
           <div className="flex items-center gap-2 mb-2 uppercase font-label-md text-[13px] tracking-widest text-on-surface-variant font-bold">
             <span className="w-1.5 h-1.5 bg-outline-variant rotate-45 block" />
             Strategic Focus
@@ -70,7 +70,7 @@ export default function OPC() {
             </div>
 
             {agents.length === 0 ? (
-              <div className="bg-white/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-lg text-center">
+              <div className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-lg text-center">
                 <span className="material-symbols-outlined text-[48px] text-outline-variant">group</span>
                 <p className="text-body-sm text-on-surface-variant mt-md">No agents running. Start a team coordination to see agents here.</p>
               </div>
@@ -79,7 +79,7 @@ export default function OPC() {
                 {agents.map(agent => {
                   const isActive = agent.status === 'active' || agent.status === 'running'
                   return (
-                    <div key={agent.id} className="bg-white/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
+                    <div key={agent.id} className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
                       <div className="flex items-center justify-between mb-sm">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -136,7 +136,7 @@ export default function OPC() {
               {/* Pending */}
               <KanbanColumn title="Pending" color="bg-orange-500" count={pendingTasks.length}>
                 {pendingTasks.map(task => (
-                  <div key={task.id} className="bg-white rounded-xl p-md border border-error/20 shadow-sm mb-3 ring-1 ring-error/5 cursor-grab active:cursor-grabbing hover:border-error/40 transition-colors relative">
+                  <div key={task.id} className="bg-surface-container-lowest rounded-xl p-md border border-error/20 shadow-sm mb-3 ring-1 ring-error/5 cursor-grab active:cursor-grabbing hover:border-error/40 transition-colors relative">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-error rounded-l-xl" />
                     <div className="flex justify-between items-start mb-2 ml-1">
                       <span className="font-label-sm text-[10px] font-bold text-on-surface-variant tracking-wider">{task.id.slice(0, 8)}</span>
@@ -158,7 +158,7 @@ export default function OPC() {
               {/* Doing */}
               <KanbanColumn title="Doing" color="bg-primary" count={inProgressTasks.length}>
                 {inProgressTasks.map(task => (
-                  <div key={task.id} className="bg-white rounded-xl p-md border border-primary/20 shadow-sm mb-3 cursor-pointer hover:border-primary/50 transition-colors relative">
+                  <div key={task.id} className="bg-surface-container-lowest rounded-xl p-md border border-primary/20 shadow-sm mb-3 cursor-pointer hover:border-primary/50 transition-colors relative">
                     <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl" />
                     <div className="flex justify-between items-center mb-2 ml-1">
                       <span className="font-label-sm text-[10px] font-bold text-primary tracking-wider">{task.id.slice(0, 8)}</span>
@@ -183,7 +183,7 @@ export default function OPC() {
               {/* Done */}
               <KanbanColumn title="Done" color="bg-green-500" count={doneTasks.length}>
                 {doneTasks.map(task => (
-                  <Link key={task.id} to="/opc/task" className="block bg-white rounded-xl p-3 border border-green-500/20 shadow-sm mb-3 cursor-pointer hover:bg-surface-bright transition-colors bg-green-50/30">
+                  <Link key={task.id} to="/opc/task" className="block bg-surface-container-lowest rounded-xl p-3 border border-green-500/20 shadow-sm mb-3 cursor-pointer hover:bg-surface-bright transition-colors bg-green-50/30">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
@@ -233,7 +233,7 @@ function KanbanColumn({ title, color, count, children }: { title: string; color:
 
 function KanbanCard({ task }: { task: { id: string; title: string; description?: string; assignee?: string; priority?: string } }) {
   return (
-    <div className="bg-white rounded-xl p-md border border-outline-variant/30 shadow-sm mb-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group/card">
+    <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/30 shadow-sm mb-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all group/card">
       <div className="flex justify-between items-start mb-2">
         <span className="font-label-sm text-[10px] font-bold text-on-surface-variant tracking-wider">{task.id.slice(0, 8)}</span>
         {task.priority ? (

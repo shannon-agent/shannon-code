@@ -44,7 +44,7 @@ export default function GeneralSettings() {
 
       <div className="space-y-lg">
         {/* Autonomy Level */}
-        <section className="bg-white rounded-xl border border-outline-variant/30 p-xl shadow-sm transition-all hover:shadow-md">
+        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-xl shadow-sm transition-all hover:shadow-md">
           <div className="flex items-center gap-md mb-xs">
             <span className="material-symbols-outlined text-primary" style={{fontVariationSettings: "'FILL' 1"}}>auto_awesome</span>
             <h3 className="font-headline-md text-headline-md">Approval Mode</h3>
@@ -75,7 +75,7 @@ export default function GeneralSettings() {
         </section>
 
         {/* Session Info */}
-        <section className="bg-white rounded-xl border border-outline-variant/30 p-xl shadow-sm">
+        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-xl shadow-sm">
           <h3 className="font-headline-md text-headline-md mb-md">Provider</h3>
           <div className="space-y-sm">
             <div className="flex justify-between items-center py-sm">

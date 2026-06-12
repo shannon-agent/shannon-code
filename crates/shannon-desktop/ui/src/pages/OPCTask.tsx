@@ -20,7 +20,7 @@ export default function OPCTask() {
           {/* Left Column */}
           <div className="xl:col-span-8 flex flex-col gap-lg">
             {/* Agent Workflow */}
-            <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
+            <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center gap-2 mb-8">
                 <span className="material-symbols-outlined text-[20px] text-on-surface">account_tree</span>
                 <h3 className="font-headline-md text-[20px] font-bold text-on-surface">Agent Workflow</h3>
@@ -58,7 +58,7 @@ export default function OPCTask() {
 
             {/* Task Description */}
             {task ? (
-              <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
+              <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
                   <span className="material-symbols-outlined text-[20px] text-on-surface">description</span>
                   <h3 className="font-headline-md text-[20px] font-bold text-on-surface">Task Description</h3>
@@ -79,14 +79,14 @@ export default function OPCTask() {
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm text-center">
+              <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm text-center">
                 <span className="material-symbols-outlined text-[48px] text-outline-variant">task_alt</span>
                 <p className="font-body-md text-on-surface-variant mt-md">No task selected. Navigate from the OPC board or Tasks page.</p>
               </div>
             )}
 
             {/* Execution Log */}
-            <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
+            <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[20px] text-on-surface">receipt_long</span>
@@ -103,7 +103,7 @@ export default function OPCTask() {
                   {agents.map((agent, i) => (
                     <div key={agent.id} className="relative flex items-start gap-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 relative z-10 md:ml-2 ${
-                        i === 0 ? 'bg-primary text-white shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-white text-on-surface-variant'
+                        i === 0 ? 'bg-primary text-white shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant'
                       }`}>
                         <span className="material-symbols-outlined text-[16px]">smart_toy</span>
                       </div>
@@ -122,7 +122,7 @@ export default function OPCTask() {
 
             {/* Human-in-the-Loop Review */}
             {hasRunningTasks && (
-              <div className="glass-card bg-white/80 rounded-2xl p-xl border border-amber-200/40 shadow-sm">
+              <div className="glass-card bg-surface-container-lowest/80 rounded-2xl p-xl border border-amber-200/40 shadow-sm">
                 <div className="flex items-center gap-2 mb-6">
                   <span className="material-symbols-outlined text-[20px] text-amber-600">verified_user</span>
                   <h3 className="font-headline-md text-[20px] font-bold text-on-surface">Human-in-the-Loop Review</h3>
@@ -185,7 +185,7 @@ export default function OPCTask() {
           {/* Right Column */}
           <div className="xl:col-span-4 flex flex-col gap-lg">
             {/* Efficiency Metrics */}
-            <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm flex flex-col gap-md">
+            <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm flex flex-col gap-md">
               <div className="flex items-center gap-2 mb-2">
                 <span className="material-symbols-outlined text-[20px] text-primary">monitoring</span>
                 <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Efficiency Metrics</h3>
@@ -225,7 +225,7 @@ export default function OPCTask() {
             </div>
 
             {/* Active Tasks */}
-            <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm flex flex-col gap-md">
+            <div className="bg-surface-container-lowest rounded-2xl p-xl border border-outline-variant/30 shadow-sm flex flex-col gap-md">
               <div className="flex items-center gap-2 mb-2">
                 <span className="material-symbols-outlined text-[20px] text-primary">inventory_2</span>
                 <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Related Tasks</h3>

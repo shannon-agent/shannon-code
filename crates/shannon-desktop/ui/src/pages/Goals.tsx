@@ -22,7 +22,7 @@ export default function Goals() {
   return (
     <div className="flex-1 flex w-full h-full pb-10">
       {/* Sidebar */}
-      <aside className="w-[320px] h-full border-r border-outline-variant/20 bg-surface-container-low/30 flex flex-col overflow-hidden shrink-0">
+      <aside className="hidden md:flex w-[320px] h-full border-r border-outline-variant/20 bg-surface-container-low/30 flex-col overflow-hidden shrink-0">
         <div className="p-md border-b border-outline-variant/20">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[20px]">search</span>
@@ -96,7 +96,7 @@ export default function Goals() {
         {/* Agent Call Path */}
         <div className="flex gap-gutter w-full">
           <div className="w-1/4 max-w-[280px]">
-            <div className="glass-card bg-white/70 p-md rounded-xl sticky top-0">
+            <div className="glass-card bg-surface-container-lowest/70 p-md rounded-xl sticky top-0">
               <h3 className="font-label-md text-on-surface mb-md flex items-center gap-sm">
                 <span className="material-symbols-outlined text-primary text-[20px]">hub</span>
                 Active Agents ({agents.length})
@@ -138,7 +138,7 @@ export default function Goals() {
                     <div className="mt-4 flex flex-col items-center">
                       <div className={`w-4 h-4 rounded-full z-10 ${isDone ? 'border-2 border-emerald-500 bg-background' : isActive ? 'border-2 border-primary bg-primary shadow-lg' : 'border-2 border-outline-variant bg-surface-container-highest'}`} />
                     </div>
-                    <div className={`flex-1 glass-card p-lg rounded-xl transition-all ${isActive ? 'bg-white border-primary/30 ring-1 ring-primary/10 shadow-lg' : isDone ? 'bg-white/70' : 'bg-white/50'}`}>
+                    <div className={`flex-1 glass-card p-lg rounded-xl transition-all ${isActive ? 'bg-surface-container-lowest border-primary/30 ring-1 ring-primary/10 shadow-lg' : isDone ? 'bg-surface-container-lowest/70' : 'bg-surface-container-lowest/50'}`}>
                       <div className="flex items-center gap-md mb-xs">
                         <h4 className={`font-headline-md ${isActive ? 'text-primary' : isDone ? 'text-on-surface' : 'text-on-surface-variant'}`}>{task.title}</h4>
                         <span className={`px-sm py-xs font-label-sm rounded-lg flex items-center gap-1 ${
@@ -172,7 +172,7 @@ export default function Goals() {
         {/* Agent Reasoning - Human-in-the-Loop Approval */}
         {activeTasks.length > 0 && (
           <div className="mt-xl">
-            <div className="glass-card bg-white/80 p-lg rounded-xl border-primary/20">
+            <div className="glass-card bg-surface-container-lowest/80 p-lg rounded-xl border-primary/20">
               <div className="flex items-center gap-sm mb-lg">
                 <span className="material-symbols-outlined text-primary text-[22px]">smart_toy</span>
                 <h3 className="font-headline-md text-on-surface">Agent Reasoning</h3>
@@ -180,7 +180,7 @@ export default function Goals() {
               </div>
               <div className="space-y-lg">
                 {activeTasks.map(task => (
-                  <div key={task.id} className="glass-card bg-white/70 p-md rounded-xl">
+                  <div key={task.id} className="glass-card bg-surface-container-lowest/70 p-md rounded-xl">
                     <div className="flex items-center justify-between mb-sm">
                       <div className="flex items-center gap-sm">
                         <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
@@ -235,8 +235,8 @@ export default function Goals() {
       </div>
 
       {/* Right Sidebar */}
-      <aside className="w-[300px] border-l border-outline-variant/20 bg-surface-container-low/30 p-lg shrink-0 flex flex-col gap-lg">
-        <div className="glass-card bg-white/70 p-lg rounded-xl">
+      <aside className="hidden xl:flex w-[300px] border-l border-outline-variant/20 bg-surface-container-low/30 p-lg shrink-0 flex-col gap-lg">
+        <div className="glass-card bg-surface-container-lowest/70 p-lg rounded-xl">
           <h5 className="font-label-md text-on-surface-variant mb-md">Task Summary</h5>
           <div className="space-y-sm">
             <div className="flex justify-between"><span className="text-body-sm text-on-surface-variant">Active</span><span className="font-label-md text-primary font-bold">{activeTasks.length}</span></div>
@@ -247,8 +247,8 @@ export default function Goals() {
       </aside>
 
       {/* Sticky Bottom Input */}
-      <div className="absolute bottom-0 left-[320px] right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
-        <div className="glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
+      <div className="absolute bottom-0 left-0 md:left-[320px] right-0 xl:right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
+        <div className="glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
           <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
           </Button>

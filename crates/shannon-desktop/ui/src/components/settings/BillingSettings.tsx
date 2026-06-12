@@ -43,7 +43,7 @@ export default function BillingSettings() {
             </div>
             <div className="flex flex-wrap gap-sm">
               {plan.features.map(f => (
-                <span key={f} className="px-sm py-xs bg-white/60 rounded-full text-label-sm text-on-surface-variant">{f}</span>
+                <span key={f} className="px-sm py-xs bg-surface-container-lowest/60 rounded-full text-label-sm text-on-surface-variant">{f}</span>
               ))}
             </div>
             {/* Cost Chart (simple bar visualization) */}
@@ -62,7 +62,7 @@ export default function BillingSettings() {
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
           {/* Token Usage Summary */}
-          <section className="md:col-span-5 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+          <section className="md:col-span-5 bg-surface-container-lowest/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
             <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-lg">Current Session</h3>
             <div className="space-y-md">
               <div className="flex justify-between items-center py-sm border-b border-outline-variant/10">
@@ -89,7 +89,7 @@ export default function BillingSettings() {
           </section>
 
           {/* Cost Overview */}
-          <section className="md:col-span-7 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+          <section className="md:col-span-7 bg-surface-container-lowest/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
             <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-lg">Cost Overview</h3>
             <div className="grid grid-cols-1 gap-lg md:grid-cols-2">
               <div className="flex flex-col items-center text-center">
@@ -131,7 +131,7 @@ export default function BillingSettings() {
           </section>
 
           {/* Token Breakdown */}
-          <section className="md:col-span-12 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+          <section className="md:col-span-12 bg-surface-container-lowest/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
             <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-lg">Token Breakdown</h3>
             <div className="space-y-md">
               <div>
@@ -157,7 +157,7 @@ export default function BillingSettings() {
 
           {/* Billing History */}
           {billingHistory.length > 0 && (
-            <section className="md:col-span-12 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+            <section className="md:col-span-12 bg-surface-container-lowest/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
               <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-lg">Billing History</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">

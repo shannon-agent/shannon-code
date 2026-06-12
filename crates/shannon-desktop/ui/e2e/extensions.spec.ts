@@ -3,31 +3,30 @@ import { test, expect } from '@playwright/test'
 test.describe('Extensions pages', () => {
   test('navigates to extensions hub (skills)', async ({ page }) => {
     await page.goto('/extensions/skills')
-    await expect(page.getByText(/Skills|Extensions Hub/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Available Skills' })).toBeVisible()
   })
 
   test('navigates to my agents page', async ({ page }) => {
     await page.goto('/extensions/agents')
-    await expect(page.getByText(/My Agents/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'My Agents' })).toBeVisible()
   })
 
   test('shows no agents message', async ({ page }) => {
     await page.goto('/extensions/agents')
-    await expect(page.getByText(/No agents running/i)).toBeVisible()
+    await expect(page.getByText(/No agents/i)).toBeVisible()
   })
 
   test('navigates to data sources page', async ({ page }) => {
     await page.goto('/extensions/datasources')
-    await expect(page.getByText(/Data Sources|MCP/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Data Sources' })).toBeVisible()
   })
 
   test('extensions tab navigation works', async ({ page }) => {
     await page.goto('/extensions/skills')
-    // Click the Agents tab if visible
     const agentsTab = page.getByRole('link', { name: /Agents/i }).first()
     if (await agentsTab.isVisible()) {
       await agentsTab.click()
-      await expect(page.getByText(/My Agents/i)).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'My Agents' })).toBeVisible()
     }
   })
 })
@@ -35,7 +34,7 @@ test.describe('Extensions pages', () => {
 test.describe('OPC pages', () => {
   test('navigates to OPC board', async ({ page }) => {
     await page.goto('/opc')
-    await expect(page.getByText(/Strategic Focus|KANBAN/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'KANBAN' })).toBeVisible()
   })
 
   test('OPC board shows kanban columns', async ({ page }) => {
@@ -47,24 +46,24 @@ test.describe('OPC pages', () => {
 
   test('OPC board shows agent swarm section', async ({ page }) => {
     await page.goto('/opc')
-    await expect(page.getByText(/Agent Swarm/i)).toBeVisible()
+    await expect(page.getByText('Agent Swarm')).toBeVisible()
   })
 
   test('navigates to OPC task detail', async ({ page }) => {
     await page.goto('/opc/task')
-    await expect(page.getByText(/Agent Workflow|Execution Log/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Agent Workflow' })).toBeVisible()
   })
 
   test('OPC task shows efficiency metrics', async ({ page }) => {
     await page.goto('/opc/task')
-    await expect(page.getByText(/Efficiency Metrics/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Efficiency Metrics' })).toBeVisible()
   })
 })
 
 test.describe('Goals and Tasks pages', () => {
   test('goals page shows task management heading', async ({ page }) => {
     await page.goto('/goals')
-    await expect(page.getByText(/Task Management/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Task Management/i })).toBeVisible()
   })
 
   test('goals page shows search input', async ({ page }) => {
@@ -74,11 +73,11 @@ test.describe('Goals and Tasks pages', () => {
 
   test('tasks page shows scheduled tasks heading', async ({ page }) => {
     await page.goto('/tasks')
-    await expect(page.getByText(/Scheduled Tasks/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Scheduled Tasks' })).toBeVisible()
   })
 
   test('tasks page shows new task button', async ({ page }) => {
     await page.goto('/tasks')
-    await expect(page.getByRole('button', { name: /New Task|Create Task/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /New Background Task/i })).toBeVisible()
   })
 })

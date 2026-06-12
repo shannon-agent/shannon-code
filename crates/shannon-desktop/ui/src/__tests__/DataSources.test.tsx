@@ -4,17 +4,30 @@ import { AppProvider } from '@/context/AppContext'
 import { MemoryRouter } from 'react-router-dom'
 import DataSources from '@/components/extensions/DataSources'
 
+const mockCtx = vi.hoisted(() => ({
+  mcpServers: [] as any[],
+  refreshMcpServers: vi.fn(),
+}))
+
+vi.mock('@/context/AppContext', () => ({
+  useApp: () => mockCtx,
+}))
+
 function wrap(ui: React.ReactElement) {
   return (
-    <AppProvider>
-      <MemoryRouter>
-        {ui}
-      </MemoryRouter>
-    </AppProvider>
+    <MemoryRouter>
+      {ui}
+    </MemoryRouter>
   )
 }
 
 describe('DataSources page', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockCtx.mcpServers = []
+    mockCtx.refreshMcpServers.mockResolvedValue(undefined)
+  })
+
   it('renders data sources heading', () => {
     render(wrap(<DataSources />))
     expect(screen.getByText('Data Sources')).toBeInTheDocument()
@@ -59,5 +72,43 @@ describe('DataSources page', () => {
   it('renders add new source card', () => {
     render(wrap(<DataSources />))
     expect(screen.getByText('Add New Source')).toBeInTheDocument()
+  })
+
+  it('renders server cards when servers exist', () => {
+    mockCtx.mcpServers = [
+      { name: 'test-server', connected: true, tool_count: 5, command: 'npx test' },
+    ]
+    render(wrap(<DataSources />))
+    expect(screen.getByText('test-server')).toBeInTheDocument()
+    expect(screen.getByText('Connected')).toBeInTheDocument()
+    expect(screen.getByText('5 tools')).toBeInTheDocument()
+  })
+
+  it('shows disconnected state for offline servers', () => {
+    mockCtx.mcpServers = [
+      { name: 'offline-server', connected: false, tool_count: 0, command: 'npx broken' },
+    ]
+    render(wrap(<DataSources />))
+    expect(screen.getByText('offline-server')).toBeInTheDocument()
+    expect(screen.getByText('Disconnected')).toBeInTheDocument()
+  })
+
+  it('calls restartMcpServer on restart click', async () => {
+    mockCtx.mcpServers = [
+      { name: 'test-server', connected: true, tool_count: 5, command: 'npx test' },
+    ]
+    render(wrap(<DataSources />))
+    const restartBtn = screen.getByText('sync')
+    fireEvent.click(restartBtn)
+    const api = await import('@/lib/tauri-api')
+    expect(api.restartMcpServer).toHaveBeenCalledWith('test-server')
+  })
+
+  it('validates required fields on add', async () => {
+    render(wrap(<DataSources />))
+    fireEvent.click(screen.getByText('Add Source'))
+    fireEvent.click(screen.getByText('Add Server'))
+    const api = await import('@/lib/tauri-api')
+    expect(api.addMcpServer).not.toHaveBeenCalled()
   })
 })

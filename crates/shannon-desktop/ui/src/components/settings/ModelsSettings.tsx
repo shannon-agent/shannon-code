@@ -37,7 +37,7 @@ export default function ModelsSettings() {
 
       <div className="space-y-lg">
         {/* Performance Strategy */}
-        <section className="bg-white border border-outline-variant/30 rounded-xl p-lg shadow-sm">
+        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-md">Performance Strategy</h3>
           <div className="flex bg-surface-container-low p-xs rounded-xl gap-xs max-w-2xl">
             {(['balanced', 'speed', 'high-quality'] as const).map(s => (
@@ -61,7 +61,7 @@ export default function ModelsSettings() {
         </section>
 
         {/* Active Model */}
-        <section className="bg-white border border-outline-variant/30 rounded-xl p-lg shadow-sm">
+        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-md">Active Model</h3>
           {currentModel ? (
             <div className="p-md rounded-xl border-2 border-primary bg-primary-container/5 flex items-center justify-between transition-all">
@@ -84,7 +84,7 @@ export default function ModelsSettings() {
         </section>
 
         {/* Provider Tabs */}
-        <section className="bg-white border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
+        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-outline-variant/30 bg-surface-container-low/30 px-lg pt-md">
             <div className="flex gap-lg overflow-x-auto">
               {providers.map(p => (
@@ -155,7 +155,7 @@ export default function ModelsSettings() {
                 </Button>
               </div>
               <Button
-                className="px-lg py-sm border border-outline-variant bg-white text-on-surface font-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer"
+                className="px-lg py-sm border border-outline-variant bg-surface-container-lowest text-on-surface font-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer"
                 onClick={() => refreshModels()}
               >
                 <span className="material-symbols-outlined text-[18px]">sync</span>
@@ -166,7 +166,7 @@ export default function ModelsSettings() {
         </section>
 
         {/* Global Parameters */}
-        <section className="bg-white border border-outline-variant/30 rounded-xl p-lg shadow-sm">
+        <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-lg">Global Parameters</h3>
           <p className="text-body-sm text-on-surface-variant mb-xl -mt-md">These settings apply to the default model unless overridden at the agent level.</p>
           <div className="space-y-xl max-w-2xl">

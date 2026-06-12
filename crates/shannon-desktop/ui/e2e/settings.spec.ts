@@ -2,35 +2,36 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Settings pages', () => {
   test('navigates to settings general page', async ({ page }) => {
-    await page.goto('/')
-    await page.getByText('Settings').first().click()
-    await expect(page.getByText(/System Settings|General/i)).toBeVisible()
+    await page.goto('/settings/general')
+    await expect(page.getByRole('heading', { name: /System Settings|General/i })).toBeVisible()
   })
 
   test('navigates to theme settings', async ({ page }) => {
     await page.goto('/settings/theme')
-    await expect(page.getByText(/Theme|Appearance/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Theme Settings' })).toBeVisible()
   })
 
   test('navigates to models settings', async ({ page }) => {
     await page.goto('/settings/models')
-    await expect(page.getByText(/Model|Provider/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Model Configuration' })).toBeVisible()
   })
 
   test('navigates to billing settings', async ({ page }) => {
     await page.goto('/settings/billing')
-    await expect(page.getByText(/Billing|Usage/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Usage.*Billing/i })).toBeVisible()
   })
 
   test('navigates to advanced settings', async ({ page }) => {
     await page.goto('/settings/advanced')
-    await expect(page.getByText(/Advanced|Configuration/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Advanced Settings' })).toBeVisible()
   })
 
   test('settings sub-navigation is visible', async ({ page }) => {
     await page.goto('/settings/general')
-    const subLinks = page.locator('aside a[href*="/settings/"]')
-    const count = await subLinks.count()
+    // Settings sub-nav is collapsed by default — click to expand
+    await page.getByRole('button', { name: /Settings/i }).click()
+    const links = page.locator('aside a[href*="/settings/"]')
+    const count = await links.count()
     expect(count).toBeGreaterThanOrEqual(4)
   })
 })

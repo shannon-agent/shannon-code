@@ -33,7 +33,7 @@ export const Sidebar = memo(function Sidebar() {
     );
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-[280px] bg-white/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md z-50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+    <aside className="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md z-50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
       <div className="flex items-center gap-3 mb-xl px-2">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
           <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>hub</span>

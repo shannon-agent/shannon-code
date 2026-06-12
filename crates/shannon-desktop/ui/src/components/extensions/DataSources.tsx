@@ -58,7 +58,7 @@ export default function DataSources() {
 
       {/* Add Form */}
       {adding && (
-        <div className="mb-lg bg-white border border-primary/30 rounded-xl p-lg shadow-sm">
+        <div className="mb-lg bg-surface-container-lowest border border-primary/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-md">Add MCP Server</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-md mb-md">
             <Input className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm font-body-sm" placeholder="Name (e.g. my-server)" value={newName} onChange={e => setNewName(e.target.value)} />
@@ -116,7 +116,7 @@ function McpServerCard({ server, restarting, onRestart, onRemove }: {
   const statusBg = server.connected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
 
   return (
-    <div className={`col-span-12 md:col-span-6 lg:col-span-4 bg-white border rounded-xl p-md shadow-sm hover:shadow-md transition-shadow ${server.connected ? 'border-outline-variant/50' : 'border-error/20'}`}>
+    <div className={`col-span-12 md:col-span-6 lg:col-span-4 bg-surface-container-lowest border rounded-xl p-md shadow-sm hover:shadow-md transition-shadow ${server.connected ? 'border-outline-variant/50' : 'border-error/20'}`}>
       <div className="flex items-center justify-between mb-md">
         <div className="flex items-center gap-md">
           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${server.connected ? 'bg-primary/10 text-primary' : 'bg-red-100 text-red-600'}`}>

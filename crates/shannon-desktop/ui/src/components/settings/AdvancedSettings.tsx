@@ -43,7 +43,7 @@ export default function AdvancedSettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
         {/* Memory Management */}
-        <div className="bg-white p-lg rounded-xl shadow-sm border border-outline-variant/30 group hover:shadow-md transition-shadow">
+        <div className="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 group hover:shadow-md transition-shadow">
           <div className="flex items-center gap-md mb-md">
             <div className="p-2 bg-primary/10 rounded-lg text-primary flex items-center justify-center">
               <span className="material-symbols-outlined">memory</span>
@@ -71,7 +71,7 @@ export default function AdvancedSettings() {
         </div>
 
         {/* Data Privacy */}
-        <div className="bg-white p-lg rounded-xl shadow-sm border border-outline-variant/30 group hover:shadow-md transition-shadow">
+        <div className="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 group hover:shadow-md transition-shadow">
           <div className="flex items-center gap-md mb-md">
             <div className="p-2 bg-secondary/10 rounded-lg text-secondary flex items-center justify-center">
               <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>security</span>
@@ -98,7 +98,7 @@ export default function AdvancedSettings() {
         </div>
 
         {/* Developer Options */}
-        <div className="bg-white p-lg rounded-xl shadow-sm border border-outline-variant/30 lg:col-span-2 group hover:shadow-md transition-shadow">
+        <div className="bg-surface-container-lowest p-lg rounded-xl shadow-sm border border-outline-variant/30 lg:col-span-2 group hover:shadow-md transition-shadow">
           <div className="flex items-center gap-md mb-md">
             <div className="p-2 bg-tertiary/10 rounded-lg text-tertiary flex items-center justify-center">
               <span className="material-symbols-outlined">terminal</span>

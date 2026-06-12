@@ -67,7 +67,7 @@ export default function Chat() {
   return (
     <div className="flex-1 flex w-full h-full relative">
       {/* Left Sidebar - Session History */}
-      <aside className="w-[240px] border-r border-outline-variant/10 flex flex-col glass-panel shrink-0 bg-white/40">
+      <aside className="hidden md:flex w-[240px] border-r border-outline-variant/10 flex-col glass-panel shrink-0 bg-surface-container-lowest/40">
         <div className="p-md border-b border-outline-variant/10">
           <Button
             className="w-full py-2 bg-primary text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:shadow-md active:scale-95 transition-all"
@@ -142,7 +142,7 @@ export default function Chat() {
       </aside>
 
       {/* Main Chat Canvas */}
-      <section className="flex-1 flex flex-col relative bg-white/40 overflow-hidden">
+      <section className="flex-1 flex flex-col relative bg-surface-container-lowest/40 overflow-hidden">
         {/* Message Area */}
         <ScrollArea className="flex-1 p-xl space-y-xl pb-32">
           {messages.length === 0 && !streamingText && (
@@ -180,7 +180,7 @@ export default function Chat() {
                   <ToolCallDisplay key={tc.tool_use_id} toolCall={tc} />
                 ))}
                 {streamingText && (
-                  <div className="bg-white px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
+                  <div className="bg-surface-container-lowest px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
                     <p className="font-body-md text-on-surface whitespace-pre-wrap">{streamingText}<span className="inline-block w-2 h-5 bg-primary/60 ml-xs animate-pulse align-text-bottom"></span></p>
                   </div>
                 )}
@@ -201,7 +201,7 @@ export default function Chat() {
         <div className="absolute bottom-6 md:bottom-12 w-full px-lg md:px-xl py-lg bg-gradient-to-t from-background via-background/90 to-transparent">
           <div className="max-w-4xl mx-auto relative group">
             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full opacity-50 group-focus-within:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
+            <div className="relative glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
               <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
                 <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
               </Button>
@@ -237,7 +237,7 @@ export default function Chat() {
       </section>
 
       {/* Right Sidebar - Context */}
-      <aside className="w-[300px] border-l border-outline-variant/10 glass-panel shrink-0 p-lg overflow-y-auto bg-white/50 hidden lg:block">
+      <aside className="w-[300px] border-l border-outline-variant/10 glass-panel shrink-0 p-lg overflow-y-auto bg-surface-container-lowest/50 hidden lg:block">
         <div className="space-y-xl">
           {/* Token Usage */}
           {usage && (
@@ -344,7 +344,7 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
         <span className="material-symbols-outlined text-on-primary-container">smart_toy</span>
       </div>
       <div className="space-y-md flex-1">
-        <div className="bg-white px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
+        <div className="bg-surface-container-lowest px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
           <p className="font-body-md text-on-surface whitespace-pre-wrap">{message.content}</p>
           {message.tool_calls && message.tool_calls.length > 0 && (
             <div className="mt-md space-y-sm">

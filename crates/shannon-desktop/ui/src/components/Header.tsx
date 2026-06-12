@@ -96,7 +96,7 @@ export function Header() {
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
             </Button>
             {modelOpen && models.length > 0 && (
-              <div className="absolute right-0 top-full mt-sm w-[280px] bg-white/95 backdrop-blur-lg rounded-xl border border-outline-variant/20 shadow-xl z-50 py-sm">
+              <div className="absolute right-0 top-full mt-sm w-[280px] bg-surface-container-lowest/95 backdrop-blur-lg rounded-xl border border-outline-variant/20 shadow-xl z-50 py-sm">
                 {models.map(m => (
                   <button
                     key={m.id}
@@ -126,7 +126,7 @@ export function Header() {
       {/* Permission Modal */}
       {permissionRequest && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl border border-outline-variant/20 p-xl max-w-md w-full mx-md">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/20 p-xl max-w-md w-full mx-md">
             <div className="flex items-center gap-md mb-lg">
               <div className="h-10 w-10 rounded-full bg-tertiary-container flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-tertiary-container">shield</span>

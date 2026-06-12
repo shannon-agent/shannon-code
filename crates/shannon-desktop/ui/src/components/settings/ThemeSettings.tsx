@@ -12,7 +12,7 @@ export default function ThemeSettings() {
 
       <div className="space-y-lg pb-10">
         {/* Theme Selection */}
-        <section className="bg-white rounded-xl border border-outline-variant/30 p-xl shadow-sm">
+        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-xl shadow-sm">
           <h3 className="font-headline-md text-headline-md mb-md">Theme</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-md">
             {themes.map(t => (
@@ -37,7 +37,7 @@ export default function ThemeSettings() {
         </section>
 
         {/* Active Theme Info */}
-        <section className="bg-white rounded-xl border border-outline-variant/30 p-xl shadow-sm">
+        <section className="bg-surface-container-lowest rounded-xl border border-outline-variant/30 p-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-headline-md text-headline-md">Active Theme</h3>
