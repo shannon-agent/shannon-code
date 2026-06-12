@@ -238,7 +238,7 @@ export default function OPCTask() {
                 <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Related Tasks</h3>
               </div>
               {tasks.slice(0, 5).map(t => (
-                <div key={t.id} className="border border-outline-variant/30 rounded-xl p-md flex items-start gap-md hover:border-primary/40 hover:bg-surface-container-lowest transition-colors cursor-pointer group">
+                <Link key={t.id} to="/opc/task" className="border border-outline-variant/30 rounded-xl p-md flex items-start gap-md hover:border-primary/40 hover:bg-surface-container-lowest transition-colors cursor-pointer group focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none">
                   <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant group-hover:text-primary group-hover:bg-primary/10 transition-colors">
                     <span className="material-symbols-outlined text-[20px]">task_alt</span>
                   </div>
@@ -246,7 +246,7 @@ export default function OPCTask() {
                     <div className="font-label-md text-[14px] font-bold text-on-surface mb-0.5 group-hover:text-primary transition-colors">{t.title}</div>
                     <span className={`font-label-sm text-[11px] ${t.status === 'completed' ? 'text-tertiary' : t.status === 'in_progress' || t.status === 'running' ? 'text-primary' : 'text-on-surface-variant'}`}>{t.status}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>

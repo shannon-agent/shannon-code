@@ -259,7 +259,7 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
         {/* Status bar */}
         {status && (
           <div className="mt-sm px-2 py-sm flex items-center gap-sm text-label-sm text-on-surface-variant">
-            <span className="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+            <span className="w-2 h-2 rounded-full bg-tertiary shrink-0"></span>
             <span className="truncate">{status.model}</span>
           </div>
         )}

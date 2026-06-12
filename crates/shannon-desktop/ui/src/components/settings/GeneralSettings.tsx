@@ -59,6 +59,7 @@ export default function GeneralSettings() {
             <input
               className="w-full appearance-none bg-outline-variant/30 h-1 rounded-full cursor-pointer outline-none slider-thumb-primary"
               max={APPROVAL_MODES.length - 1} min={0} type="range" value={approvalMode}
+              aria-valuenow={approvalMode} aria-valuemin={0} aria-valuemax={APPROVAL_MODES.length - 1}
               onChange={e => handleModeChange(Number(e.target.value))}
             />
             <div className="flex justify-between font-label-sm text-outline px-1">

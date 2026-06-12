@@ -180,7 +180,7 @@ function McpServerCard({ server, restarting, onRestart, onRemove }: {
             <span className="material-symbols-outlined text-[16px]">sync</span>
           )}
         </Button>
-        <Button variant="ghost" className="py-xs rounded-lg text-on-surface-variant hover:text-error cursor-pointer" onClick={() => onRemove(server.name)}>
+        <Button variant="ghost" aria-label="Remove server" className="py-xs rounded-lg text-on-surface-variant hover:text-error cursor-pointer" onClick={() => onRemove(server.name)}>
           <span className="material-symbols-outlined text-[16px]">delete</span>
         </Button>
       </div>

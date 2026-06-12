@@ -180,7 +180,7 @@ export default function Chat() {
                       <HighlightText text={session.title || 'Untitled'} query={sessionSearch} />
                     </p>
                     <div className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <button className="p-xs rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={e => { e.stopPropagation(); togglePin(session.id) }} title={pinnedIds.has(session.id) ? 'Unpin' : 'Pin'}>
+                      <button className="p-xs rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={e => { e.stopPropagation(); togglePin(session.id) }} title={pinnedIds.has(session.id) ? 'Unpin' : 'Pin'} aria-pressed={pinnedIds.has(session.id)}>
                         <span className="material-symbols-outlined text-[14px]">{pinnedIds.has(session.id) ? 'push_pin' : 'keep'}</span>
                       </button>
                       <button className="p-xs rounded hover:bg-surface-container text-on-surface-variant hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none" onClick={e => { e.stopPropagation(); handleExport(session.id) }} title="Export">
