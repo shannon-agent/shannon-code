@@ -43,10 +43,10 @@ export default function ExtensionsHub() {
 
   const colorForCategory = (cat: string) => {
     switch (cat.toLowerCase()) {
-      case 'productivity': return 'bg-blue-100 text-blue-600'
-      case 'design': return 'bg-purple-100 text-purple-600'
-      case 'data': case 'analysis': return 'bg-green-100 text-green-600'
-      case 'code': return 'bg-orange-100 text-orange-600'
+      case 'productivity': return 'bg-primary/10 text-primary'
+      case 'design': return 'bg-secondary/10 text-secondary'
+      case 'data': case 'analysis': return 'bg-tertiary/10 text-tertiary'
+      case 'code': return 'bg-orange-500/10 text-orange-600'
       default: return 'bg-surface-container-high text-on-surface-variant'
     }
   }
