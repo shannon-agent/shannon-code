@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
 import * as api from '@/lib/tauri-api'
@@ -14,7 +15,7 @@ export default function ExtensionsHub() {
   useEffect(() => {
     api.listSkills()
       .then(setSkills)
-      .catch(e => console.warn('Failed to load skills:', e))
+      .catch(e => { console.warn('Failed to load skills:', e); toast.error('Failed to load skills') })
       .finally(() => setLoading(false))
   }, [])
 

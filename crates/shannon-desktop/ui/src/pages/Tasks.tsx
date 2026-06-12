@@ -67,8 +67,9 @@ export default function Tasks() {
     try {
       setErrorMsg(null)
       await api.startBackgroundTask(`Execute task: ${tasks.find(t => t.id === id)?.title ?? id}`)
+      toast.success('Task started')
       await refreshTasks()
-    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to run task') }
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to run task'); toast.error('Failed to run task') }
     setTimeout(() => setRunning(null), 1500)
   }
 
