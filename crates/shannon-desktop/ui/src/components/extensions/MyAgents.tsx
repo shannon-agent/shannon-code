@@ -1,8 +1,15 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 
 export default function MyAgents() {
-  const { agents, backgroundTasks } = useApp()
+  const { agents, backgroundTasks, sendMessage } = useApp()
+  const navigate = useNavigate()
+  const [configuring, setConfiguring] = useState<string | null>(null)
+  const [showAddAgent, setShowAddAgent] = useState(false)
+  const [newAgentPrompt, setNewAgentPrompt] = useState('')
+  const [showMenu, setShowMenu] = useState<string | null>(null)
 
   const statusFor = (status: string) => {
     switch (status) {
@@ -110,23 +117,57 @@ export default function MyAgents() {
                   </div>
 
                   <div className="mt-auto pt-md border-t border-outline-variant flex gap-sm">
-                    <Button variant="ghost" className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer">Configure</Button>
-                    <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+                    <Button variant="ghost" className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer" onClick={() => setConfiguring(configuring === agent.id ? null : agent.id)}>
+                      {configuring === agent.id ? 'Close' : 'Configure'}
+                    </Button>
+                    <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center relative" onClick={() => setShowMenu(showMenu === agent.id ? null : agent.id)}>
                       <span className="material-symbols-outlined">more_horiz</span>
+                      {showMenu === agent.id && (
+                        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg shadow-lg py-xs z-10 min-w-[140px]">
+                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Show status of agent ${agent.name}`); setShowMenu(null) }}>View Status</button>
+                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Stop agent ${agent.name}`); setShowMenu(null) }}>Stop Agent</button>
+                        </div>
+                      )}
                     </Button>
                   </div>
+                  {configuring === agent.id && (
+                    <div className="mt-sm p-sm bg-surface-container-low rounded-lg text-label-sm text-on-surface-variant">
+                      <p>Configuration for <strong className="text-on-surface">{agent.name}</strong></p>
+                      <p className="mt-xs opacity-70">Model: {agent.model || 'Default'}</p>
+                    </div>
+                  )}
                 </div>
               )
             })}
 
             {/* Add New Agent */}
-            <div className="border-2 border-dashed border-outline-variant p-lg rounded-xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary/50 transition-colors">
-              <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container/20 group-hover:text-primary transition-colors mb-md">
-                <span className="material-symbols-outlined text-[32px]">add</span>
+            {!showAddAgent ? (
+              <div className="border-2 border-dashed border-outline-variant p-lg rounded-xl flex flex-col items-center justify-center text-center group cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setShowAddAgent(true)}>
+                <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant group-hover:bg-primary-container/20 group-hover:text-primary transition-colors mb-md">
+                  <span className="material-symbols-outlined text-[32px]">add</span>
+                </div>
+                <h3 className="text-body-lg font-bold">New Specialization</h3>
+                <p className="text-label-md text-on-surface-variant max-w-[200px]">Define a custom prompt or import a model to create a new agent.</p>
               </div>
-              <h3 className="text-body-lg font-bold">New Specialization</h3>
-              <p className="text-label-md text-on-surface-variant max-w-[200px]">Define a custom prompt or import a model to create a new agent.</p>
-            </div>
+            ) : (
+              <div className="border-2 border-primary/30 p-lg rounded-xl flex flex-col gap-md">
+                <h3 className="text-body-lg font-bold">Create New Agent</h3>
+                <textarea
+                  className="w-full h-24 p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                  placeholder="Describe the agent's role and capabilities..."
+                  value={newAgentPrompt}
+                  onChange={e => setNewAgentPrompt(e.target.value)}
+                />
+                <div className="flex gap-sm">
+                  <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={() => { if (newAgentPrompt.trim()) { sendMessage(`Create agent: ${newAgentPrompt}`); setNewAgentPrompt(''); setShowAddAgent(false) } }}>
+                    Create Agent
+                  </Button>
+                  <Button variant="ghost" className="py-2 px-md rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => { setShowAddAgent(false); setNewAgentPrompt('') }}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Performance Section */}
@@ -170,7 +211,7 @@ export default function MyAgents() {
               <div className="mt-lg h-2 bg-surface-container-high rounded-full overflow-hidden">
                 <div className="h-full bg-primary rounded-full" style={{ width: totalTasks > 0 ? `${(completedTasks / totalTasks) * 100}%` : '0%' }} />
               </div>
-              <Button variant="ghost" className="w-full mt-lg text-primary text-label-md font-bold hover:underline cursor-pointer text-left">View All Tasks →</Button>
+              <Button variant="ghost" className="w-full mt-lg text-primary text-label-md font-bold hover:underline cursor-pointer text-left" onClick={() => navigate('/tasks')}>View All Tasks →</Button>
             </div>
           </section>
         </>

@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 
+type FilterStatus = 'all' | 'pending' | 'running' | 'completed'
+
 export default function Tasks() {
   const { tasks, backgroundTasks, agents, refreshTasks } = useApp()
   const [running, setRunning] = useState<string | null>(null)
@@ -10,27 +12,49 @@ export default function Tasks() {
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
   const [showFilters, setShowFilters] = useState(false)
   const [calendarView, setCalendarView] = useState(false)
+  const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? backgroundTasks.find(t => t.task_id === selectedTaskId) : null
+
+  const statusMatchesFilter = (status: string): boolean => {
+    if (activeFilter === 'all') return true
+    if (activeFilter === 'pending') return status === 'pending' || status === 'todo'
+    if (activeFilter === 'running') return status === 'running' || status === 'in_progress'
+    if (activeFilter === 'completed') return status === 'completed'
+    return true
+  }
+
+  const filteredTasks = tasks.filter(t => statusMatchesFilter(t.status))
 
   const handleStartTask = async () => {
     const taskPrompt = window.prompt('Enter a task prompt for background execution:')
     if (!taskPrompt) return
     try {
+      setErrorMsg(null)
       await api.startBackgroundTask(taskPrompt)
       await refreshTasks()
-    } catch (e) { console.warn("Tasks error:", e) }
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to start task') }
   }
 
   const handleCancelTask = async (id: string) => {
-    try { await api.cancelBackgroundTask(id) } catch (e) { console.warn("Tasks error:", e) }
+    try {
+      setErrorMsg(null)
+      await api.cancelBackgroundTask(id)
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to cancel task') }
     await refreshTasks()
   }
 
   const handleRunNow = async (id: string) => {
     setRunning(id)
-    setTimeout(() => setRunning(null), 2000)
+    try {
+      setErrorMsg(null)
+      await api.startBackgroundTask(`Execute task: ${tasks.find(t => t.id === id)?.title ?? id}`)
+      await refreshTasks()
+    } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to run task') }
+    setTimeout(() => setRunning(null), 1500)
   }
 
   const statusBadge = (status: string) => {
@@ -99,28 +123,173 @@ export default function Tasks() {
           </div>
         </div>
 
+        {errorMsg && (
+          <div className="flex items-center gap-sm px-md py-sm rounded-xl bg-red-50 border border-red-200 text-red-700 font-label-md mb-lg">
+            <span className="material-symbols-outlined text-[18px]">error</span>
+            {errorMsg}
+            <button className="ml-auto text-red-400 hover:text-red-600 cursor-pointer" onClick={() => setErrorMsg(null)}>
+              <span className="material-symbols-outlined text-[18px]">close</span>
+            </button>
+          </div>
+        )}
+
         {showFilters && (
           <div className="flex gap-sm mb-lg flex-wrap">
-            {['All', 'Pending', 'Running', 'Completed'].map(status => (
-              <Button key={status} variant="ghost" className="px-sm py-xs rounded-full text-label-sm bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
-                {status}
+            {([['all', 'All'], ['pending', 'Pending'], ['running', 'Running'], ['completed', 'Completed']] as const).map(([value, label]) => (
+              <Button key={value} variant="ghost" onClick={() => setActiveFilter(value as FilterStatus)} className={`px-sm py-xs rounded-full text-label-sm transition-colors cursor-pointer ${activeFilter === value ? 'bg-primary/10 text-primary font-bold' : 'bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-primary/10'}`}>
+                {label}
               </Button>
             ))}
           </div>
         )}
 
-        {/* Bento Grid */}
+        {/* Calendar View or List View */}
+        {calendarView ? (
+          <div className="space-y-lg">
+            {/* Full-Width Calendar Grid */}
+            <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
+              <div className="grid grid-cols-7 text-center mb-sm">
+                {dayNames.map(d => <span key={d} className="text-[11px] font-bold text-outline uppercase py-sm">{d}</span>)}
+              </div>
+              <div className="grid grid-cols-7 gap-1">
+                {Array.from({ length: startDay }, (_, i) => (
+                  <div key={`prev-${i}`} className="min-h-[80px] p-xs rounded-lg" />
+                ))}
+                {Array.from({ length: daysInMonth }, (_, i) => {
+                  const day = i + 1
+                  const isToday = viewMonth === today.getMonth() && viewYear === today.getFullYear() && day === today.getDate()
+                  const dayTasks = filteredTasks.filter(t => {
+                    if (t.status === 'running' || t.status === 'in_progress') return true
+                    if (t.status === 'completed') return true
+                    return t.status === 'pending'
+                  })
+                  const isSelected = selectedDay === day
+                  return (
+                    <div
+                      key={day}
+                      className={`min-h-[80px] p-xs rounded-lg border cursor-pointer transition-all ${
+                        isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary/20' :
+                        isToday ? 'border-primary/30 bg-primary/5' :
+                        'border-outline-variant/10 hover:bg-surface-container-low'
+                      }`}
+                      onClick={() => setSelectedDay(isSelected ? null : day)}
+                    >
+                      <div className={`text-[12px] font-bold mb-xs ${isToday ? 'w-6 h-6 rounded-full bg-primary text-on-primary flex items-center justify-center' : 'text-on-surface-variant'}`}>
+                        {day}
+                      </div>
+                      <div className="space-y-0.5">
+                        {dayTasks.slice(0, 3).map((t, ti) => (
+                          <div key={ti} className={`h-1 rounded-full ${
+                            t.status === 'running' || t.status === 'in_progress' ? 'bg-primary' :
+                            t.status === 'completed' ? 'bg-emerald-500' :
+                            'bg-outline-variant'
+                          }`} />
+                        ))}
+                        {dayTasks.length > 3 && <span className="text-[9px] text-on-surface-variant">+{dayTasks.length - 3}</span>}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Tasks for Selected Day */}
+            {selectedDay !== null && (
+              <div>
+                <h4 className="font-label-md text-label-md text-outline uppercase tracking-[0.1em] mb-md pl-xs">
+                  {monthNames[viewMonth]} {selectedDay} — Tasks
+                </h4>
+                <div className="space-y-md">
+                  {filteredTasks.length === 0 ? (
+                    <p className="text-body-sm text-on-surface-variant text-center py-lg">No tasks for this view.</p>
+                  ) : (
+                    filteredTasks.slice(0, 5).map(task => {
+                      const badge = statusBadge(task.status)
+                      return (
+                        <div key={task.id} className="glass-panel border border-outline-variant/10 rounded-xl p-md shadow-sm hover:shadow-md transition-all group bg-surface-container-lowest/80 cursor-pointer" onClick={() => setSelectedTaskId(task.id)}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-md">
+                              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                                <span className="material-symbols-outlined text-[24px]">task_alt</span>
+                              </div>
+                              <div>
+                                <h3 className="font-body-lg font-semibold text-on-surface group-hover:text-primary transition-colors">{task.title}</h3>
+                                {task.assignee ? <span className="font-label-sm text-on-surface-variant">{task.assignee}</span> : null}
+                              </div>
+                            </div>
+                            <div className={`flex items-center gap-xs px-sm py-1 rounded-full border ${badge.bg}`}>
+                              <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
+                              <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">{badge.label}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Widgets in Calendar Mode */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+              <div className="bg-primary overflow-hidden rounded-2xl relative p-lg text-on-primary">
+                <div className="relative z-10">
+                  <h4 className="font-label-md text-on-primary/80 uppercase tracking-widest mb-md">AI Efficiency</h4>
+                  <div className="text-display-lg text-[40px] mb-xs">{efficiencyPct}%</div>
+                  <div className="mt-lg h-2 bg-surface-container-lowest/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-surface-container-lowest" style={{ width: `${efficiencyPct}%` }} />
+                  </div>
+                </div>
+              </div>
+              {agentAllocs.length > 0 ? (
+                <div className="bg-surface-container-low rounded-2xl p-lg border border-outline-variant/20">
+                  <h4 className="font-headline-md text-[16px] text-on-surface mb-md">Agent Allocation</h4>
+                  <div className="space-y-sm">
+                    {agentAllocs.map(a => (
+                      <div key={a.name}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-body-sm text-on-surface-variant">{a.name}</span>
+                          <span className={`font-label-md ${a.textColor}`}>{a.pct}%</span>
+                        </div>
+                        <div className="w-full h-1 bg-outline-variant/30 rounded-full">
+                          <div className={`h-full ${a.color} rounded-full`} style={{ width: `${a.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-lg">
+                <h4 className="font-headline-md text-[16px] text-on-surface mb-md">Active Now</h4>
+                <div className="space-y-md">
+                  {tasks.filter(t => t.status === 'running' || t.status === 'in_progress').slice(0, 3).map(t => (
+                    <div key={t.id} className="flex items-start gap-md">
+                      <div className="w-1 bg-primary h-8 rounded-full" />
+                      <div>
+                        <p className="text-body-sm font-semibold">{t.title}</p>
+                        <p className="text-[12px] text-on-surface-variant">{t.assignee || 'Unassigned'}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {tasks.filter(t => t.status === 'running' || t.status === 'in_progress').length === 0 ? (
+                    <p className="text-body-sm text-on-surface-variant italic opacity-60">No active tasks</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="grid grid-cols-12 gap-gutter">
           {/* Tasks List */}
           <div className="col-span-12 lg:col-span-8 space-y-md">
-            {tasks.length === 0 && backgroundTasks.length === 0 ? (
+            {filteredTasks.length === 0 && backgroundTasks.length === 0 ? (
               <div className="text-center py-xl">
                 <span className="material-symbols-outlined text-[48px] text-outline-variant">task_alt</span>
                 <p className="font-body-md text-on-surface-variant mt-md">No tasks yet.</p>
               </div>
             ) : null}
 
-            {tasks.map(task => {
+            {filteredTasks.map(task => {
               const badge = statusBadge(task.status)
               const isRunning = running === task.id
               return (
@@ -307,6 +476,7 @@ export default function Tasks() {
             ) : null}
           </div>
         </div>
+        )}
       </div>
 
       {/* Task Detail Drawer */}

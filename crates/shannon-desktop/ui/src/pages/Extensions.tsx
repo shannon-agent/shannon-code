@@ -1,23 +1,29 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function Extensions() {
   const location = useLocation();
+  const navigate = useNavigate();
   const path = location.pathname;
+  const [search, setSearch] = useState("");
 
   let searchPlaceholder = "Search extensions...";
   let ctaText = "";
   let ctaIcon = "";
+  let ctaAction: () => void = () => {};
 
   if (path.includes('agents')) {
     searchPlaceholder = "Search components...";
     ctaText = "Create New Agent";
     ctaIcon = "add";
+    ctaAction = () => navigate('/extensions/agents');
   } else if (path.includes('datasources')) {
     searchPlaceholder = "Search knowledge...";
     ctaText = "Add Data Source";
     ctaIcon = "add_circle";
+    ctaAction = () => navigate('/extensions/datasources');
   }
 
   return (
@@ -31,12 +37,14 @@ export default function Extensions() {
               className="bg-transparent border-none outline-none focus:ring-0 text-label-md font-label-md w-full"
               placeholder={searchPlaceholder}
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
         <div className="flex items-center gap-md shrink-0">
            {ctaText && (
-             <Button className="bg-primary text-on-primary px-lg py-sm rounded-full font-bold text-label-md hover:bg-primary/90 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+             <Button onClick={ctaAction} className="bg-primary text-on-primary px-lg py-sm rounded-full font-bold text-label-md hover:bg-primary/90 flex items-center gap-1 cursor-pointer whitespace-nowrap">
                 <span className="material-symbols-outlined text-[18px]">{ctaIcon}</span>
                 {ctaText}
              </Button>
@@ -46,7 +54,7 @@ export default function Extensions() {
 
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto">
-         <Outlet />
+         <Outlet context={{ search }} />
       </div>
     </div>
   );

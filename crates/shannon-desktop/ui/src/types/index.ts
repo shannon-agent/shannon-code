@@ -40,6 +40,7 @@ export interface UsagePayload {
   input_tokens: number
   output_tokens: number
   cost_usd: number
+  cache_hit_rate?: number
 }
 
 export interface QueryCompletedPayload {
@@ -219,6 +220,7 @@ export interface TaskItem {
   assignee?: string
   priority?: string
   description?: string
+  progress?: number
 }
 
 export interface BackgroundTaskInfo {

@@ -60,7 +60,7 @@ test.describe('OPC pages', () => {
   })
 })
 
-test.describe('Goals and Tasks pages', () => {
+test.describe('Goals and Scheduled pages', () => {
   test('goals page shows task management heading', async ({ page }) => {
     await page.goto('/goals')
     await expect(page.getByRole('heading', { name: /Task Management/i })).toBeVisible()

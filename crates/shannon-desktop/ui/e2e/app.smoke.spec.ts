@@ -25,9 +25,9 @@ test.describe('Shannon Desktop UI', () => {
     await expect(page.getByRole('button', { name: /New Chat/i })).toBeVisible()
   })
 
-  test('navigates to tasks page', async ({ page }) => {
+  test('navigates to scheduled page', async ({ page }) => {
     await page.goto('/')
-    await page.getByText('Tasks').first().click()
+    await page.getByText('Scheduled').first().click()
     await expect(page.getByText(/Scheduled Tasks/i)).toBeVisible()
   })
 

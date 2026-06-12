@@ -170,8 +170,8 @@ export default function ModelsSettings() {
           <h3 className="font-headline-md text-on-surface mb-lg">Global Parameters</h3>
           <p className="text-body-sm text-on-surface-variant mb-xl -mt-md">These settings apply to the default model unless overridden at the agent level.</p>
           <div className="space-y-xl max-w-2xl">
-            <ParameterSlider label="Temperature" value={0.7} min={0} max={1} step={0.1} lowLabel="Precise" highLabel="Creative" />
-            <ParameterSlider label="Max Tokens" value={4096} min={256} max={128000} step={256} formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} lowLabel="Short" highLabel="Long Context" />
+            <ParameterSlider label="Temperature" value={0.7} min={0} max={1} step={0.1} lowLabel="Precise" highLabel="Creative" configKey="temperature" />
+            <ParameterSlider label="Max Tokens" value={4096} min={256} max={128000} step={256} formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} lowLabel="Short" highLabel="Long Context" configKey="max_tokens" />
           </div>
         </section>
       </div>
@@ -179,7 +179,7 @@ export default function ModelsSettings() {
   )
 }
 
-function ParameterSlider({ label, value: initialValue, min, max, step, formatValue, lowLabel, highLabel }: {
+function ParameterSlider({ label, value: initialValue, min, max, step, formatValue, lowLabel, highLabel, configKey }: {
   label: string
   value: number
   min: number
@@ -188,9 +188,17 @@ function ParameterSlider({ label, value: initialValue, min, max, step, formatVal
   formatValue?: (v: number) => string
   lowLabel?: string
   highLabel?: string
+  configKey?: string
 }) {
   const [value, setValue] = useState(initialValue)
   const display = formatValue ? formatValue(value) : String(value)
+
+  const handleChange = (newValue: number) => {
+    setValue(newValue)
+    if (configKey) {
+      api.configure({ key: configKey, value: String(newValue) }).catch(e => console.warn('ParameterSlider error:', e))
+    }
+  }
 
   return (
     <div>
@@ -201,7 +209,7 @@ function ParameterSlider({ label, value: initialValue, min, max, step, formatVal
       <input
         className="w-full appearance-none bg-outline-variant/30 h-1 rounded-full cursor-pointer outline-none slider-thumb-primary"
         min={min} max={max} step={step} type="range" value={value}
-        onChange={e => setValue(Number(e.target.value))}
+        onChange={e => handleChange(Number(e.target.value))}
       />
       {lowLabel && highLabel ? (
         <div className="flex justify-between mt-xs">

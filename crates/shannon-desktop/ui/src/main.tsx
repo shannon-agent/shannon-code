@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@fontsource-variable/inter';
 import '@fontsource-variable/geist';
-import '@fontsource-variable/material-symbols-outlined';
+import '@fontsource-variable/material-symbols-outlined/full.css';
 import App from './App';
 import './index.css';
 

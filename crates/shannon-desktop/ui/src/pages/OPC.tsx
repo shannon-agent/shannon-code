@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +28,19 @@ function iconForAgent(name: string): string {
 export default function OPC() {
   const { agents, tasks, config } = useApp()
   const [quickTask, setQuickTask] = useState('')
+  const [editingFocus, setEditingFocus] = useState(false)
+  const [focusText, setFocusText] = useState('')
+
+  const currentFocus = config?.provider
+    ? `${config.provider.charAt(0).toUpperCase() + config.provider.slice(1)} Agent Orchestration — autonomous task execution with multi-agent coordination.`
+    : 'Autonomous task execution through multi-agent orchestration and intelligent coordination.'
+
+  useEffect(() => { setFocusText(currentFocus) }, [currentFocus])
+
+  const handleSaveFocus = () => {
+    import('@/lib/tauri-api').then(api => api.configure({ key: 'strategic_focus', value: focusText })).catch(() => {})
+    setEditingFocus(false)
+  }
 
   const handleQuickTask = async () => {
     const trimmed = quickTask.trim()
@@ -49,15 +62,31 @@ export default function OPC() {
 
         {/* Mission Statement */}
         <div className="bg-surface-container-lowest/70 backdrop-blur-md rounded-2xl p-xl mb-lg border border-outline-variant/30 relative shadow-sm">
-          <div className="flex items-center gap-2 mb-2 uppercase font-label-md text-[13px] tracking-widest text-on-surface-variant font-bold">
-            <span className="w-1.5 h-1.5 bg-outline-variant rotate-45 block" />
-            Strategic Focus
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 uppercase font-label-md text-[13px] tracking-widest text-on-surface-variant font-bold">
+              <span className="w-1.5 h-1.5 bg-outline-variant rotate-45 block" />
+              Strategic Focus
+            </div>
+            <button className="text-label-sm text-primary hover:underline cursor-pointer" onClick={() => setEditingFocus(!editingFocus)}>
+              {editingFocus ? 'Cancel' : 'Edit'}
+            </button>
           </div>
-          <h2 className="font-headline-lg text-[28px] font-bold text-on-surface mt-2 max-w-5xl">
-            {config?.provider
-              ? `${config.provider.charAt(0).toUpperCase() + config.provider.slice(1)} Agent Orchestration — autonomous task execution with multi-agent coordination.`
-              : 'Autonomous task execution through multi-agent orchestration and intelligent coordination.'}
-          </h2>
+          {editingFocus ? (
+            <div className="mt-2 space-y-md">
+              <textarea
+                className="w-full h-24 p-md bg-surface-container-low rounded-xl border border-outline-variant/30 text-body-md resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                value={focusText}
+                onChange={e => setFocusText(e.target.value)}
+              />
+              <button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer hover:opacity-90" onClick={handleSaveFocus}>
+                Save Focus
+              </button>
+            </div>
+          ) : (
+            <h2 className="font-headline-lg text-[28px] font-bold text-on-surface mt-2 max-w-5xl">
+              {currentFocus}
+            </h2>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-lg items-start">

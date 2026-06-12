@@ -18,6 +18,11 @@ export default function ExtensionsHub() {
   const categories = [...new Set(skills.map(s => s.category ?? 'Uncategorized'))]
   const sortedCategories = filterMode === 'recent' ? [...categories].reverse() : categories
 
+  const sortedSkills = (cat: string) => {
+    const catSkills = skills.filter(s => (s.category ?? 'Uncategorized') === cat)
+    return filterMode === 'recent' ? [...catSkills].reverse() : catSkills
+  }
+
   const iconForCategory = (cat: string) => {
     switch (cat.toLowerCase()) {
       case 'productivity': return 'bolt'
@@ -69,7 +74,7 @@ export default function ExtensionsHub() {
             <div key={cat} className="mb-lg">
               <h4 className="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">{cat}</h4>
               <div className="flex flex-wrap gap-md">
-                {skills.filter(s => (s.category ?? 'Uncategorized') === cat).map(skill => (
+                {sortedSkills(cat).map(skill => (
                   <div key={skill.name} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorForCategory(cat)}`}>
                       <span className="material-symbols-outlined">{iconForCategory(cat)}</span>

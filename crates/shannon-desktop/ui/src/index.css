@@ -64,14 +64,14 @@
   --spacing-max-content-width: 1200px;
 
   /* Fonts */
-  --font-body-md: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-headline-md: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-label-sm: "Geist", ui-monospace, SFMono-Regular, monospace;
-  --font-label-md: "Geist", ui-monospace, SFMono-Regular, monospace;
-  --font-headline-lg: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-body-sm: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-body-lg: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-display-lg: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body-md: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-headline-md: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-label-sm: "Geist Variable", ui-monospace, SFMono-Regular, monospace;
+  --font-label-md: "Geist Variable", ui-monospace, SFMono-Regular, monospace;
+  --font-headline-lg: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-body-sm: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-body-lg: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display-lg: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 
   /* Text Sizing Overrides */
   --text-label-sm: 12px;
@@ -112,7 +112,7 @@
 }
 
 @utility material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
+  font-family: 'Material Symbols Outlined Variable';
   font-weight: normal;
   font-style: normal;
   font-size: 24px;
@@ -170,7 +170,7 @@
 /* shadcn radius tokens only — colors come from MD3 @theme above */
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

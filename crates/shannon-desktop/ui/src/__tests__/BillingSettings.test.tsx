@@ -30,9 +30,9 @@ describe('BillingSettings', () => {
     expect(screen.getByText('Token Usage')).toBeInTheDocument()
   })
 
-  it('renders session cost display', () => {
+  it('renders cache hit rate display', () => {
     render(wrap(<BillingSettings />))
-    expect(screen.getByText('Session Cost')).toBeInTheDocument()
+    expect(screen.getByText('Cache Hit Rate')).toBeInTheDocument()
   })
 
   it('renders cost analysis section', () => {
@@ -43,6 +43,11 @@ describe('BillingSettings', () => {
   it('renders active plan badge', () => {
     render(wrap(<BillingSettings />))
     expect(screen.getByText('Active Plan')).toBeInTheDocument()
+  })
+
+  it('renders billing history section', () => {
+    render(wrap(<BillingSettings />))
+    expect(screen.getByText('Billing History')).toBeInTheDocument()
   })
 
   it('renders footer help section', () => {

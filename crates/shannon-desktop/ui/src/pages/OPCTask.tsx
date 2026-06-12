@@ -168,7 +168,7 @@ export default function OPCTask() {
                       <button
                         className="self-end px-md py-xs rounded-lg bg-primary/10 text-primary font-label-sm hover:bg-primary/20 transition-colors"
                         onClick={() => {
-                          respondPermission(taskId, false)
+                          respondPermission(taskId, false, revisionNote || undefined)
                           setRevisionNote('')
                           setShowRevisionInput(null)
                         }}

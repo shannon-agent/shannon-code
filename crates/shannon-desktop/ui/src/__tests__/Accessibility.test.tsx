@@ -31,7 +31,7 @@ describe('Accessibility', () => {
       render(wrap(<Sidebar />))
       expect(screen.getByText('Chat')).toBeInTheDocument()
       expect(screen.getByText('Goals')).toBeInTheDocument()
-      expect(screen.getByText('Tasks')).toBeInTheDocument()
+      expect(screen.getByText('Scheduled')).toBeInTheDocument()
     })
 
     it('settings sub-nav items have visible text when expanded', () => {

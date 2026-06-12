@@ -12,6 +12,8 @@ export default function AdvancedSettings() {
   const [debugConsole, setDebugConsole] = useState(false)
   const [clearing, setClearing] = useState(false)
   const [resetting, setResetting] = useState(false)
+  const [showLogs, setShowLogs] = useState(false)
+  const [showApiKeys, setShowApiKeys] = useState(false)
 
   const handleToggle = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value)
@@ -109,12 +111,12 @@ export default function AdvancedSettings() {
             <div className="flex-1">
               <p className="text-on-surface-variant text-body-sm mb-md">Advanced tools for debugging agent behaviors and observing raw kernel output.</p>
               <div className="flex items-center gap-md">
-                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
+                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer" onClick={() => setShowLogs(true)}>
                   <span className="material-symbols-outlined text-[16px]">description</span>
                   View System Logs
                 </Button>
                 <span className="text-outline-variant">|</span>
-                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
+                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer" onClick={() => setShowApiKeys(true)}>
                   <span className="material-symbols-outlined text-[16px]">api</span>
                   Manage API Keys
                 </Button>
@@ -149,6 +151,43 @@ export default function AdvancedSettings() {
           </div>
         </div>
       </div>
+
+      {/* System Logs Modal */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowLogs(false)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-2xl w-full mx-lg shadow-2xl max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-lg">
+              <h3 className="font-headline-md text-on-surface">System Logs</h3>
+              <Button variant="ghost" className="cursor-pointer" onClick={() => setShowLogs(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </Button>
+            </div>
+            <div className="bg-surface-container-high rounded-xl p-md font-mono text-label-sm text-on-surface-variant max-h-[50vh] overflow-y-auto">
+              <p>Shannon Desktop v0.1.0</p>
+              <p>System logs are available in the Tauri console.</p>
+              <p className="mt-sm opacity-60">Run with RUST_LOG=debug for verbose output.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* API Keys Modal */}
+      {showApiKeys && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={() => setShowApiKeys(false)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl max-w-lg w-full mx-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-lg">
+              <h3 className="font-headline-md text-on-surface">Manage API Keys</h3>
+              <Button variant="ghost" className="cursor-pointer" onClick={() => setShowApiKeys(false)}>
+                <span className="material-symbols-outlined">close</span>
+              </Button>
+            </div>
+            <p className="text-body-sm text-on-surface-variant mb-md">API keys are managed through your provider's configuration. Update your key in Model Settings.</p>
+            <Button className="w-full py-md bg-primary text-on-primary rounded-xl font-label-md cursor-pointer" onClick={() => setShowApiKeys(false)}>
+              Go to Model Settings
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

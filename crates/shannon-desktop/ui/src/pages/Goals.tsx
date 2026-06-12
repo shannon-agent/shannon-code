@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
@@ -7,6 +7,7 @@ export default function Goals() {
   const { tasks, agents, respondPermission, sendMessage } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [goalInput, setGoalInput] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Group tasks by status to create a goal-like view
   const activeTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
@@ -249,7 +250,8 @@ export default function Goals() {
       {/* Sticky Bottom Input */}
       <div className="absolute bottom-0 left-0 md:left-[320px] right-0 xl:right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
         <div className="glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
-          <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
+          <input type="file" ref={fileInputRef} className="hidden" onChange={e => { const files = e.target.files; if (files && files.length > 0 && goalInput.trim()) { sendMessage(goalInput, Array.from(files).map(f => f.name)); setGoalInput('') } }} />
+          <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary" onClick={() => fileInputRef.current?.click()}>
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
           </Button>
           <input
@@ -260,7 +262,7 @@ export default function Goals() {
             onChange={e => setGoalInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}
           />
-          <Button variant="ghost" aria-label="AI assistant" className="p-md text-primary">
+          <Button variant="ghost" aria-label="AI assistant" className="p-md text-primary" onClick={() => { sendMessage('Suggest next steps for my current tasks based on their progress'); setGoalInput('') }}>
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
           </Button>
           <Button aria-label="Send message" className="bg-primary text-on-primary p-2 rounded-xl hover:shadow-md hover:shadow-primary/30 transition-all" disabled={!goalInput.trim()} onClick={() => { if (goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}>

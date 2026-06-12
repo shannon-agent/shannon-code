@@ -95,9 +95,9 @@ describe('Header component', () => {
     expect(screen.getByText('Goals')).toBeInTheDocument()
   })
 
-  it('renders Tasks title on /tasks route', () => {
+  it('renders Scheduled title on /tasks route', () => {
     render(wrap(<Header />, { route: '/tasks' }))
-    expect(screen.getByText('Tasks')).toBeInTheDocument()
+    expect(screen.getByText('Scheduled')).toBeInTheDocument()
   })
 
   it('renders Settings title on /settings route', () => {

@@ -104,8 +104,8 @@ export async function exportSession(id: string, format: 'markdown' | 'json'): Pr
 
 // --- Permissions ---
 
-export async function respondPermission(requestId: string, allow: boolean): Promise<void> {
-  await invoke('respond_permission', { requestId, allow })
+export async function respondPermission(requestId: string, allow: boolean, note?: string): Promise<void> {
+  await invoke('respond_permission', { requestId, allow, note: note ?? null })
 }
 
 // --- Files & Diffs ---

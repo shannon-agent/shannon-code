@@ -179,4 +179,89 @@ describe('Tasks Enhanced', () => {
     renderTasks()
     expect(screen.getByLabelText('Cancel background task')).toBeInTheDocument()
   })
+
+  // US-TASK-04: Filter Tasks by status
+  describe('Filter functionality', () => {
+    // Use tasks without 'running' status to avoid sidebar "Active Now" duplication
+    const mixedTasks = [
+      { id: '1', title: 'Build API', status: 'completed' },
+      { id: '2', title: 'Write Tests', status: 'pending' },
+      { id: '3', title: 'Code Review', status: 'completed' },
+      { id: '4', title: 'Fix Bug', status: 'pending' },
+    ]
+
+    it('shows all tasks by default', () => {
+      setContext({ tasks: mixedTasks, backgroundTasks: [], agents: [] })
+      renderTasks()
+      expect(screen.getByText('Build API')).toBeInTheDocument()
+      expect(screen.getByText('Write Tests')).toBeInTheDocument()
+      expect(screen.getByText('Code Review')).toBeInTheDocument()
+      expect(screen.getByText('Fix Bug')).toBeInTheDocument()
+    })
+
+    it('filters to completed tasks only', () => {
+      setContext({ tasks: mixedTasks, backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      fireEvent.click(screen.getByRole('button', { name: 'Completed' }))
+      expect(screen.getByText('Build API')).toBeInTheDocument()
+      expect(screen.getByText('Code Review')).toBeInTheDocument()
+      expect(screen.queryByText('Write Tests')).not.toBeInTheDocument()
+      expect(screen.queryByText('Fix Bug')).not.toBeInTheDocument()
+    })
+
+    it('filters to pending tasks only', () => {
+      setContext({ tasks: mixedTasks, backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      fireEvent.click(screen.getByRole('button', { name: 'Pending' }))
+      expect(screen.getByText('Write Tests')).toBeInTheDocument()
+      expect(screen.getByText('Fix Bug')).toBeInTheDocument()
+      expect(screen.queryByText('Build API')).not.toBeInTheDocument()
+      expect(screen.queryByText('Code Review')).not.toBeInTheDocument()
+    })
+
+    it('filters to running tasks only', () => {
+      const withRunning = [
+        { id: '1', title: 'Build API', status: 'completed' },
+        { id: '2', title: 'Deploy App', status: 'running' },
+      ]
+      setContext({ tasks: withRunning, backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      fireEvent.click(screen.getByRole('button', { name: 'Running' }))
+      // Running tasks appear in both task list and "Active Now" sidebar
+      expect(screen.queryAllByText('Deploy App').length).toBeGreaterThanOrEqual(1)
+      expect(screen.queryByText('Build API')).not.toBeInTheDocument()
+    })
+
+    it('resets to all tasks when All is clicked', () => {
+      setContext({ tasks: mixedTasks, backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      fireEvent.click(screen.getByRole('button', { name: 'Completed' }))
+      expect(screen.queryByText('Write Tests')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'All' }))
+      expect(screen.getByText('Write Tests')).toBeInTheDocument()
+      expect(screen.getByText('Fix Bug')).toBeInTheDocument()
+      expect(screen.getByText('Build API')).toBeInTheDocument()
+    })
+
+    it('highlights active filter button', () => {
+      setContext({ tasks: mixedTasks, backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      const completedBtn = screen.getByRole('button', { name: 'Completed' })
+      fireEvent.click(completedBtn)
+      expect(completedBtn.className).toContain('primary')
+    })
+
+    it('shows empty state when filter matches no tasks', () => {
+      setContext({ tasks: [{ id: '1', title: 'Done', status: 'completed' }], backgroundTasks: [], agents: [] })
+      renderTasks()
+      fireEvent.click(screen.getByText('Filters'))
+      fireEvent.click(screen.getByRole('button', { name: 'Running' }))
+      expect(screen.getByText('No tasks yet.')).toBeInTheDocument()
+    })
+  })
 })

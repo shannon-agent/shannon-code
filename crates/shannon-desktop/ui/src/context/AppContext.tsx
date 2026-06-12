@@ -44,7 +44,7 @@ interface AppActions {
   switchSession: (id: string) => Promise<void>
   deleteSession: (id: string) => Promise<void>
   renameSession: (id: string, title: string) => Promise<void>
-  respondPermission: (requestId: string, allow: boolean) => Promise<void>
+  respondPermission: (requestId: string, allow: boolean, note?: string) => Promise<void>
   refreshSessions: () => Promise<void>
   refreshStatus: () => Promise<void>
   refreshConfig: () => Promise<void>
@@ -176,9 +176,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) { setError(String(e)) }
   }, [refreshSessions])
 
-  const respondPermissionAction = useCallback(async (requestId: string, allow: boolean) => {
+  const respondPermissionAction = useCallback(async (requestId: string, allow: boolean, note?: string) => {
     try {
-      await api.respondPermission(requestId, allow)
+      await api.respondPermission(requestId, allow, note)
       setPermissionRequest(null)
     } catch (e) { setError(String(e)) }
   }, [])
