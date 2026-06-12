@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -58,6 +59,7 @@ export default function App() {
               </Route>
             </Routes>
           </Suspense>
+        <Toaster position="bottom-right" richColors closeButton theme="system" />
         </BrowserRouter>
         </ErrorBoundary>
       </AppProvider>

@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import { useApp } from '@/context/AppContext'
 
 export default function MyAgents() {
-  const { agents, backgroundTasks, sendMessage } = useApp()
+  const { agents, backgroundTasks, models, sendMessage } = useApp()
   const navigate = useNavigate()
   const [configuring, setConfiguring] = useState<string | null>(null)
   const [showAddAgent, setShowAddAgent] = useState(false)
-  const [newAgentPrompt, setNewAgentPrompt] = useState('')
+  const [agentName, setAgentName] = useState('')
+  const [agentModel, setAgentModel] = useState('')
+  const [agentPrompt, setAgentPrompt] = useState('')
+  const [agentTools, setAgentTools] = useState<Record<string, boolean>>({ bash: true, read: true, write: true })
   const [showMenu, setShowMenu] = useState<string | null>(null)
 
   const statusFor = (status: string) => {
@@ -57,11 +61,11 @@ export default function MyAgents() {
 
       {/* Agents Bento Grid */}
       {agents.length === 0 ? (
-        <div className="text-center py-xl">
-          <span className="material-symbols-outlined text-[48px] text-outline-variant">smart_toy</span>
-          <p className="font-body-md text-on-surface-variant mt-md">No agents running.</p>
-          <p className="font-body-sm text-on-surface-variant opacity-60">Agents will appear here when spawned via team coordination or background tasks.</p>
-        </div>
+        <EmptyState
+          icon="smart_toy"
+          title="No agents running."
+          description="Agents will appear here when spawned via team coordination or background tasks."
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
@@ -152,17 +156,68 @@ export default function MyAgents() {
             ) : (
               <div className="border-2 border-primary/30 p-lg rounded-xl flex flex-col gap-md">
                 <h3 className="text-body-lg font-bold">Create New Agent</h3>
-                <textarea
-                  className="w-full h-24 p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Describe the agent's role and capabilities..."
-                  value={newAgentPrompt}
-                  onChange={e => setNewAgentPrompt(e.target.value)}
-                />
+                <div className="space-y-sm">
+                  <label className="text-label-md text-on-surface-variant">Name</label>
+                  <input
+                    className="w-full p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="e.g. Research Assistant"
+                    value={agentName}
+                    onChange={e => setAgentName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-sm">
+                  <label className="text-label-md text-on-surface-variant">Model</label>
+                  <select
+                    className="w-full p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    value={agentModel}
+                    onChange={e => setAgentModel(e.target.value)}
+                  >
+                    <option value="">Default Model</option>
+                    {models.map(m => (
+                      <option key={m.id} value={m.id}>{m.name} ({m.provider})</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-sm">
+                  <label className="text-label-md text-on-surface-variant">System Prompt</label>
+                  <textarea
+                    className="w-full h-24 p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="Describe the agent's role and capabilities..."
+                    value={agentPrompt}
+                    onChange={e => setAgentPrompt(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-sm">
+                  <label className="text-label-md text-on-surface-variant">Tools</label>
+                  <div className="flex flex-wrap gap-md">
+                    {['bash', 'read', 'write', 'search', 'mcp'].map(tool => (
+                      <label key={tool} className="flex items-center gap-xs text-label-md cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!agentTools[tool]}
+                          onChange={e => setAgentTools(prev => ({ ...prev, [tool]: e.target.checked }))}
+                          className="accent-primary"
+                        />
+                        {tool.charAt(0).toUpperCase() + tool.slice(1)}
+                      </label>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex gap-sm">
-                  <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={() => { if (newAgentPrompt.trim()) { sendMessage(`Create agent: ${newAgentPrompt}`); setNewAgentPrompt(''); setShowAddAgent(false) } }}>
+                  <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={() => {
+                    if (agentName.trim()) {
+                      const tools = Object.entries(agentTools).filter(([, v]) => v).map(([k]) => k)
+                      const config = { name: agentName, model: agentModel || undefined, systemPrompt: agentPrompt, tools }
+                      sendMessage(`Create agent: ${JSON.stringify(config)}`)
+                      setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true })
+                      setShowAddAgent(false)
+                    }
+                  }}>
                     Create Agent
                   </Button>
-                  <Button variant="ghost" className="py-2 px-md rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => { setShowAddAgent(false); setNewAgentPrompt('') }}>
+                  <Button variant="ghost" className="py-2 px-md rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => {
+                    setShowAddAgent(false); setAgentName(''); setAgentModel(''); setAgentPrompt('')
+                  }}>
                     Cancel
                   </Button>
                 </div>

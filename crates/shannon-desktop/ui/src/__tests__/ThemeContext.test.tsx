@@ -27,13 +27,26 @@ describe('ThemeContext', () => {
     expect(screen.getByTestId('current-theme')).toHaveTextContent('material')
   })
 
-  it('provides all 7 themes', () => {
+  it('provides all 8 themes', () => {
     render(
       <ThemeProvider>
         <ThemeConsumer />
       </ThemeProvider>
     )
-    expect(screen.getByTestId('theme-count')).toHaveTextContent('7')
+    expect(screen.getByTestId('theme-count')).toHaveTextContent('8')
+  })
+
+  it('resolves system theme to light/dight based on media query', () => {
+    render(
+      <ThemeProvider>
+        <ThemeConsumer />
+      </ThemeProvider>
+    )
+    fireEvent.click(screen.getByTestId('btn-system'))
+    expect(screen.getByTestId('current-theme')).toHaveTextContent('system')
+    // resolvedTheme depends on prefers-color-scheme, data-theme is set accordingly
+    const dataTheme = document.documentElement.getAttribute('data-theme')
+    expect(['material', 'tokyo-night']).toContain(dataTheme)
   })
 
   it('switches theme on setTheme call', () => {

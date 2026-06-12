@@ -1,12 +1,15 @@
 import { useState, useRef } from 'react'
+
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import { useApp } from '@/context/AppContext'
 
 export default function Goals() {
   const { tasks, agents, respondPermission, sendMessage } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [goalInput, setGoalInput] = useState('')
+  const [aiMenuOpen, setAiMenuOpen] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Group tasks by status to create a goal-like view
@@ -126,10 +129,11 @@ export default function Goals() {
           {/* Task Tree */}
           <div className="flex-1 space-y-md">
             {tasks.length === 0 ? (
-              <div className="text-center py-xl">
-                <span className="material-symbols-outlined text-[48px] text-outline-variant">task_alt</span>
-                <p className="font-body-md text-on-surface-variant mt-md">No tasks yet. Create tasks via the Tasks page or background execution.</p>
-              </div>
+              <EmptyState
+                icon="task_alt"
+                title="No tasks yet."
+                description="Create tasks via the Tasks page or background execution."
+              />
             ) : (
               tasks.map(task => {
                 const isActive = task.status === 'in_progress' || task.status === 'running'
@@ -262,9 +266,25 @@ export default function Goals() {
             onChange={e => setGoalInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}
           />
-          <Button variant="ghost" aria-label="AI assistant" className="p-md text-primary" onClick={() => { sendMessage('Suggest next steps for my current tasks based on their progress'); setGoalInput('') }}>
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
-          </Button>
+          <div className="relative">
+            <Button variant="ghost" aria-label="AI assistant" className="p-md text-primary" onClick={() => setAiMenuOpen(!aiMenuOpen)}>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
+            </Button>
+            {aiMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-sm w-[220px] bg-surface-container-lowest rounded-xl border border-outline-variant/20 shadow-xl py-xs z-50">
+                {[
+                  { label: 'Suggest Next Steps', icon: 'lightbulb', prompt: 'Suggest next steps for my current tasks based on their progress' },
+                  { label: 'Summarize Progress', icon: 'summarize', prompt: 'Summarize the progress of all my current tasks' },
+                  { label: 'Identify Risks', icon: 'warning', prompt: 'Identify potential risks and blockers in my current tasks' },
+                ].map(opt => (
+                  <button key={opt.label} className="w-full text-left px-md py-sm hover:bg-primary/5 flex items-center gap-sm text-on-surface font-label-md transition-colors" onClick={() => { sendMessage(opt.prompt); setGoalInput(''); setAiMenuOpen(false) }}>
+                    <span className="material-symbols-outlined text-[16px] text-primary">{opt.icon}</span>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <Button aria-label="Send message" className="bg-primary text-on-primary p-2 rounded-xl hover:shadow-md hover:shadow-primary/30 transition-all" disabled={!goalInput.trim()} onClick={() => { if (goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}>
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_upward</span>
           </Button>

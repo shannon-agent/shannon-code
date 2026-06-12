@@ -6,7 +6,7 @@ interface ShortcutMap {
   [key: string]: () => void
 }
 
-export function useKeyboardShortcuts() {
+export function useKeyboardShortcuts(onTogglePalette?: () => void, onToggleHelp?: () => void) {
   const navigate = useNavigate()
   const { cancelQuery, isQuerying } = useApp()
 
@@ -14,11 +14,12 @@ export function useKeyboardShortcuts() {
     const shortcuts: ShortcutMap = {
       'mod+n': () => navigate('/chat'),
       'mod+shift+n': () => navigate('/chat'),
-      'mod+k': () => navigate('/chat'),
+      'mod+k': () => onTogglePalette?.(),
       'mod+/': () => {
         const sidebar = document.querySelector('[data-sidebar]')
         sidebar?.classList.toggle('collapsed')
       },
+      '?': () => onToggleHelp?.(),
       'escape': () => {
         if (isQuerying) cancelQuery()
       },
@@ -30,6 +31,11 @@ export function useKeyboardShortcuts() {
 
       const mod = e.metaKey || e.ctrlKey
       const key = e.key.toLowerCase()
+
+      if (e.key === '?' || e.key === '/') {
+        const fn = shortcuts[e.key]
+        if (fn && !mod) { e.preventDefault(); fn(); return }
+      }
 
       let combo = ''
       if (mod) combo += 'mod+'
@@ -45,5 +51,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [navigate, cancelQuery, isQuerying])
+  }, [navigate, cancelQuery, isQuerying, onTogglePalette, onToggleHelp])
 }

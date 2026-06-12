@@ -1,5 +1,5 @@
 import { useApp } from '@/context/AppContext'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { useState } from 'react'
 
 export default function OPCTask() {
@@ -15,6 +15,10 @@ export default function OPCTask() {
 
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
+      <Link to="/opc" className="inline-flex items-center gap-xs text-primary hover:underline font-label-md mb-md">
+        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+        Back to Board
+      </Link>
       <div className="max-w-[1400px] mx-auto">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-lg pb-10">
           {/* Left Column */}

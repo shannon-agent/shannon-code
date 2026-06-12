@@ -6,6 +6,7 @@ import MyAgents from '@/components/extensions/MyAgents'
 const ctx = vi.hoisted(() => ({
   agents: [] as any[],
   backgroundTasks: [] as any[],
+  models: [] as any[],
   sendMessage: vi.fn(),
 }))
 

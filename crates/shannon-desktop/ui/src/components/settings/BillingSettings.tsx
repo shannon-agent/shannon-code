@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
+import { CardSkeleton } from '@/components/SkeletonLoader'
 import * as api from '@/lib/tauri-api'
 import type { BillingPlan, CostRecord, BillingHistory } from '@/types'
 
@@ -9,12 +10,15 @@ export default function BillingSettings() {
   const [plan, setPlan] = useState<BillingPlan | null>(null)
   const [costHistory, setCostHistory] = useState<CostRecord[]>([])
   const [billingHistory, setBillingHistory] = useState<BillingHistory[]>([])
+  const [loading, setLoading] = useState(true)
   const [showChangePlan, setShowChangePlan] = useState(false)
   const [showLegal, setShowLegal] = useState(false)
   useEffect(() => {
-    api.getBillingPlan().then(setPlan).catch(() => {})
-    api.getCostHistory(30).then(setCostHistory).catch(() => {})
-    api.getBillingHistory().then(setBillingHistory).catch(() => {})
+    Promise.all([
+      api.getBillingPlan().then(setPlan).catch(() => {}),
+      api.getCostHistory(30).then(setCostHistory).catch(() => {}),
+      api.getBillingHistory().then(setBillingHistory).catch(() => {}),
+    ]).finally(() => setLoading(false))
   }, [])
 
   const inputTokens = usage?.input_tokens ?? 0
@@ -32,6 +36,13 @@ export default function BillingSettings() {
       </div>
 
       <div className="space-y-lg">
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
+            <div className="md:col-span-5"><CardSkeleton /></div>
+            <div className="md:col-span-7"><CardSkeleton /></div>
+            <div className="md:col-span-12"><CardSkeleton /></div>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
 
           {/* Section 1: Current Plan */}
@@ -209,6 +220,7 @@ export default function BillingSettings() {
             </div>
           </section>
         </div>
+        )}
       </div>
 
       {/* Footer Help Section */}

@@ -154,6 +154,7 @@ describe('Goals Enhanced', () => {
     ctx.sendMessage = vi.fn()
     renderGoals()
     fireEvent.click(screen.getByLabelText('AI assistant'))
+    fireEvent.click(screen.getByText('Suggest Next Steps'))
     expect(ctx.sendMessage).toHaveBeenCalledWith(expect.stringContaining('Suggest next steps'))
   })
 })

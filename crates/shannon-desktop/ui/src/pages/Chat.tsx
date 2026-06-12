@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect, memo } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import WelcomeState from '@/components/WelcomeState'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 import type { ChatMessage, ToolCall, FileContext } from '@/types'
@@ -18,6 +22,9 @@ export default function Chat() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [fileContext, setFileContext] = useState<FileContext[]>([])
+  const [attachedFiles, setAttachedFiles] = useState<string[]>([])
+  const [isDragging, setIsDragging] = useState(false)
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -32,11 +39,10 @@ export default function Chat() {
   const handleSend = () => {
     const trimmed = input.trim()
     if (!trimmed || isQuerying) return
-    const files = fileInputRef.current?.files
-    const filePaths = files && files.length > 0 ? Array.from(files).map(f => f.name) : undefined
+    const filePaths = attachedFiles.length > 0 ? attachedFiles : undefined
     sendMessage(trimmed, filePaths)
     setInput('')
-    if (fileInputRef.current) fileInputRef.current.value = ''
+    setAttachedFiles([])
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -57,6 +63,26 @@ export default function Chat() {
   const filteredSessions = sessionSearch
     ? sessions.filter(s => s.title.toLowerCase().includes(sessionSearch.toLowerCase()))
     : sessions
+
+  const sortedSessions = [...filteredSessions].sort((a, b) => {
+    const aPin = pinnedIds.has(a.id) ? 1 : 0
+    const bPin = pinnedIds.has(b.id) ? 1 : 0
+    return bPin - aPin
+  })
+
+  const togglePin = (id: string) => {
+    setPinnedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const handleExport = async (id: string) => {
+    try {
+      await api.exportSession(id, 'markdown')
+    } catch (e) { console.warn('Export failed:', e) }
+  }
 
   const formatTime = (ts: number) => {
     const d = new Date(ts)
@@ -95,7 +121,7 @@ export default function Chat() {
           {filteredSessions.length === 0 && (
             <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No sessions</p>
           )}
-          {filteredSessions.map(session => (
+          {sortedSessions.map(session => (
             <div
               key={session.id}
               className={`p-sm rounded-lg cursor-pointer group ${
@@ -132,9 +158,20 @@ export default function Chat() {
                 />
               ) : (
                 <>
-                  <p className={`font-label-md truncate ${session.id === currentSessionId ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary transition-colors'}`}>
-                    <HighlightText text={session.title || 'Untitled'} query={sessionSearch} />
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className={`font-label-md truncate flex-1 ${session.id === currentSessionId ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary transition-colors'}`}>
+                      {pinnedIds.has(session.id) && <span className="material-symbols-outlined text-[14px] text-primary mr-xs align-text-bottom">push_pin</span>}
+                      <HighlightText text={session.title || 'Untitled'} query={sessionSearch} />
+                    </p>
+                    <div className="flex items-center gap-xs opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button className="p-xs rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" onClick={e => { e.stopPropagation(); togglePin(session.id) }} title={pinnedIds.has(session.id) ? 'Unpin' : 'Pin'}>
+                        <span className="material-symbols-outlined text-[14px]">{pinnedIds.has(session.id) ? 'push_pin' : 'keep'}</span>
+                      </button>
+                      <button className="p-xs rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" onClick={e => { e.stopPropagation(); handleExport(session.id) }} title="Export">
+                        <span className="material-symbols-outlined text-[14px]">download</span>
+                      </button>
+                    </div>
+                  </div>
                   <p className="text-body-sm text-on-surface-variant opacity-70 truncate">
                     {session.message_count} messages · {formatTime(session.created_at)}
                   </p>
@@ -150,12 +187,16 @@ export default function Chat() {
         {/* Message Area */}
         <ScrollArea className="flex-1 p-xl space-y-xl pb-32">
           {messages.length === 0 && !streamingText && (
-            <div className="flex items-center justify-center h-full opacity-40">
-              <div className="text-center space-y-sm">
-                <span className="material-symbols-outlined text-[48px] text-primary">chat_bubble</span>
-                <p className="font-body-lg text-on-surface-variant">Start a conversation</p>
+            sessions.length === 0 ? (
+              <WelcomeState onSelectPrompt={setInput} />
+            ) : (
+              <div className="flex items-center justify-center h-full opacity-40">
+                <div className="text-center space-y-sm">
+                  <span className="material-symbols-outlined text-[48px] text-primary">chat_bubble</span>
+                  <p className="font-body-lg text-on-surface-variant">Start a conversation</p>
+                </div>
               </div>
-            </div>
+            )
           )}
 
           {messages.map((msg, i) => (
@@ -202,11 +243,48 @@ export default function Chat() {
         </ScrollArea>
 
         {/* Input Bar */}
-        <div className="absolute bottom-6 md:bottom-12 w-full px-lg md:px-xl py-lg bg-gradient-to-t from-background via-background/90 to-transparent">
+        <div
+          className={`absolute bottom-6 md:bottom-12 w-full px-lg md:px-xl py-lg bg-gradient-to-t from-background via-background/90 to-transparent transition-colors ${isDragging ? 'bg-primary/5' : ''}`}
+          onDragOver={e => { e.preventDefault(); setIsDragging(true) }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={e => {
+            e.preventDefault()
+            setIsDragging(false)
+            const files = Array.from(e.dataTransfer.files).map(f => f.name)
+            if (files.length > 0) setAttachedFiles(prev => [...prev, ...files])
+          }}
+        >
+          {isDragging && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-primary/10 backdrop-blur-sm rounded-lg pointer-events-none">
+              <div className="text-center">
+                <span className="material-symbols-outlined text-[32px] text-primary">cloud_upload</span>
+                <p className="font-label-md text-primary">Drop files here</p>
+              </div>
+            </div>
+          )}
           <div className="max-w-4xl mx-auto relative group">
             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full opacity-50 group-focus-within:opacity-100 transition-opacity duration-500"></div>
+            {attachedFiles.length > 0 && (
+              <div className="flex flex-wrap gap-xs mb-sm relative">
+                {attachedFiles.map((name, i) => (
+                  <span key={i} className="inline-flex items-center gap-xs px-sm py-xs bg-primary/10 text-primary rounded-lg font-label-sm">
+                    <span className="material-symbols-outlined text-[14px]">description</span>
+                    {name}
+                    <button className="hover:text-error cursor-pointer" onClick={() => setAttachedFiles(prev => prev.filter((_, j) => j !== i))}>
+                      <span className="material-symbols-outlined text-[14px]">close</span>
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="relative glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
-              <input type="file" ref={fileInputRef} className="hidden" onChange={e => { if (e.target.files && e.target.files.length > 0 && input.trim()) handleSend() }} />
+              <input type="file" ref={fileInputRef} className="hidden" onChange={e => {
+                if (e.target.files) {
+                  const newFiles = Array.from(e.target.files).map(f => f.name)
+                  setAttachedFiles(prev => [...prev, ...newFiles])
+                  e.target.value = ''
+                }
+              }} />
               <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary" onClick={() => fileInputRef.current?.click()}>
                 <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
               </Button>
@@ -261,6 +339,24 @@ export default function Chat() {
                   <span className="text-on-surface-variant">Cost</span>
                   <span className="font-bold text-primary">${usage.cost_usd.toFixed(4)}</span>
                 </div>
+                {(() => {
+                  const total = usage.input_tokens + usage.output_tokens
+                  const max = (usage as any).max_tokens ?? 200000
+                  const pct = Math.min(100, (total / max) * 100)
+                  const barColor = pct > 80 ? 'bg-error' : pct > 50 ? 'bg-amber-500' : 'bg-primary'
+                  return (
+                    <div className="pt-sm border-t border-outline-variant/10">
+                      <div className="flex justify-between text-label-sm text-on-surface-variant mb-xs">
+                        <span>Context Window</span>
+                        <span className="font-bold">{pct.toFixed(0)}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-label-sm text-on-surface-variant mt-xs">{total.toLocaleString()} / {max.toLocaleString()}</p>
+                    </div>
+                  )
+                })()}
               </div>
             </section>
           )}
@@ -350,7 +446,9 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
       </div>
       <div className="space-y-md flex-1">
         <div className="bg-surface-container-lowest px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
-          <p className="font-body-md text-on-surface whitespace-pre-wrap">{message.content}</p>
+          <div className="font-body-md text-on-surface prose prose-sm max-w-none prose-p:my-1 prose-pre:bg-surface-container prose-pre:p-md prose-pre:rounded-lg prose-code:text-primary prose-code:before:content-[''] prose-code:after:content-['']">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>{message.content}</ReactMarkdown>
+          </div>
           {message.tool_calls && message.tool_calls.length > 0 && (
             <div className="mt-md space-y-sm">
               {message.tool_calls.map(tc => (
@@ -406,7 +504,13 @@ const ToolCallDisplay = memo(function ToolCallDisplay({ toolCall }: { toolCall: 
             <pre className="text-body-sm text-on-surface-variant bg-surface-container p-sm rounded-lg overflow-x-auto max-h-[200px]">{JSON.stringify(toolCall.tool_input ?? null, null, 2)}</pre>
           ) : null}
           {toolCall.result && (
-            <pre className={`text-body-sm p-sm rounded-lg overflow-x-auto max-h-[200px] ${toolCall.is_error ? 'bg-error/5 text-error' : 'bg-surface-container text-on-surface-variant'}`}>{toolCall.result}</pre>
+            toolCall.is_error ? (
+              <pre className="text-body-sm p-sm rounded-lg overflow-x-auto max-h-[200px] bg-error/5 text-error">{toolCall.result}</pre>
+            ) : (
+              <div className="text-body-sm p-sm rounded-lg overflow-x-auto max-h-[200px] bg-surface-container text-on-surface-variant prose prose-sm max-w-none prose-pre:bg-surface-container-lowest prose-pre:p-sm prose-pre:rounded prose-code:text-primary prose-code:before:content-[''] prose-code:after:content-['']">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>{toolCall.result}</ReactMarkdown>
+              </div>
+            )
           )}
         </div>
       )}

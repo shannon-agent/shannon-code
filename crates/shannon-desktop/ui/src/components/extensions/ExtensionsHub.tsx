@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import * as api from '@/lib/tauri-api'
 import type { SkillInfo } from '@/types'
 
@@ -7,6 +8,7 @@ export default function ExtensionsHub() {
   const [skills, setSkills] = useState<SkillInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [filterMode, setFilterMode] = useState<'trending' | 'recent'>('trending')
+  const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null)
 
   useEffect(() => {
     api.listSkills()
@@ -64,26 +66,38 @@ export default function ExtensionsHub() {
             <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
           </div>
         ) : skills.length === 0 ? (
-          <div className="text-center py-xl">
-            <span className="material-symbols-outlined text-[48px] text-outline-variant">extension_off</span>
-            <p className="font-body-md text-on-surface-variant mt-md">No skills available.</p>
-            <p className="font-body-sm text-on-surface-variant opacity-60">Skills can be added via MCP servers or plugin configuration.</p>
-          </div>
+          <EmptyState
+            icon="extension_off"
+            title="No skills available."
+            description="Skills can be added via MCP servers or plugin configuration."
+          />
         ) : (
           sortedCategories.map(cat => (
             <div key={cat} className="mb-lg">
               <h4 className="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">{cat}</h4>
               <div className="flex flex-wrap gap-md">
                 {sortedSkills(cat).map(skill => (
-                  <div key={skill.name} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm">
+                  <div key={skill.name} className="group cursor-pointer bg-surface-container-lowest border border-outline-variant/50 rounded-xl p-md flex items-center gap-md hover:border-primary transition-all shadow-sm" onClick={() => setSelectedSkill(selectedSkill?.name === skill.name ? null : skill)}>
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${colorForCategory(cat)}`}>
                       <span className="material-symbols-outlined">{iconForCategory(cat)}</span>
                     </div>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="font-label-md text-label-md font-bold">{skill.name}</p>
-                      <p className="text-label-sm font-label-sm text-on-surface-variant">{skill.description || `Trigger: ${skill.trigger}`}</p>
+                      <p className="text-label-sm font-label-sm text-on-surface-variant truncate">{skill.description || `Trigger: ${skill.trigger}`}</p>
                     </div>
                     <span className="px-sm py-xs bg-surface-container-low rounded-full text-label-sm font-label-sm text-on-surface-variant">{skill.source}</span>
+                    <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{selectedSkill?.name === skill.name ? 'expand_less' : 'expand_more'}</span>
+                  </div>
+                ))}
+                {sortedSkills(cat).map(skill => selectedSkill?.name === skill.name && (
+                  <div key={`${skill.name}-detail`} className="bg-surface-container-low border border-primary/30 rounded-xl p-lg space-y-sm">
+                    <h5 className="font-label-md text-on-surface font-bold">{skill.name}</h5>
+                    <p className="text-body-sm text-on-surface-variant">{skill.description || 'No description available.'}</p>
+                    <div className="flex items-center gap-md text-label-sm text-on-surface-variant">
+                      <span className="flex items-center gap-xs"><span className="material-symbols-outlined text-[14px]">terminal</span>Trigger: {skill.trigger}</span>
+                      <span className="flex items-center gap-xs"><span className="material-symbols-outlined text-[14px]">source</span>{skill.source}</span>
+                    </div>
+                    <button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90 transition-opacity" onClick={() => setSelectedSkill(null)}>Close</button>
                   </div>
                 ))}
               </div>

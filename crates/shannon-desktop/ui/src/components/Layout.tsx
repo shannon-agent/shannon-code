@@ -1,17 +1,26 @@
+import { useState, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import CommandPalette from './CommandPalette';
+import KeyboardShortcutsHelp from './KeyboardShortcutsHelp';
 import { useApp } from '@/context/AppContext';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function Layout() {
   const { usage, agents, status } = useApp();
-  useKeyboardShortcuts();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const togglePalette = useCallback(() => setPaletteOpen(p => !p), []);
+  const toggleHelp = useCallback(() => setHelpOpen(p => !p), []);
+  useKeyboardShortcuts(togglePalette, toggleHelp);
 
   return (
     <div className="bg-background text-on-surface font-body-md overflow-hidden min-h-screen" style={{ '--sidebar-w': '280px' } as React.CSSProperties}>
       <Sidebar />
       <Header />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <KeyboardShortcutsHelp open={helpOpen} onClose={() => setHelpOpen(false)} />
       <main className="pt-16 pb-8 h-screen flex flex-col relative" style={{ marginLeft: 'var(--sidebar-w)', width: 'calc(100% - var(--sidebar-w))' }}>
         <Outlet />
       </main>

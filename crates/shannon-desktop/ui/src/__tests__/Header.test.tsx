@@ -86,7 +86,7 @@ describe('Header component', () => {
     render(wrap(<Header />, { route: '/chat' }))
     expect(screen.getByText('Permission Request')).toBeInTheDocument()
     expect(screen.getByText('bash')).toBeInTheDocument()
-    expect(screen.getByText('Allow')).toBeInTheDocument()
+    expect(screen.getByText('Allow Once')).toBeInTheDocument()
     expect(screen.getByText('Deny')).toBeInTheDocument()
   })
 

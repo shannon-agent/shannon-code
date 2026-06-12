@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 
@@ -283,10 +284,10 @@ export default function Tasks() {
           {/* Tasks List */}
           <div className="col-span-12 lg:col-span-8 space-y-md">
             {filteredTasks.length === 0 && backgroundTasks.length === 0 ? (
-              <div className="text-center py-xl">
-                <span className="material-symbols-outlined text-[48px] text-outline-variant">task_alt</span>
-                <p className="font-body-md text-on-surface-variant mt-md">No tasks yet.</p>
-              </div>
+              <EmptyState
+                icon="task_alt"
+                title="No tasks yet."
+              />
             ) : null}
 
             {filteredTasks.map(task => {

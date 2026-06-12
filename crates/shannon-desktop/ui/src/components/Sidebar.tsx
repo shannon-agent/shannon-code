@@ -1,16 +1,59 @@
-import { useState, memo } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '../lib/utils';
 import { useApp } from '@/context/AppContext';
 
+const MIN_W = 200
+const MAX_W = 400
+const DEFAULT_W = 280
+const STORAGE_KEY = 'shannon-sidebar-width'
+
 export const Sidebar = memo(function Sidebar() {
   const [opcOpen, setOpcOpen] = useState(true);
   const [extensionsOpen, setExtensionsOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [width, setWidth] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? Math.min(MAX_W, Math.max(MIN_W, parseInt(stored, 10) || DEFAULT_W)) : DEFAULT_W
+  });
+  const dragging = useRef(false);
   const location = useLocation();
   const { status, createSession } = useApp();
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    dragging.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!dragging.current) return
+      const next = Math.min(MAX_W, Math.max(MIN_W, e.clientX))
+      setWidth(next)
+      document.documentElement.style.setProperty('--sidebar-w', `${next}px`)
+    }
+    const handleMouseUp = () => {
+      if (!dragging.current) return
+      dragging.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      localStorage.setItem(STORAGE_KEY, String(width))
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [width])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-w', `${width}px`)
+  }, [width])
 
   const isOpcActive = location.pathname.includes('/opc') && !location.pathname.includes('/extensions');
   const isExtensionsActive = location.pathname.includes('/extensions');
@@ -33,7 +76,12 @@ export const Sidebar = memo(function Sidebar() {
     );
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-[280px] bg-surface-container-lowest/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md z-50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">
+    <aside data-sidebar className="fixed left-0 top-0 h-full bg-surface-container-lowest/70 backdrop-blur-[20px] border-r border-outline-variant/30 flex flex-col py-lg px-md z-50 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]" style={{ width }}>
+      {/* Drag handle */}
+      <div
+        className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+        onMouseDown={handleMouseDown}
+      />
       <div className="flex items-center gap-3 mb-xl px-2">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
           <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>hub</span>
@@ -56,15 +104,18 @@ export const Sidebar = memo(function Sidebar() {
         <ScrollArea className="h-full">
         <NavLink to="/chat" className={getNavClass}>
            <span className="material-symbols-outlined">chat_bubble</span>
-           <span>Chat</span>
+           <span className="flex-1">Chat</span>
+           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘1</kbd>
         </NavLink>
         <NavLink to="/goals" className={getNavClass}>
            <span className="material-symbols-outlined">ads_click</span>
-           <span>Goals</span>
+           <span className="flex-1">Goals</span>
+           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘2</kbd>
         </NavLink>
         <NavLink to="/tasks" className={getNavClass}>
            <span className="material-symbols-outlined">task_alt</span>
-           <span>Scheduled</span>
+           <span className="flex-1">Scheduled</span>
+           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘3</kbd>
         </NavLink>
         <div className="space-y-1">
           <Button

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApp } from '@/context/AppContext';
@@ -49,7 +50,8 @@ export function Header() {
     try {
       await api.switchProvider({ provider: status.provider, model: modelId })
       setModelOpen(false)
-    } catch (e) { console.warn("Header error:", e) }
+      toast.success(`Switched to ${modelId}`)
+    } catch (e) { console.warn("Header error:", e); toast.error('Failed to switch model') }
   }
 
   return (
@@ -131,30 +133,36 @@ export function Header() {
               <div className="h-10 w-10 rounded-full bg-tertiary-container flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-tertiary-container">shield</span>
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-headline-sm text-on-surface font-bold">Permission Request</h3>
-                <p className="text-body-sm text-on-surface-variant">A tool needs your approval</p>
+                <p className="text-body-sm text-on-surface-variant">Review the tool invocation below</p>
               </div>
+              <span className={`px-sm py-xs rounded-full font-label-sm font-bold uppercase tracking-wider ${
+                permissionRequest.risk === 'critical' ? 'bg-red-100 text-red-700' :
+                permissionRequest.risk === 'high' ? 'bg-orange-100 text-orange-700' :
+                permissionRequest.risk === 'medium' ? 'bg-amber-100 text-amber-700' :
+                'bg-green-100 text-green-700'
+              }`}>{permissionRequest.risk}</span>
             </div>
             <div className="p-md bg-surface-container-low rounded-xl mb-lg space-y-sm">
               <div className="flex justify-between">
                 <span className="text-label-sm text-on-surface-variant">Tool</span>
                 <span className="font-label-md text-on-surface font-bold">{permissionRequest.tool}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-label-sm text-on-surface-variant">Risk</span>
-                <span className={`font-label-md font-bold ${permissionRequest.risk === 'high' ? 'text-error' : permissionRequest.risk === 'medium' ? 'text-amber-500' : 'text-green-500'}`}>{permissionRequest.risk}</span>
-              </div>
               {permissionRequest.input ? (
-                <pre className="text-body-sm text-on-surface-variant bg-surface-container p-sm rounded-lg overflow-x-auto max-h-[120px] mt-sm">{JSON.stringify(permissionRequest.input as object, null, 2)}</pre>
+                <pre className="text-body-sm text-on-surface-variant bg-surface-container p-sm rounded-lg overflow-x-auto max-h-[200px] mt-sm">{JSON.stringify(permissionRequest.input as object, null, 2)}</pre>
               ) : null}
             </div>
+            <label className="flex items-center gap-sm mb-lg cursor-pointer text-body-sm text-on-surface-variant hover:text-on-surface transition-colors">
+              <input type="checkbox" className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30" />
+              Always allow this tool
+            </label>
             <div className="flex gap-md">
-              <Button className="flex-1 py-sm bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-high transition-all" onClick={() => respondPermission(permissionRequest.request_id, false)}>
+              <Button className="flex-1 py-sm bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-high transition-all font-label-md" onClick={() => respondPermission(permissionRequest.request_id, false)}>
                 Deny
               </Button>
-              <Button className="flex-1 py-sm bg-primary text-white rounded-xl hover:shadow-md hover:shadow-primary/30 active:scale-95 transition-all" onClick={() => respondPermission(permissionRequest.request_id, true)}>
-                Allow
+              <Button className="flex-1 py-sm bg-primary text-white rounded-xl hover:shadow-md hover:shadow-primary/30 active:scale-95 transition-all font-label-md" onClick={() => respondPermission(permissionRequest.request_id, true)}>
+                Allow Once
               </Button>
             </div>
           </div>

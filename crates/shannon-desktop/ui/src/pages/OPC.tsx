@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
 
@@ -48,7 +50,8 @@ export default function OPC() {
     try {
       await import('@/lib/tauri-api').then(api => api.startBackgroundTask(trimmed))
       setQuickTask('')
-    } catch (e) { console.warn('Failed to start quick task:', e) }
+      toast.success('Task created')
+    } catch (e) { console.warn('Failed to start quick task:', e); toast.error('Failed to create task') }
   }
 
   const todoTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo')
@@ -99,9 +102,12 @@ export default function OPC() {
             </div>
 
             {agents.length === 0 ? (
-              <div className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-lg text-center">
-                <span className="material-symbols-outlined text-[48px] text-outline-variant">group</span>
-                <p className="text-body-sm text-on-surface-variant mt-md">No agents running. Start a team coordination to see agents here.</p>
+              <div className="bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-lg">
+                <EmptyState
+                  icon="group"
+                  title="No agents running."
+                  description="Start a team coordination to see agents here."
+                />
               </div>
             ) : (
               <div className="space-y-sm">

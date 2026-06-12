@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import EmptyState from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
@@ -74,10 +75,12 @@ export default function DataSources() {
 
       <div className="grid grid-cols-12 gap-lg pb-10">
         {mcpServers.length === 0 && !adding && (
-          <div className="col-span-12 text-center py-xl">
-            <span className="material-symbols-outlined text-[48px] text-outline-variant">cloud_off</span>
-            <p className="font-body-md text-on-surface-variant mt-md">No MCP servers configured.</p>
-            <p className="font-body-sm text-on-surface-variant opacity-60">Click "Add Source" to connect a data source.</p>
+          <div className="col-span-12">
+            <EmptyState
+              icon="cloud_off"
+              title="No MCP servers configured."
+              description='Click "Add Source" to connect a data source.'
+            />
           </div>
         )}
 

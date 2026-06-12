@@ -52,10 +52,11 @@ describe('useKeyboardShortcuts', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/chat')
   })
 
-  it('navigates to /chat on mod+k', () => {
-    renderHook(() => useKeyboardShortcuts())
+  it('calls palette toggle on mod+k', () => {
+    const toggle = vi.fn()
+    renderHook(() => useKeyboardShortcuts(toggle))
     fireKeyDown('k', { metaKey: true })
-    expect(mockNavigate).toHaveBeenCalledWith('/chat')
+    expect(toggle).toHaveBeenCalled()
   })
 
   it('ignores shortcuts when focus is in input', () => {
