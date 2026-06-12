@@ -22,8 +22,9 @@ export default function BillingSettings() {
     setCancelling(true)
     try {
       await api.configure({ key: 'cancel_subscription', value: 'true' })
+      toast.success('Subscription cancelled')
       setShowCancelConfirm(false)
-    } catch (e) { console.warn("BillingSettings cancel error:", e) }
+    } catch (e) { console.warn("BillingSettings cancel error:", e); toast.error('Failed to cancel subscription') }
     setCancelling(false)
   }
 
@@ -31,8 +32,9 @@ export default function BillingSettings() {
     setChangingPlan(planName)
     try {
       await api.configure({ key: 'plan', value: planName.toLowerCase() })
+      toast.success(`Switched to ${planName} plan`)
       setShowChangePlan(false)
-    } catch (e) { console.warn("BillingSettings plan error:", e) }
+    } catch (e) { console.warn("BillingSettings plan error:", e); toast.error('Failed to change plan') }
     setChangingPlan(null)
   }
 
