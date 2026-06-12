@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { useApp } from '@/context/AppContext'
+import * as api from '@/lib/tauri-api'
 
 interface PaletteItem {
   id: string
@@ -33,7 +35,9 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       id: `s-${s.id}`, label: s.title || 'Untitled', icon: 'history', category: 'Sessions', action: () => navigate('/chat'),
     }))
     const modelItems: PaletteItem[] = models.slice(0, 5).map(m => ({
-      id: `m-${m.id}`, label: m.name, icon: 'smart_toy', category: 'Models', action: () => {},
+      id: `m-${m.id}`, label: m.name, icon: 'smart_toy', category: 'Models', action: () => {
+        api.switchProvider({ provider: m.provider, model: m.id }).then(() => toast.success(`Switched to ${m.name}`)).catch(() => toast.error('Failed to switch model'))
+      },
     }))
     return [...pages, ...sessionItems, ...modelItems]
   }, [navigate, sessions, models])

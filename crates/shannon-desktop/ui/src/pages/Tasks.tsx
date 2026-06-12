@@ -512,7 +512,7 @@ export default function Tasks() {
 
       {/* Task Detail Drawer */}
       {selectedTask && (
-        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedTaskId(null)}>
+        <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSelectedTaskId(null)} onKeyDown={e => { if (e.key === 'Escape') setSelectedTaskId(null) }}>
           <div className="bg-black/20 absolute inset-0" />
           <div className="relative w-[400px] bg-surface-container-lowest shadow-2xl border-l border-outline-variant/20 p-xl overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-lg">

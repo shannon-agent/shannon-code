@@ -86,7 +86,7 @@ export default function Goals() {
       </aside>
 
       {/* Main Canvas */}
-      <div className="flex-1 flex flex-col overflow-y-auto p-xl relative">
+      <div className="flex-1 flex flex-col overflow-y-auto p-xl pb-32 relative">
         {loading ? (
           <div className="flex-1 p-lg space-y-md">
             {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
