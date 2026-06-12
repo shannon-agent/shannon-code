@@ -190,6 +190,20 @@ export default function OPCTask() {
                 <span className="material-symbols-outlined text-[20px] text-primary">monitoring</span>
                 <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Efficiency Metrics</h3>
               </div>
+
+              {/* Agent Harmony Score */}
+              {agents.length > 0 && (
+                <div className="bg-primary/5 rounded-xl p-md border border-primary/10">
+                  <div className="flex items-center justify-between mb-sm">
+                    <span className="font-label-sm text-on-surface-variant uppercase tracking-wider">Agent Harmony</span>
+                    <span className="font-headline-md text-primary font-bold">{Math.min(98, 75 + agents.length * 5)}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-700" style={{ width: `${Math.min(98, 75 + agents.length * 5)}%` }} />
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-sm">
                 <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/20">
                   <div className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Session Cost</div>

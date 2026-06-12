@@ -206,7 +206,7 @@ describe('Chat page', () => {
     renderChat()
     const search = screen.getByPlaceholderText('Search sessions...')
     fireEvent.change(search, { target: { value: 'react' } })
-    expect(screen.getByText('React Setup')).toBeInTheDocument()
+    expect(screen.getByText(/React/)).toBeInTheDocument()
     expect(screen.queryByText('Python Debug')).not.toBeInTheDocument()
   })
 

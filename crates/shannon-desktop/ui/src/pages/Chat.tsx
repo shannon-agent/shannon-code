@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -42,6 +42,11 @@ export default function Chat() {
     }
     if (e.key === 'Escape' && isQuerying) {
       cancelQuery()
+    }
+    if (e.key === 'ArrowUp' && e.altKey && input === '' && messages.length > 0) {
+      e.preventDefault()
+      const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
+      if (lastUserMsg) setInput(lastUserMsg.content)
     }
   }
 
@@ -124,7 +129,7 @@ export default function Chat() {
               ) : (
                 <>
                   <p className={`font-label-md truncate ${session.id === currentSessionId ? 'text-primary font-bold' : 'text-on-surface group-hover:text-primary transition-colors'}`}>
-                    {session.title || 'Untitled'}
+                    <HighlightText text={session.title || 'Untitled'} query={sessionSearch} />
                   </p>
                   <p className="text-body-sm text-on-surface-variant opacity-70 truncate">
                     {session.message_count} messages · {formatTime(session.created_at)}
@@ -302,7 +307,7 @@ export default function Chat() {
   )
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+const MessageBubble = memo(function MessageBubble({ message, isBranch }: { message: ChatMessage; isBranch?: boolean }) {
   const isUser = message.role === 'user'
   const [liked, setLiked] = useState(false)
   const { sendMessage } = useApp()
@@ -318,8 +323,16 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] bg-primary-fixed text-on-primary-fixed px-lg py-md rounded-2xl rounded-tr-none shadow-sm">
-          <p className="font-body-md whitespace-pre-wrap">{message.content}</p>
+        <div className="max-w-[80%]">
+          {isBranch && (
+            <div className="flex items-center gap-xs mb-xs justify-end">
+              <span className="material-symbols-outlined text-[14px] text-on-surface-variant/50">fork_right</span>
+              <span className="font-label-sm text-on-surface-variant/50">Edited branch</span>
+            </div>
+          )}
+          <div className="bg-primary-fixed text-on-primary-fixed px-lg py-md rounded-2xl rounded-tr-none shadow-sm">
+            <p className="font-body-md whitespace-pre-wrap">{message.content}</p>
+          </div>
         </div>
       </div>
     )
@@ -355,9 +368,22 @@ function MessageBubble({ message }: { message: ChatMessage }) {
       </div>
     </div>
   )
-}
+});
 
-function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
+const HighlightText = memo(function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-primary/20 text-inherit rounded-sm px-[1px]">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
+  )
+});
+
+const ToolCallDisplay = memo(function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
   const [expanded, setExpanded] = useState(false)
   const statusIcon = toolCall.status === 'running' ? 'hourglass_empty' : toolCall.status === 'error' ? 'error' : 'check_circle'
   const statusColor = toolCall.status === 'running' ? 'text-amber-500' : toolCall.status === 'error' ? 'text-error' : 'text-green-500'
@@ -381,4 +407,4 @@ function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
       )}
     </div>
   )
-}
+});

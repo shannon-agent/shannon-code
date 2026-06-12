@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '../lib/utils';
 import { useApp } from '@/context/AppContext';
 
-export function Sidebar() {
+export const Sidebar = memo(function Sidebar() {
   const [opcOpen, setOpcOpen] = useState(true);
   const [extensionsOpen, setExtensionsOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -206,4 +206,4 @@ export function Sidebar() {
       </div>
     </aside>
   );
-}
+});

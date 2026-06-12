@@ -1,24 +1,29 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Layout } from './components/Layout';
-import Chat from './pages/Chat';
-import Tasks from './pages/Tasks';
-import Goals from './pages/Goals';
-import Extensions from './pages/Extensions';
-import Settings from './pages/Settings';
-import OPC from './pages/OPC';
-import OPCTask from './pages/OPCTask';
-import ExtensionsHub from './components/extensions/ExtensionsHub';
-import MyAgents from './components/extensions/MyAgents';
-import DataSources from './components/extensions/DataSources';
 
-import GeneralSettings from './components/settings/GeneralSettings';
-import ThemeSettings from './components/settings/ThemeSettings';
-import ModelsSettings from './components/settings/ModelsSettings';
-import AdvancedSettings from './components/settings/AdvancedSettings';
-import BillingSettings from './components/settings/BillingSettings';
+const Chat = lazy(() => import('./pages/Chat'));
+const Tasks = lazy(() => import('./pages/Tasks'));
+const Goals = lazy(() => import('./pages/Goals'));
+const Extensions = lazy(() => import('./pages/Extensions'));
+const Settings = lazy(() => import('./pages/Settings'));
+const OPC = lazy(() => import('./pages/OPC'));
+const OPCTask = lazy(() => import('./pages/OPCTask'));
+const ExtensionsHub = lazy(() => import('./components/extensions/ExtensionsHub'));
+const MyAgents = lazy(() => import('./components/extensions/MyAgents'));
+const DataSources = lazy(() => import('./components/extensions/DataSources'));
+const GeneralSettings = lazy(() => import('./components/settings/GeneralSettings'));
+const ThemeSettings = lazy(() => import('./components/settings/ThemeSettings'));
+const ModelsSettings = lazy(() => import('./components/settings/ModelsSettings'));
+const AdvancedSettings = lazy(() => import('./components/settings/AdvancedSettings'));
+const BillingSettings = lazy(() => import('./components/settings/BillingSettings'));
+
+function PageLoader() {
+  return <div className="flex-1 flex items-center justify-center"><span className="material-symbols-outlined text-[32px] text-primary animate-spin">progress_activity</span></div>;
+}
 
 export default function App() {
   return (
@@ -26,31 +31,33 @@ export default function App() {
       <AppProvider>
         <ErrorBoundary>
         <BrowserRouter>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/chat" replace />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/goals" element={<Goals />} />
-              <Route path="/extensions" element={<Extensions />}>
-                <Route index element={<Navigate to="skills" replace />} />
-                <Route path="skills" element={<ExtensionsHub />} />
-                <Route path="agents" element={<MyAgents />} />
-                <Route path="datasources" element={<DataSources />} />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Navigate to="/chat" replace />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/goals" element={<Goals />} />
+                <Route path="/extensions" element={<Extensions />}>
+                  <Route index element={<Navigate to="skills" replace />} />
+                  <Route path="skills" element={<ExtensionsHub />} />
+                  <Route path="agents" element={<MyAgents />} />
+                  <Route path="datasources" element={<DataSources />} />
+                </Route>
+                <Route path="/opc" element={<OPC />} />
+                <Route path="/opc/task" element={<OPCTask />} />
+                <Route path="/settings" element={<Settings />}>
+                  <Route index element={<Navigate to="general" replace />} />
+                  <Route path="general" element={<GeneralSettings />} />
+                  <Route path="theme" element={<ThemeSettings />} />
+                  <Route path="models" element={<ModelsSettings />} />
+                  <Route path="billing" element={<BillingSettings />} />
+                  <Route path="advanced" element={<AdvancedSettings />} />
+                </Route>
+                <Route path="*" element={<Navigate to="/chat" replace />} />
               </Route>
-              <Route path="/opc" element={<OPC />} />
-              <Route path="/opc/task" element={<OPCTask />} />
-              <Route path="/settings" element={<Settings />}>
-                <Route index element={<Navigate to="general" replace />} />
-                <Route path="general" element={<GeneralSettings />} />
-                <Route path="theme" element={<ThemeSettings />} />
-                <Route path="models" element={<ModelsSettings />} />
-                <Route path="billing" element={<BillingSettings />} />
-                <Route path="advanced" element={<AdvancedSettings />} />
-              </Route>
-              <Route path="*" element={<Navigate to="/chat" replace />} />
-            </Route>
-          </Routes>
+            </Routes>
+          </Suspense>
         </BrowserRouter>
         </ErrorBoundary>
       </AppProvider>

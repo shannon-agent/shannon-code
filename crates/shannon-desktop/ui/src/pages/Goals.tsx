@@ -37,15 +37,21 @@ export default function Goals() {
             {filteredActive.length === 0 && filteredPending.length === 0 ? (
               <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No tasks</p>
             ) : null}
-            {filteredActive.map(task => (
+            {filteredActive.map(task => {
+              const progress = task.progress ?? Math.round((task.status === 'completed' ? 100 : task.status === 'in_progress' || task.status === 'running' ? 55 : 15))
+              return (
               <div key={task.id} className="w-full flex flex-col gap-1 p-md rounded-xl bg-primary/10 border border-primary/20 cursor-pointer">
                 <div className="flex justify-between items-start">
                   <span className="font-label-md text-primary font-bold truncate">{task.title}</span>
-                  <span className="material-symbols-outlined text-primary text-[16px]">sync</span>
+                  <span className="font-label-sm text-primary font-bold">{progress}%</span>
+                </div>
+                <div className="w-full h-1.5 bg-primary/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
                 </div>
                 {task.assignee ? <span className="font-label-sm text-on-surface-variant">Assigned to: {task.assignee}</span> : null}
               </div>
-            ))}
+              )
+            })}
             {filteredPending.map(task => (
               <div key={task.id} className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer duration-300">
                 <div className="flex justify-between items-start">
@@ -143,6 +149,17 @@ export default function Goals() {
                         </span>
                       </div>
                       {task.description ? <p className="text-on-surface-variant">{task.description}</p> : null}
+                      <div className="flex items-center gap-md mt-sm">
+                        <div className="flex-1 h-1.5 bg-outline-variant/10 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-green-500' : isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
+                            style={{ width: `${isDone ? 100 : isActive ? (task.progress ?? 55) : 15}%` }}
+                          />
+                        </div>
+                        <span className={`font-label-sm text-[11px] ${isDone ? 'text-green-600' : isActive ? 'text-primary' : 'text-on-surface-variant'}`}>
+                          {isDone ? '100%' : isActive ? `${task.progress ?? 55}%` : '15%'}
+                        </span>
+                      </div>
                       {task.assignee ? <p className="text-label-sm text-on-surface-variant mt-sm">Assigned to: {task.assignee}</p> : null}
                     </div>
                   </div>
