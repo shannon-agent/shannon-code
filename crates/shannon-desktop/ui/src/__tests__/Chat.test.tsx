@@ -97,7 +97,7 @@ describe('Chat page', () => {
     const input = screen.getByPlaceholderText('Ask Shannon anything...')
     fireEvent.change(input, { target: { value: 'Hello agent' } })
     fireEvent.keyDown(input, { key: 'Enter' })
-    expect(ctx.sendMessage).toHaveBeenCalledWith('Hello agent')
+    expect(ctx.sendMessage).toHaveBeenCalledWith('Hello agent', undefined)
   })
 
   it('does not send empty message on Enter', () => {
@@ -257,5 +257,20 @@ describe('Chat page', () => {
     fireEvent.click(likeBtn)
     // After liking, the icon changes to thumb_up
     expect(likeBtn.querySelector('.material-symbols-outlined')).toHaveTextContent('thumb_up')
+  })
+
+  // US-CHAT-08: Attach file button
+  it('has attach file button', () => {
+    resetCtx()
+    renderChat()
+    expect(screen.getByLabelText('Attach file')).toBeInTheDocument()
+  })
+
+  it('has hidden file input for attachments', () => {
+    resetCtx()
+    renderChat()
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    expect(fileInput).toBeInTheDocument()
+    expect(fileInput.className).toContain('hidden')
   })
 })

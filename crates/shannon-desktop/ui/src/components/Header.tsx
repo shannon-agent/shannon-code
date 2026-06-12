@@ -9,7 +9,7 @@ const TITLE_MAP: [string, string][] = [
   ['/opc/task', 'OPC Task'],
   ['/opc', 'One Person Company'],
   ['/settings', 'Settings'],
-  ['/tasks', 'Tasks'],
+  ['/tasks', 'Scheduled'],
   ['/goals', 'Goals'],
   ['/extensions', 'Extensions'],
   ['/chat', 'Chat'],

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import MyAgents from '@/components/extensions/MyAgents'
 
@@ -197,5 +197,49 @@ describe('MyAgents', () => {
     ctx.agents = [{ id: 'a1', name: 'TestBot', model: 'claude-3', status: 'running' }]
     renderMyAgents()
     expect(screen.getByText(/claude-3/)).toBeInTheDocument()
+  })
+
+  // US-EXT-06: Agent management actions
+  it('shows Configure button on agent card', () => {
+    resetCtx()
+    ctx.agents = [{ id: 'a1', name: 'Bot', status: 'idle' }]
+    renderMyAgents()
+    expect(screen.getByText('Configure')).toBeInTheDocument()
+  })
+
+  it('toggles config panel on Configure click', () => {
+    resetCtx()
+    ctx.agents = [{ id: 'a1', name: 'ConfigBot', model: 'gpt-4', status: 'idle' }]
+    renderMyAgents()
+    fireEvent.click(screen.getByText('Configure'))
+    expect(screen.getByText('Close')).toBeInTheDocument()
+    expect(screen.getByText(/Configuration for/)).toBeInTheDocument()
+  })
+
+  // US-EXT-07: Create new agent
+  it('shows New Specialization card when agents exist', () => {
+    resetCtx()
+    ctx.agents = [{ id: 'a1', name: 'Bot', status: 'running' }]
+    renderMyAgents()
+    expect(screen.getByText('New Specialization')).toBeInTheDocument()
+  })
+
+  it('shows create form on New Specialization click', () => {
+    resetCtx()
+    ctx.agents = [{ id: 'a1', name: 'Bot', status: 'running' }]
+    renderMyAgents()
+    fireEvent.click(screen.getByText('New Specialization'))
+    expect(screen.getByText('Create New Agent')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Describe the agent/)).toBeInTheDocument()
+    expect(screen.getByText('Create Agent')).toBeInTheDocument()
+  })
+
+  it('dismisses create form on Cancel click', () => {
+    resetCtx()
+    ctx.agents = [{ id: 'a1', name: 'Bot', status: 'running' }]
+    renderMyAgents()
+    fireEvent.click(screen.getByText('New Specialization'))
+    fireEvent.click(screen.getByText('Cancel'))
+    expect(screen.getByText('New Specialization')).toBeInTheDocument()
   })
 })

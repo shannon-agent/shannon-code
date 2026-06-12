@@ -160,4 +160,27 @@ describe('OPC page', () => {
     const emptyMessages = screen.getAllByText('Empty')
     expect(emptyMessages.length).toBeGreaterThan(0)
   })
+
+  // US-OPC-04: Strategic Focus editing
+  it('shows Edit button for strategic focus', () => {
+    resetCtx()
+    renderOPC()
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+  })
+
+  it('toggles to textarea on Edit click', () => {
+    resetCtx()
+    renderOPC()
+    fireEvent.click(screen.getByText('Edit'))
+    expect(screen.getByText('Save Focus')).toBeInTheDocument()
+  })
+
+  it('shows Cancel when editing and toggles back', () => {
+    resetCtx()
+    renderOPC()
+    fireEvent.click(screen.getByText('Edit'))
+    expect(screen.getByText('Cancel')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('Cancel'))
+    expect(screen.getByText('Edit')).toBeInTheDocument()
+  })
 })

@@ -126,4 +126,34 @@ describe('Goals Enhanced', () => {
     renderGoals()
     expect(screen.getAllByText('Done Task').length).toBeGreaterThan(0)
   })
+
+  // US-GOAL-06: File attachment button
+  it('has attach file button', () => {
+    resetCtx()
+    renderGoals()
+    expect(screen.getByLabelText('Attach file')).toBeInTheDocument()
+  })
+
+  it('has hidden file input', () => {
+    resetCtx()
+    renderGoals()
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
+    expect(fileInput).toBeInTheDocument()
+    expect(fileInput.className).toContain('hidden')
+  })
+
+  // US-GOAL-07: AI assistant button
+  it('has AI assistant button', () => {
+    resetCtx()
+    renderGoals()
+    expect(screen.getByLabelText('AI assistant')).toBeInTheDocument()
+  })
+
+  it('sends suggestion message on AI assistant click', () => {
+    resetCtx()
+    ctx.sendMessage = vi.fn()
+    renderGoals()
+    fireEvent.click(screen.getByLabelText('AI assistant'))
+    expect(ctx.sendMessage).toHaveBeenCalledWith(expect.stringContaining('Suggest next steps'))
+  })
 })

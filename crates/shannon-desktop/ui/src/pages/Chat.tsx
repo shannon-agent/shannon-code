@@ -18,6 +18,7 @@ export default function Chat() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [fileContext, setFileContext] = useState<FileContext[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -31,8 +32,11 @@ export default function Chat() {
   const handleSend = () => {
     const trimmed = input.trim()
     if (!trimmed || isQuerying) return
-    sendMessage(trimmed)
+    const files = fileInputRef.current?.files
+    const filePaths = files && files.length > 0 ? Array.from(files).map(f => f.name) : undefined
+    sendMessage(trimmed, filePaths)
     setInput('')
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -202,7 +206,8 @@ export default function Chat() {
           <div className="max-w-4xl mx-auto relative group">
             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full opacity-50 group-focus-within:opacity-100 transition-opacity duration-500"></div>
             <div className="relative glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
-              <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
+              <input type="file" ref={fileInputRef} className="hidden" onChange={e => { if (e.target.files && e.target.files.length > 0 && input.trim()) handleSend() }} />
+              <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary" onClick={() => fileInputRef.current?.click()}>
                 <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
               </Button>
               <span className="material-symbols-outlined p-md text-primary" aria-hidden="true">{isQuerying ? 'hourglass_empty' : 'auto_awesome'}</span>

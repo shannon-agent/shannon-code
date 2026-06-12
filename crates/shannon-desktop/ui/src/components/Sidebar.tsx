@@ -64,7 +64,7 @@ export const Sidebar = memo(function Sidebar() {
         </NavLink>
         <NavLink to="/tasks" className={getNavClass}>
            <span className="material-symbols-outlined">task_alt</span>
-           <span>Tasks</span>
+           <span>Scheduled</span>
         </NavLink>
         <div className="space-y-1">
           <Button

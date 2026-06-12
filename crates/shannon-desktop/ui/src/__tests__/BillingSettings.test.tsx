@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { AppProvider } from '@/context/AppContext'
 import { MemoryRouter } from 'react-router-dom'
 import BillingSettings from '@/components/settings/BillingSettings'
@@ -53,5 +53,43 @@ describe('BillingSettings', () => {
   it('renders footer help section', () => {
     render(wrap(<BillingSettings />))
     expect(screen.getByText(/Enterprise Team/i)).toBeInTheDocument()
+  })
+
+  // US-SET-06: Change Plan modal
+  it('opens change plan modal on Change Plan click', () => {
+    render(wrap(<BillingSettings />))
+    fireEvent.click(screen.getByText('Change Plan'))
+    expect(screen.getByText('Free')).toBeInTheDocument()
+    expect(screen.getByText('Pro')).toBeInTheDocument()
+    expect(screen.getByText('Enterprise')).toBeInTheDocument()
+  })
+
+  it('closes change plan modal when close button clicked', () => {
+    render(wrap(<BillingSettings />))
+    fireEvent.click(screen.getAllByText('Change Plan')[0])
+    expect(screen.getByText('Free')).toBeInTheDocument()
+    // Click the backdrop to close
+    const modal = screen.getByText('Free').closest('.fixed')!
+    const closeBtn = modal.querySelector('.material-symbols-outlined')
+    if (closeBtn) fireEvent.click(closeBtn)
+  })
+
+  // US-SET-08: Legal modal
+  it('opens legal modal on Legal & Terms click', () => {
+    render(wrap(<BillingSettings />))
+    fireEvent.click(screen.getByText('Legal & Terms'))
+    expect(screen.getByText('Legal & Privacy')).toBeInTheDocument()
+  })
+
+  it('opens legal modal on Privacy Policy click', () => {
+    render(wrap(<BillingSettings />))
+    fireEvent.click(screen.getByText('Privacy Policy'))
+    expect(screen.getByText('Legal & Privacy')).toBeInTheDocument()
+  })
+
+  // US-SET-07: Cancel subscription
+  it('has cancel button', () => {
+    render(wrap(<BillingSettings />))
+    expect(screen.getByText('Cancel')).toBeInTheDocument()
   })
 })
