@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
@@ -28,14 +27,11 @@ export default function ModelsSettings() {
 
   const currentModel = status?.model
   const providers = [...new Set(models.map(m => m.provider))]
+  const [activeProvider, setActiveProvider] = useState<string | null>(null)
+  const filteredModels = activeProvider ? models.filter(m => m.provider === activeProvider) : models
 
   return (
     <div className="max-w-[1200px] pr-8 pb-10">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
-        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="text-on-surface">Models</span>
-      </nav>
       <header className="mb-md">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">Model Configuration</h2>
         <p className="font-body-md text-on-surface-variant">Manage your active AI providers and configure default models for your workspace.</p>
@@ -93,8 +89,16 @@ export default function ModelsSettings() {
         <section className="bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-outline-variant/30 bg-surface-container-low/30 px-lg pt-md">
             <div className="flex gap-lg overflow-x-auto">
+              <button
+                onClick={() => setActiveProvider(null)}
+                className={`pb-sm px-xs border-b-2 font-label-md whitespace-nowrap cursor-pointer transition-colors ${!activeProvider ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant hover:text-primary'}`}
+              >All</button>
               {providers.map(p => (
-                <span key={p} className="pb-sm px-xs border-b-2 border-primary text-primary font-bold font-label-md whitespace-nowrap">{p}</span>
+                <button
+                  key={p}
+                  onClick={() => setActiveProvider(activeProvider === p ? null : p)}
+                  className={`pb-sm px-xs border-b-2 font-label-md whitespace-nowrap cursor-pointer transition-colors ${activeProvider === p ? 'border-primary text-primary font-bold' : 'border-transparent text-on-surface-variant hover:text-primary'}`}
+                >{p}</button>
               ))}
               {providers.length === 0 && <span className="pb-sm px-xs text-on-surface-variant font-label-md">No providers available</span>}
             </div>
@@ -111,11 +115,11 @@ export default function ModelsSettings() {
               </span>
             </div>
 
-            {models.length === 0 ? (
+            {filteredModels.length === 0 ? (
               <p className="text-body-sm text-on-surface-variant py-lg text-center">No models found. Check your provider configuration.</p>
             ) : (
               <div className="grid grid-cols-1 gap-md">
-                {models.map(m => (
+                {filteredModels.map(m => (
                   <button
                     key={m.id}
                     onClick={() => handleModelSwitch(m.id)}

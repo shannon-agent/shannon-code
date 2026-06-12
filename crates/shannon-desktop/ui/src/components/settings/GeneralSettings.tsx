@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 import type { ApprovalMode } from '@/types'
@@ -38,11 +37,6 @@ export default function GeneralSettings() {
 
   return (
     <div className="max-w-3xl">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
-        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="text-on-surface">General</span>
-      </nav>
       <header className="mb-xl">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">System Settings</h2>
         <p className="font-body-md text-on-surface-variant">Refine your AI workflow and interface preferences.</p>
@@ -99,19 +93,6 @@ export default function GeneralSettings() {
           </div>
         </section>
       </div>
-
-      <style>{`
-        input.slider-thumb-primary::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            height: 16px;
-            width: 16px;
-            border-radius: 50%;
-            background: var(--color-primary);
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(107, 56, 212, 0.3);
-            margin-top: -6px;
-        }
-      `}</style>
     </div>
   )
 }

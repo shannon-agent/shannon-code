@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useApp } from '@/context/AppContext'
@@ -15,6 +14,7 @@ export default function AdvancedSettings() {
   const [resetting, setResetting] = useState(false)
   const [showLogs, setShowLogs] = useState(false)
   const [showApiKeys, setShowApiKeys] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const handleToggle = async (key: string, value: boolean, setter: (v: boolean) => void) => {
     setter(value)
@@ -31,19 +31,14 @@ export default function AdvancedSettings() {
   }
 
   const handleFactoryReset = async () => {
-    if (!confirm('This will permanently delete all local agents, conversation history, and configuration. This cannot be undone. Continue?')) return
     setResetting(true)
     try { await api.configure({ key: 'factory_reset', value: 'true' }) } catch (e) { console.warn("AdvancedSettings error:", e) }
     setResetting(false)
+    setShowResetConfirm(false)
   }
 
   return (
     <div className="pb-xl">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
-        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="text-on-surface">Advanced</span>
-      </nav>
       <div className="mb-xl">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">Advanced Settings</h2>
         <p className="text-on-surface-variant font-body-md">Configure underlying engine parameters and data sovereignty protocols.</p>
@@ -149,7 +144,7 @@ export default function AdvancedSettings() {
             </div>
             <Button
               className="px-xl py-md bg-error text-white rounded-xl font-label-md text-[14px] font-bold hover:bg-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer"
-              onClick={handleFactoryReset}
+              onClick={() => setShowResetConfirm(true)}
               disabled={resetting}
             >
               {resetting ? 'Resetting...' : 'Reset to Factory Settings'}
@@ -191,6 +186,23 @@ export default function AdvancedSettings() {
             <Button className="w-full py-md bg-primary text-on-primary rounded-xl font-label-md cursor-pointer" onClick={() => setShowApiKeys(false)}>
               Go to Model Settings
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Factory Reset Confirmation */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowResetConfirm(false)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-md">
+              <span className="material-symbols-outlined text-error text-[24px]">warning</span>
+              <h3 className="font-headline-md text-on-surface">Factory Reset</h3>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-lg">This will permanently delete all local agents, conversation history, and configuration. This cannot be undone.</p>
+            <div className="flex justify-end gap-sm">
+              <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowResetConfirm(false)}>Cancel</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={handleFactoryReset} disabled={resetting}>{resetting ? 'Resetting...' : 'Reset'}</Button>
+            </div>
           </div>
         </div>
       )}

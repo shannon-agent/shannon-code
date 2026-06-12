@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import { CardSkeleton } from '@/components/SkeletonLoader'
@@ -14,6 +13,7 @@ export default function BillingSettings() {
   const [loading, setLoading] = useState(true)
   const [showChangePlan, setShowChangePlan] = useState(false)
   const [showLegal, setShowLegal] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   useEffect(() => {
     Promise.all([
       api.getBillingPlan().then(setPlan).catch(() => {}),
@@ -30,11 +30,6 @@ export default function BillingSettings() {
 
   return (
     <div className="pb-xl">
-      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
-        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
-        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
-        <span className="text-on-surface">Usage &amp; Billing</span>
-      </nav>
       {/* Page Header */}
       <div className="mb-xl">
         <h2 className="font-headline-lg text-[32px] font-semibold text-on-surface mb-xs">Usage &amp; Billing</h2>
@@ -52,7 +47,7 @@ export default function BillingSettings() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-lg">
 
           {/* Section 1: Current Plan */}
-          <section className="md:col-span-5 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg flex flex-col justify-between shadow-sm">
+          <section className="md:col-span-5 bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-lg flex flex-col justify-between shadow-sm">
             <div>
               <div className="flex justify-between items-start mb-lg">
                 <div>
@@ -77,12 +72,12 @@ export default function BillingSettings() {
             </div>
             <div className="flex gap-3 mt-auto">
               <Button className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer" onClick={() => setShowChangePlan(true)}>Change Plan</Button>
-              <Button className="px-4 py-3 border border-outline-variant text-on-surface-variant rounded-xl hover:bg-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold" onClick={() => { if (confirm('Are you sure you want to cancel your subscription? This will downgrade you to the free tier at the end of your billing period.')) api.configure({ key: 'cancel_subscription', value: 'true' }).catch(() => {}) }}>Cancel</Button>
+              <Button className="px-4 py-3 border border-outline-variant text-on-surface-variant rounded-xl hover:bg-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold" onClick={() => setShowCancelConfirm(true)}>Cancel</Button>
             </div>
           </section>
 
           {/* Section 2: Usage Quota Overview */}
-          <section className="md:col-span-7 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+          <section className="md:col-span-7 bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
             <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-lg">Usage Quota Overview</h3>
             <div className="grid grid-cols-1 gap-lg md:grid-cols-2">
               {/* Token Usage Ring */}
@@ -128,7 +123,7 @@ export default function BillingSettings() {
           </section>
 
           {/* Section 3: Cost Analysis Chart */}
-          <section className="md:col-span-12 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg shadow-sm">
+          <section className="md:col-span-12 bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
             <div className="flex justify-between items-end mb-xl">
               <div>
                 <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest mb-2">Cost Analysis</h3>
@@ -151,7 +146,7 @@ export default function BillingSettings() {
                     <div key={i} className="w-full flex flex-col justify-end group relative cursor-pointer hover:brightness-110 transition-all" style={{ height: `${Math.max(8, (r.cost_usd / maxCost) * 100)}%` }}>
                       <div className="w-full bg-primary flex-1 rounded-t-sm transition-all duration-1000 ease-out"></div>
                       <div className="w-full bg-secondary h-[30%] transition-all duration-1000 ease-out"></div>
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white border border-[#e2e8f0]/30 rounded px-2 py-1 text-label-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-lowest border border-outline-variant/30 rounded px-2 py-1 text-label-sm font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
                         ${r.cost_usd.toFixed(4)}
                       </div>
                     </div>
@@ -176,7 +171,7 @@ export default function BillingSettings() {
           </section>
 
           {/* Section 4: Billing History */}
-          <section className="md:col-span-12 bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl p-lg overflow-hidden shadow-sm">
+          <section className="md:col-span-12 bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/30 rounded-2xl p-lg overflow-hidden shadow-sm">
             <div className="flex justify-between items-center mb-lg">
               <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest">Billing History</h3>
             </div>
@@ -230,7 +225,7 @@ export default function BillingSettings() {
       </div>
 
       {/* Footer Help Section */}
-      <footer className="mt-xl flex flex-col md:flex-row justify-between items-center px-lg py-md bg-white/70 backdrop-blur-md border border-[#e2e8f0]/80 rounded-2xl shadow-sm gap-md">
+      <footer className="mt-xl flex flex-col md:flex-row justify-between items-center px-lg py-md bg-surface-container-lowest/70 backdrop-blur-md border border-outline-variant/30 rounded-2xl shadow-sm gap-md">
         <div className="flex items-center gap-4 text-center md:text-left">
           <span className="material-symbols-outlined text-primary hidden md:block">info</span>
           <p className="font-body-sm text-[14px] text-on-surface-variant">Need to scale further? Contact our <a className="text-primary font-bold hover:underline cursor-pointer">Enterprise Team</a> for custom quotas.</p>
@@ -240,6 +235,23 @@ export default function BillingSettings() {
           <a className="font-label-sm text-[12px] text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onClick={() => setShowLegal(true)}>Privacy Policy</a>
         </div>
       </footer>
+
+      {/* Cancel Subscription Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowCancelConfirm(false)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-md">
+              <span className="material-symbols-outlined text-error text-[24px]">warning</span>
+              <h3 className="font-headline-md text-on-surface">Cancel Subscription</h3>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to cancel? This will downgrade you to the free tier at the end of your billing period.</p>
+            <div className="flex justify-end gap-sm">
+              <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowCancelConfirm(false)}>Keep Plan</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => { api.configure({ key: 'cancel_subscription', value: 'true' }).catch(() => {}); setShowCancelConfirm(false) }}>Cancel Plan</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Change Plan Modal */}
       {showChangePlan && (
