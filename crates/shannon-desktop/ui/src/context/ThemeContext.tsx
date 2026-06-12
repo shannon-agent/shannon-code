@@ -64,7 +64,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const setTheme = useCallback((newTheme: ThemeName) => {
     setThemeState(newTheme)
     localStorage.setItem('shannon-theme', newTheme)
-    api.configure({ key: 'theme', value: newTheme }).catch(() => {})
+    api.configure({ key: 'theme', value: newTheme }).catch(e => console.warn('Failed to save theme:', e))
   }, [])
 
   return (

@@ -37,7 +37,7 @@ export default function Chat() {
   }, [messages, streamingText])
 
   useEffect(() => {
-    api.getFileContext().then(setFileContext).catch(() => {})
+    api.getFileContext().then(setFileContext).catch(e => console.warn('Failed to load file context:', e))
   }, [messages])
 
   const handleSend = () => {

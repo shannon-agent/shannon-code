@@ -284,7 +284,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       refreshAgents(),
       refreshMcpServers(),
       refreshBackgroundTasks(),
-      api.getConversation().then(setMessages).catch(() => {}),
+      api.getConversation().then(setMessages).catch(e => console.warn('Failed to load conversation:', e)),
     ]).finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
