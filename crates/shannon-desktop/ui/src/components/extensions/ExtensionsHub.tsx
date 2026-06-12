@@ -19,6 +19,13 @@ export default function ExtensionsHub() {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    if (!selectedSkill) return
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelectedSkill(null) }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [selectedSkill])
+
   const filteredSkills = skills.filter(s => !searchQuery ||
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.description?.toLowerCase().includes(searchQuery.toLowerCase())
