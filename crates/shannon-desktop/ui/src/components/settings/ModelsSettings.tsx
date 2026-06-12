@@ -12,7 +12,7 @@ export default function ModelsSettings() {
 
   const setStrategy = (s: 'speed' | 'balanced' | 'high-quality') => {
     setStrategyState(s)
-    api.configure({ key: 'performance_strategy', value: s }).catch(e => console.warn('ModelsSettings error:', e))
+    api.configure({ key: 'performance_strategy', value: s }).then(() => toast.success(`Strategy: ${s}`)).catch(e => { console.warn('ModelsSettings error:', e); toast.error('Failed to update strategy') })
   }
   const [showKey, setShowKey] = useState(false)
 

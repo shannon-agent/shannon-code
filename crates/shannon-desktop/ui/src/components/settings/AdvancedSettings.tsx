@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useApp } from '@/context/AppContext'
@@ -21,18 +22,19 @@ export default function AdvancedSettings() {
     try {
       await api.configure({ key, value: String(value) })
       await refreshConfig()
-    } catch (e) { console.warn("AdvancedSettings error:", e) }
+      toast.success(`${key.replace(/_/g, ' ')} ${value ? 'enabled' : 'disabled'}`)
+    } catch (e) { console.warn("AdvancedSettings error:", e); toast.error('Failed to update setting') }
   }
 
   const handleClearCache = async () => {
     setClearing(true)
-    try { await api.configure({ key: 'clear_cache', value: 'true' }) } catch (e) { console.warn("AdvancedSettings error:", e) }
+    try { await api.configure({ key: 'clear_cache', value: 'true' }); toast.success('Cache cleared') } catch (e) { console.warn("AdvancedSettings error:", e); toast.error('Failed to clear cache') }
     setClearing(false)
   }
 
   const handleFactoryReset = async () => {
     setResetting(true)
-    try { await api.configure({ key: 'factory_reset', value: 'true' }) } catch (e) { console.warn("AdvancedSettings error:", e) }
+    try { await api.configure({ key: 'factory_reset', value: 'true' }); toast.success('Factory reset complete') } catch (e) { console.warn("AdvancedSettings error:", e); toast.error('Factory reset failed') }
     setResetting(false)
     setShowResetConfirm(false)
   }

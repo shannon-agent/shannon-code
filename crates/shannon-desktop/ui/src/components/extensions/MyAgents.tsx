@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
 import { useApp } from '@/context/AppContext'
@@ -221,6 +222,7 @@ export default function MyAgents() {
                     const tools = Object.entries(agentTools).filter(([, v]) => v).map(([k]) => k)
                     const config = { name: agentName, model: agentModel || undefined, systemPrompt: agentPrompt, tools }
                     sendMessage(`Create agent: ${JSON.stringify(config)}`)
+                    toast.success(`Agent "${agentName}" created`)
                     setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true }); setNameError('')
                     setShowAddAgent(false)
                   }}>

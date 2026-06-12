@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
 import { Input } from '@/components/ui/input'
@@ -29,20 +30,22 @@ export default function DataSources() {
       setNewArgs('')
       setAdding(false)
       await refreshMcpServers()
-    } catch (e) { console.warn("DataSources error:", e) }
+      toast.success(`Added ${newName.trim()}`)
+    } catch (e) { console.warn("DataSources error:", e); toast.error('Failed to add server') }
   }
 
   const handleRemove = async (name: string) => {
     try {
       await api.removeMcpServer(name)
       await refreshMcpServers()
-    } catch (e) { console.warn("DataSources error:", e) }
+      toast.success(`Removed ${name}`)
+    } catch (e) { console.warn("DataSources error:", e); toast.error('Failed to remove server') }
     setRemoveTarget(null)
   }
 
   const handleRestart = async (name: string) => {
     setRestarting(name)
-    try { await api.restartMcpServer(name) } catch (e) { console.warn("DataSources error:", e) }
+    try { await api.restartMcpServer(name); toast.success(`Restarted ${name}`) } catch (e) { console.warn("DataSources error:", e); toast.error(`Failed to restart ${name}`) }
     setRestarting(null)
     await refreshMcpServers()
   }
