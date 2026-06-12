@@ -22,7 +22,7 @@ export default function WelcomeState({ onSelectPrompt }: WelcomeStateProps) {
           {EXAMPLES.map(ex => (
             <button
               key={ex.icon}
-              className="flex items-start gap-sm p-md rounded-xl border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container-high hover:border-primary/30 transition-all text-left cursor-pointer group"
+              className="flex items-start gap-sm p-md rounded-xl border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container-high hover:border-primary/30 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none transition-all text-left cursor-pointer group"
               onClick={() => onSelectPrompt(ex.prompt)}
             >
               <span className="material-symbols-outlined text-[20px] text-on-surface-variant mt-0.5 group-hover:text-primary transition-colors">{ex.icon}</span>

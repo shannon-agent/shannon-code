@@ -270,6 +270,7 @@ export default function Goals() {
         <div className="glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
           <span className="material-symbols-outlined p-md text-primary" aria-hidden="true">auto_awesome</span>
           <input
+            aria-label="Ask about goals"
             className="flex-1 bg-transparent border-none outline-none font-body-md text-on-surface placeholder:text-outline-variant/80"
             placeholder="Ask about this goal..."
             type="text"

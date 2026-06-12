@@ -25,6 +25,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <h3 className="font-headline-md text-on-surface mb-sm">Something went wrong</h3>
           <p className="text-body-sm text-on-surface-variant max-w-md mb-lg">{this.state.error.message}</p>
           <button className="px-md py-sm bg-primary text-on-primary rounded-xl font-label-md cursor-pointer" onClick={() => this.setState({ error: null })}>Try Again</button>
+          <button className="px-md py-sm border border-outline-variant text-on-surface rounded-xl font-label-md cursor-pointer hover:bg-surface-container-low transition-colors" onClick={() => window.location.reload()}>Reload Page</button>
         </div>
       )
     }
