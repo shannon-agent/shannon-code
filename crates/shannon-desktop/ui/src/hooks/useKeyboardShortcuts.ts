@@ -1,182 +1,46 @@
-// Keyboard shortcuts hook for Shannon Desktop
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useApp } from '@/context/AppContext'
 
-interface ShortcutConfig {
-  key: string
-  ctrlKey?: boolean
-  shiftKey?: boolean
-  altKey?: boolean
-  metaKey?: boolean
-  handler: () => void
-  description: string
+interface ShortcutMap {
+  [key: string]: () => void
 }
 
-/**
- * React hook for registering keyboard shortcuts
- *
- * Automatically cleans up event listeners on unmount.
- * Supports modifiers: ctrl, shift, alt, meta (Cmd on Mac, Win on Windows)
- *
- * @example
- * ```tsx
- * useKeyboardShortcuts([
- *   {
- *     key: 'n',
- *     ctrlKey: true,
- *     handler: () => console.log('New session'),
- *     description: 'New session'
- *   }
- * ])
- * ```
- */
-export function useKeyboardShortcuts(shortcuts: ShortcutConfig[]): void {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      for (const shortcut of shortcuts) {
-        const keyMatches = event.key.toLowerCase() === shortcut.key.toLowerCase()
-        const ctrlMatches = shortcut.ctrlKey === undefined || event.ctrlKey === shortcut.ctrlKey
-        const shiftMatches = shortcut.shiftKey === undefined || event.shiftKey === shortcut.shiftKey
-        const altMatches = shortcut.altKey === undefined || event.altKey === shortcut.altKey
-        const metaMatches = shortcut.metaKey === undefined || event.metaKey === shortcut.metaKey
+export function useKeyboardShortcuts() {
+  const navigate = useNavigate()
+  const { cancelQuery, isQuerying } = useApp()
 
-        if (keyMatches && ctrlMatches && shiftMatches && altMatches && metaMatches) {
-          event.preventDefault()
-          shortcut.handler()
-          break
-        }
+  useEffect(() => {
+    const shortcuts: ShortcutMap = {
+      'mod+n': () => navigate('/chat'),
+      'mod+shift+n': () => navigate('/chat'),
+      'mod+k': () => navigate('/chat'),
+      'mod+/': () => {
+        const sidebar = document.querySelector('[data-sidebar]')
+        sidebar?.classList.toggle('collapsed')
+      },
+      'escape': () => {
+        if (isQuerying) cancelQuery()
+      },
+    }
+
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey
+      const key = e.key.toLowerCase()
+
+      let combo = ''
+      if (mod) combo += 'mod+'
+      if (e.shiftKey) combo += 'shift+'
+      combo += key
+
+      const fn = shortcuts[combo]
+      if (fn) {
+        e.preventDefault()
+        fn()
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [shortcuts])
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [navigate, cancelQuery, isQuerying])
 }
-
-/**
- * Default keyboard shortcuts for Shannon Desktop
- */
-export const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
-  {
-    key: 'n',
-    ctrlKey: true,
-    handler: () => {
-      // Trigger new session - will be connected to SessionList
-      window.dispatchEvent(new CustomEvent('shannon:new-session'))
-    },
-    description: 'New session'
-  },
-  {
-    key: 'k',
-    ctrlKey: true,
-    handler: () => {
-      // Open command palette
-      window.dispatchEvent(new CustomEvent('shannon:command-palette'))
-    },
-    description: 'Command palette'
-  },
-  {
-    key: ',',
-    ctrlKey: true,
-    handler: () => {
-      // Open settings panel
-      window.dispatchEvent(new CustomEvent('shannon:toggle-settings'))
-    },
-    description: 'Open settings'
-  },
-  {
-    key: 'b',
-    ctrlKey: true,
-    handler: () => {
-      // Toggle sidebar
-      window.dispatchEvent(new CustomEvent('shannon:toggle-sidebar'))
-    },
-    description: 'Toggle sidebar'
-  },
-  {
-    key: 'o',
-    ctrlKey: true,
-    handler: () => {
-      // Cycle view mode (verbose → normal → summary)
-      window.dispatchEvent(new CustomEvent('shannon:cycle-view-mode'))
-    },
-    description: 'Cycle view mode'
-  },
-  {
-    key: '`',
-    ctrlKey: true,
-    handler: () => {
-      // Toggle terminal panel
-      window.dispatchEvent(new CustomEvent('shannon:toggle-terminal'))
-    },
-    description: 'Toggle terminal'
-  },
-  {
-    key: 'D',
-    ctrlKey: true,
-    shiftKey: true,
-    handler: () => {
-      // Focus diff review
-      window.dispatchEvent(new CustomEvent('shannon:focus-diff'))
-    },
-    description: 'Focus diff review'
-  },
-  {
-    key: 'E',
-    ctrlKey: true,
-    shiftKey: true,
-    handler: () => {
-      // Focus settings / model picker
-      window.dispatchEvent(new CustomEvent('shannon:toggle-settings'))
-    },
-    description: 'Focus settings'
-  },
-  {
-    key: ']',
-    ctrlKey: true,
-    handler: () => {
-      // Next session
-      window.dispatchEvent(new CustomEvent('shannon:next-session'))
-    },
-    description: 'Next session'
-  },
-  {
-    key: '[',
-    ctrlKey: true,
-    handler: () => {
-      // Previous session
-      window.dispatchEvent(new CustomEvent('shannon:prev-session'))
-    },
-    description: 'Previous session'
-  },
-  {
-    key: 'P',
-    ctrlKey: true,
-    shiftKey: true,
-    handler: () => {
-      // Toggle right panel
-      window.dispatchEvent(new CustomEvent('shannon:toggle-right-panel'))
-    },
-    description: 'Toggle right panel'
-  },
-  {
-    key: 'Escape',
-    handler: () => {
-      // Cancel streaming query and close dialogs
-      window.dispatchEvent(new CustomEvent('shannon:cancel-query'))
-      window.dispatchEvent(new CustomEvent('shannon:close-dialogs'))
-    },
-    description: 'Cancel query / Close dialogs'
-  },
-  {
-    key: '?',
-    shiftKey: true,
-    handler: () => {
-      // Show keyboard shortcuts help
-      window.dispatchEvent(new CustomEvent('shannon:show-shortcuts'))
-    },
-    description: 'Show shortcuts'
-  }
-]

@@ -1,103 +1,42 @@
-// React Error Boundary with retry functionality
-import { Component, ReactNode, ErrorInfo } from 'react'
-import { AlertCircle, RefreshCw } from 'lucide-react'
+import { Component, type ReactNode } from 'react'
 
 interface Props {
   children: ReactNode
+  fallback?: ReactNode
 }
 
 interface State {
   hasError: boolean
   error: Error | null
-  errorInfo: ErrorInfo | null
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = {
-      hasError: false,
-      error: null,
-      errorInfo: null
-    }
+    this.state = { hasError: false, error: null }
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-      errorInfo: null
-    }
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    })
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
-  }
-
-  handleRetry = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null
-    })
+    return { hasError: true, error }
   }
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) return this.props.fallback
       return (
-        <div className="flex items-center justify-center min-h-screen bg-[#1a1b26] p-4">
-          <div className="max-w-lg w-full bg-[#24283b] border border-[#f7768e] rounded-lg p-6">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="w-8 h-8 text-[#f7768e] flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h2 className="text-lg font-semibold text-[#c0caf5] mb-2">
-                  Something went wrong
-                </h2>
-                <p className="text-sm text-[#a9b1d6] mb-4">
-                  The application encountered an unexpected error. You can try
-                  reloading or contact support if the problem persists.
-                </p>
-
-                {this.state.error && (
-                  <div className="mb-4">
-                    <div className="text-xs text-[#565f89] mb-1">
-                      Error message:
-                    </div>
-                    <pre className="bg-[#1a1b26] p-3 rounded text-xs text-[#f7768e] overflow-x-auto">
-                      {this.state.error.message}
-                    </pre>
-                  </div>
-                )}
-
-                {this.state.errorInfo && (
-                  <details className="mb-4">
-                    <summary className="text-xs text-[#565f89] cursor-pointer hover:text-[#a9b1d6]">
-                      Technical details (dev mode)
-                    </summary>
-                    <pre className="mt-2 bg-[#1a1b26] p-3 rounded text-xs text-[#565f89] overflow-x-auto">
-                      {this.state.errorInfo.componentStack}
-                    </pre>
-                  </details>
-                )}
-
-                <button
-                  onClick={this.handleRetry}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#7aa2f7] hover:bg-[#7aa2f7]/80 text-[#1a1b26] rounded-lg transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Retry
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="flex flex-col items-center justify-center min-h-[200px] p-xl text-center">
+          <span className="material-symbols-outlined text-[48px] text-error mb-md">error</span>
+          <h3 className="font-headline-md text-on-surface mb-sm">Something went wrong</h3>
+          <p className="font-body-sm text-on-surface-variant mb-md max-w-md">{this.state.error?.message ?? 'An unexpected error occurred.'}</p>
+          <button
+            className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer hover:shadow-md transition-all"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            Try Again
+          </button>
         </div>
       )
     }
-
     return this.props.children
   }
 }
