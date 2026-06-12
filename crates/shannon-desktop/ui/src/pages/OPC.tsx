@@ -59,6 +59,7 @@ export default function OPC() {
   const pendingTasks = tasks.filter(t => t.status === 'review' || t.status === 'blocked')
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
   const doneTasks = tasks.filter(t => t.status === 'completed')
+  const deprecatedTasks = tasks.filter(t => t.status === 'deprecated')
 
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
@@ -237,7 +238,7 @@ export default function OPC() {
               </KanbanColumn>
 
               {/* Deprecated */}
-              <KanbanColumn title="Deprecated" color="bg-outline-variant" count={0}>
+              <KanbanColumn title="Deprecated" color="bg-outline-variant" count={deprecatedTasks.length}>
                 <div className="flex items-center justify-center p-xl mt-xl">
                   <p className="font-label-sm text-[12px] text-on-surface-variant italic opacity-60">Empty Archive</p>
                 </div>

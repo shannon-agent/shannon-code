@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { toast } from 'sonner'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { Button } from '@/components/ui/button'
@@ -88,7 +89,8 @@ export default function Chat() {
   const handleExport = async (id: string) => {
     try {
       await api.exportSession(id, 'markdown')
-    } catch (e) { console.warn('Export failed:', e) }
+      toast.success('Session exported')
+    } catch (e) { console.warn('Export failed:', e); toast.error('Export failed') }
   }
 
   const formatTime = (ts: number) => {

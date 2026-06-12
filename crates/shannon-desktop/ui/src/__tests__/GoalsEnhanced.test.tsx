@@ -127,19 +127,11 @@ describe('Goals Enhanced', () => {
     expect(screen.getAllByText('Done Task').length).toBeGreaterThan(0)
   })
 
-  // US-GOAL-06: File attachment button
-  it('has attach file button', () => {
+  // US-GOAL-06: Goal input field
+  it('has goal text input', () => {
     resetCtx()
     renderGoals()
-    expect(screen.getByLabelText('Attach file')).toBeInTheDocument()
-  })
-
-  it('has hidden file input', () => {
-    resetCtx()
-    renderGoals()
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    expect(fileInput).toBeInTheDocument()
-    expect(fileInput.className).toContain('hidden')
+    expect(screen.getByPlaceholderText('Ask about this goal...')).toBeInTheDocument()
   })
 
   // US-GOAL-07: AI assistant button

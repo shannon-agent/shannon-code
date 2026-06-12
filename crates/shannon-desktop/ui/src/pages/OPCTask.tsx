@@ -74,8 +74,8 @@ export default function OPCTask() {
                   <div className="flex items-center gap-md mt-md">
                     <span className={`px-sm py-xs rounded-full font-label-sm text-[11px] font-bold uppercase tracking-wider ${
                       task.status === 'completed' ? 'bg-green-100 text-green-700' :
-                      task.status === 'running' || task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                      task.status === 'failed' ? 'bg-red-100 text-red-700' :
+                      task.status === 'running' || task.status === 'in_progress' ? 'bg-primary/10 text-primary' :
+                      task.status === 'failed' ? 'bg-error/10 text-error' :
                       'bg-surface-container text-on-surface-variant'
                     }`}>{task.status}</span>
                     {task.assignee ? <span className="font-label-sm text-on-surface-variant">Assigned to: {task.assignee}</span> : null}
@@ -201,10 +201,10 @@ export default function OPCTask() {
                 <div className="bg-primary/5 rounded-xl p-md border border-primary/10">
                   <div className="flex items-center justify-between mb-sm">
                     <span className="font-label-sm text-on-surface-variant uppercase tracking-wider">Agent Harmony</span>
-                    <span className="font-headline-md text-primary font-bold">{Math.min(98, 75 + agents.length * 5)}%</span>
+                    <span className="font-headline-md text-primary font-bold">{tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%</span>
                   </div>
                   <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-700" style={{ width: `${Math.min(98, 75 + agents.length * 5)}%` }} />
+                    <div className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-700" style={{ width: `${tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%` }} />
                   </div>
                 </div>
               )}
@@ -242,7 +242,7 @@ export default function OPCTask() {
                   </div>
                   <div>
                     <div className="font-label-md text-[14px] font-bold text-on-surface mb-0.5 group-hover:text-primary transition-colors">{t.title}</div>
-                    <span className={`font-label-sm text-[11px] ${t.status === 'completed' ? 'text-green-600' : t.status === 'in_progress' ? 'text-blue-600' : 'text-on-surface-variant'}`}>{t.status}</span>
+                    <span className={`font-label-sm text-[11px] ${t.status === 'completed' ? 'text-green-600' : t.status === 'in_progress' || t.status === 'running' ? 'text-primary' : 'text-on-surface-variant'}`}>{t.status}</span>
                   </div>
                 </div>
               ))}

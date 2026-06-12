@@ -13,6 +13,7 @@ export default function DataSources() {
   const [newCommand, setNewCommand] = useState('')
   const [newArgs, setNewArgs] = useState('')
   const [restarting, setRestarting] = useState<string | null>(null)
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null)
 
   const handleAdd = async () => {
     if (!newName.trim() || !newCommand.trim()) return
@@ -27,11 +28,11 @@ export default function DataSources() {
   }
 
   const handleRemove = async (name: string) => {
-    if (!confirm(`Remove data source "${name}"?`)) return
     try {
       await api.removeMcpServer(name)
       await refreshMcpServers()
     } catch (e) { console.warn("DataSources error:", e) }
+    setRemoveTarget(null)
   }
 
   const handleRestart = async (name: string) => {
@@ -90,7 +91,7 @@ export default function DataSources() {
             server={server}
             restarting={restarting}
             onRestart={handleRestart}
-            onRemove={handleRemove}
+            onRemove={setRemoveTarget}
           />
         ))}
 
@@ -104,6 +105,23 @@ export default function DataSources() {
           </div>
         )}
       </div>
+
+      {/* Remove Confirmation Modal */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setRemoveTarget(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-md">
+              <span className="material-symbols-outlined text-error text-[24px]">delete</span>
+              <h3 className="font-headline-md text-on-surface">Remove Data Source</h3>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to remove <strong className="text-on-surface">{removeTarget}</strong>? Any agents using its tools will lose access.</p>
+            <div className="flex justify-end gap-sm">
+              <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setRemoveTarget(null)}>Cancel</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => handleRemove(removeTarget)}>Remove</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -114,15 +132,15 @@ function McpServerCard({ server, restarting, onRestart, onRemove }: {
   onRestart: (name: string) => void
   onRemove: (name: string) => void
 }) {
-  const statusColor = server.connected ? 'bg-emerald-500' : 'bg-error'
+  const statusColor = server.connected ? 'bg-green-500' : 'bg-error'
   const statusText = server.connected ? 'Connected' : 'Disconnected'
-  const statusBg = server.connected ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+  const statusBg = server.connected ? 'bg-green-100 text-green-700 border-green-200' : 'bg-error/10 text-error border-error/20'
 
   return (
     <div className={`col-span-12 md:col-span-6 lg:col-span-4 bg-surface-container-lowest border rounded-xl p-md shadow-sm hover:shadow-md transition-shadow ${server.connected ? 'border-outline-variant/50' : 'border-error/20'}`}>
       <div className="flex items-center justify-between mb-md">
         <div className="flex items-center gap-md">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${server.connected ? 'bg-primary/10 text-primary' : 'bg-red-100 text-red-600'}`}>
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${server.connected ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'}`}>
             <span className="material-symbols-outlined">database</span>
           </div>
           <div>

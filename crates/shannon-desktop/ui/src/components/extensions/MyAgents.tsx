@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
@@ -14,12 +14,22 @@ export default function MyAgents() {
   const [agentPrompt, setAgentPrompt] = useState('')
   const [agentTools, setAgentTools] = useState<Record<string, boolean>>({ bash: true, read: true, write: true })
   const [showMenu, setShowMenu] = useState<string | null>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showMenu) return
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(null)
+    }
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [showMenu])
 
   const statusFor = (status: string) => {
     switch (status) {
       case 'active': case 'running': return { color: 'bg-green-500 animate-pulse', bg: 'bg-green-100 text-green-700', label: 'Active' }
       case 'idle': return { color: 'bg-outline', bg: 'bg-surface-container-high text-on-surface-variant', label: 'Idle' }
-      case 'error': return { color: 'bg-error', bg: 'bg-red-100 text-red-700', label: 'Error' }
+      case 'error': return { color: 'bg-error', bg: 'bg-error/10 text-error', label: 'Error' }
       default: return { color: 'bg-outline', bg: 'bg-surface-container-high text-on-surface-variant', label: status }
     }
   }
@@ -127,7 +137,7 @@ export default function MyAgents() {
                     <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center relative" onClick={() => setShowMenu(showMenu === agent.id ? null : agent.id)}>
                       <span className="material-symbols-outlined">more_horiz</span>
                       {showMenu === agent.id && (
-                        <div className="absolute right-0 top-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg shadow-lg py-xs z-10 min-w-[140px]">
+                        <div ref={menuRef} className="absolute right-0 top-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg shadow-lg py-xs z-10 min-w-[140px]">
                           <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Show status of agent ${agent.name}`); setShowMenu(null) }}>View Status</button>
                           <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Stop agent ${agent.name}`); setShowMenu(null) }}>Stop Agent</button>
                         </div>

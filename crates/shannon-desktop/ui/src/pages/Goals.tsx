@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -11,7 +11,6 @@ export default function Goals() {
   const [searchQuery, setSearchQuery] = useState('')
   const [goalInput, setGoalInput] = useState('')
   const [aiMenuOpen, setAiMenuOpen] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Group tasks by status to create a goal-like view
   const activeTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
@@ -43,7 +42,7 @@ export default function Goals() {
               <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No tasks</p>
             ) : null}
             {filteredActive.map(task => {
-              const progress = task.progress ?? Math.round((task.status === 'completed' ? 100 : task.status === 'in_progress' || task.status === 'running' ? 55 : 15))
+              const progress = task.progress ?? Math.round((task.status === 'completed' ? 100 : task.status === 'in_progress' || task.status === 'running' ? 0 : 0))
               return (
               <div key={task.id} className="w-full flex flex-col gap-1 p-md rounded-xl bg-primary/10 border border-primary/20 cursor-pointer">
                 <div className="flex justify-between items-start">
@@ -165,11 +164,11 @@ export default function Goals() {
                         <div className="flex-1 h-1.5 bg-outline-variant/10 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${isDone ? 'bg-green-500' : isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
-                            style={{ width: `${isDone ? 100 : isActive ? (task.progress ?? 55) : 15}%` }}
+                            style={{ width: `${isDone ? 100 : isActive ? (task.progress ?? 0) : 0}%` }}
                           />
                         </div>
                         <span className={`font-label-sm text-[11px] ${isDone ? 'text-green-600' : isActive ? 'text-primary' : 'text-on-surface-variant'}`}>
-                          {isDone ? '100%' : isActive ? `${task.progress ?? 55}%` : '15%'}
+                          {isDone ? '100%' : isActive ? `${task.progress ?? 0}%` : '0%'}
                         </span>
                       </div>
                       {task.assignee ? <p className="text-label-sm text-on-surface-variant mt-sm">Assigned to: {task.assignee}</p> : null}
@@ -263,10 +262,7 @@ export default function Goals() {
       {/* Sticky Bottom Input */}
       <div className="absolute bottom-0 left-0 md:left-[320px] right-0 xl:right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
         <div className="glass-card bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
-          <input type="file" ref={fileInputRef} className="hidden" onChange={e => { const files = e.target.files; if (files && files.length > 0 && goalInput.trim()) { sendMessage(goalInput, Array.from(files).map(f => f.name)); setGoalInput('') } }} />
-          <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary" onClick={() => fileInputRef.current?.click()}>
-            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
-          </Button>
+          <span className="material-symbols-outlined p-md text-primary" aria-hidden="true">auto_awesome</span>
           <input
             className="flex-1 bg-transparent border-none outline-none font-body-md text-on-surface placeholder:text-outline-variant/80"
             placeholder="Ask about this goal..."

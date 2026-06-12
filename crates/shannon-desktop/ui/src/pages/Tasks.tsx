@@ -69,11 +69,11 @@ export default function Tasks() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case 'completed': return { bg: 'bg-emerald-100 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500', label: 'Completed', icon: 'check_circle' }
-      case 'running': case 'in_progress': return { bg: 'bg-blue-100 text-blue-800 border-blue-200', dot: 'bg-blue-500 animate-pulse', label: 'Running', icon: 'autorenew' }
-      case 'failed': case 'error': return { bg: 'bg-red-100 text-red-800 border-red-200', dot: 'bg-red-500', label: 'Failed', icon: 'error' }
+      case 'completed': return { bg: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-500', label: 'Completed', icon: 'check_circle' }
+      case 'running': case 'in_progress': return { bg: 'bg-primary/10 text-primary border-primary/20', dot: 'bg-primary animate-pulse', label: 'Running', icon: 'autorenew' }
+      case 'failed': case 'error': return { bg: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Failed', icon: 'error' }
       case 'pending': return { bg: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/30', dot: 'bg-outline', label: 'Pending', icon: 'schedule' }
-      default: return { bg: 'bg-emerald-100 text-emerald-800 border-emerald-200', dot: 'bg-emerald-500', label: status, icon: 'task_alt' }
+      default: return { bg: 'bg-surface-container-high text-on-surface-variant border-outline-variant/30', dot: 'bg-outline-variant', label: status, icon: 'task_alt' }
     }
   }
 
@@ -134,10 +134,10 @@ export default function Tasks() {
         </div>
 
         {errorMsg && (
-          <div className="flex items-center gap-sm px-md py-sm rounded-xl bg-red-50 border border-red-200 text-red-700 font-label-md mb-lg">
+          <div className="flex items-center gap-sm px-md py-sm rounded-xl bg-error/10 border border-error/20 text-error font-label-md mb-lg">
             <span className="material-symbols-outlined text-[18px]">error</span>
             {errorMsg}
-            <button className="ml-auto text-red-400 hover:text-red-600 cursor-pointer" onClick={() => setErrorMsg(null)}>
+            <button className="ml-auto text-error/60 hover:text-error cursor-pointer" onClick={() => setErrorMsg(null)}>
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
           </div>
