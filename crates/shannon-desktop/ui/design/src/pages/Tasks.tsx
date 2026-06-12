@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '../lib/utils';
+import { Button } from "@/components/ui/button";
 
 export default function Tasks() {
   const [running, setRunning] = useState(false);
@@ -20,14 +21,14 @@ export default function Tasks() {
             <p className="text-on-surface-variant mt-xs">Manage and monitor your automated intelligence workflows.</p>
           </div>
           <div className="flex gap-sm">
-            <button className="px-md py-sm rounded-xl border border-outline-variant/50 flex items-center gap-sm hover:bg-surface-container-high/30 transition-all font-label-md cursor-pointer">
+            <Button className="px-md py-sm rounded-xl border border-outline-variant/50 flex items-center gap-sm hover:bg-surface-container-high/30 transition-all font-label-md cursor-pointer">
               <span className="material-symbols-outlined text-[20px]">filter_list</span>
               Filters
-            </button>
-            <button className="px-md py-sm rounded-xl border border-outline-variant/50 flex items-center gap-sm hover:bg-surface-container-high/30 transition-all font-label-md cursor-pointer">
+            </Button>
+            <Button className="px-md py-sm rounded-xl border border-outline-variant/50 flex items-center gap-sm hover:bg-surface-container-high/30 transition-all font-label-md cursor-pointer">
               <span className="material-symbols-outlined text-[20px]">calendar_today</span>
               Month View
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -62,10 +63,10 @@ export default function Tasks() {
                     <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">Scheduled</span>
                   </div>
                   <div className="flex items-center gap-sm">
-                    <button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" title="Edit">
+                    <Button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" title="Edit">
                       <span className="material-symbols-outlined">edit</span>
-                    </button>
-                    <button 
+                    </Button>
+                    <Button
                       onClick={handleRunNow}
                       className={cn(
                         "text-on-primary px-md py-sm rounded-lg font-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer",
@@ -83,7 +84,7 @@ export default function Tasks() {
                           Run Now
                         </>
                       )}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -116,13 +117,13 @@ export default function Tasks() {
                     <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">Running</span>
                   </div>
                   <div className="flex items-center gap-sm">
-                    <button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer">
+                    <Button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer">
                       <span className="material-symbols-outlined">stop_circle</span>
-                    </button>
-                    <button className="bg-surface-variant text-on-surface-variant px-md py-sm rounded-lg font-label-md flex items-center gap-xs opacity-50 cursor-not-allowed">
+                    </Button>
+                    <Button className="bg-surface-variant text-on-surface-variant px-md py-sm rounded-lg font-label-md flex items-center gap-xs opacity-50 cursor-not-allowed">
                       <span className="material-symbols-outlined text-[18px]">play_arrow</span>
                       Run Now
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -155,13 +156,13 @@ export default function Tasks() {
                     <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">Paused</span>
                   </div>
                   <div className="flex items-center gap-sm">
-                    <button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer">
+                    <Button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer">
                       <span className="material-symbols-outlined">play_circle</span>
-                    </button>
-                    <button className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
+                    </Button>
+                    <Button className="bg-primary text-on-primary px-md py-sm rounded-lg font-label-md flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all cursor-pointer">
                       <span className="material-symbols-outlined text-[18px]">play_arrow</span>
                       Run Now
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -287,7 +288,7 @@ export default function Tasks() {
                     <div className="h-full bg-primary w-[42%]"></div>
                   </div>
                 </div>
-                
+
                 <div className="pt-sm">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-body-sm text-on-surface-variant">FinanceAgent</span>
@@ -297,7 +298,7 @@ export default function Tasks() {
                     <div className="h-full bg-secondary w-[28%]"></div>
                   </div>
                 </div>
-                
+
                 <div className="pt-sm">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-body-sm text-on-surface-variant">NetworkBot</span>
@@ -309,11 +310,10 @@ export default function Tasks() {
                 </div>
               </div>
             </div>
-            
+
           </div>
         </div>
       </div>
     </div>
   );
 }
-

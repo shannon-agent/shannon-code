@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdvancedSettings() {
   return (
@@ -7,7 +9,7 @@ export default function AdvancedSettings() {
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">Advanced Settings</h2>
         <p className="text-on-surface-variant font-body-md">Configure underlying engine parameters and data sovereignty protocols.</p>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
         {/* Memory Management */}
         <div className="bg-white p-lg rounded-xl shadow-sm border border-outline-variant/30 group hover:shadow-md transition-shadow">
@@ -24,14 +26,11 @@ export default function AdvancedSettings() {
                 <div className="font-label-md text-[14px] text-on-surface font-semibold mb-1">Long-term Memory</div>
                 <div className="font-label-sm text-[12px] text-on-surface-variant leading-tight">Allow agent to reference past conversations.</div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input defaultChecked className="sr-only peer" type="checkbox" />
-                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-              </label>
+              <Switch defaultChecked className="shrink-0" />
             </div>
-            <button className="w-full py-md border border-outline-variant/50 rounded-xl text-on-surface font-label-md font-bold text-[14px] hover:bg-surface-container-low transition-colors active:scale-[0.99] cursor-pointer">
+            <Button className="w-full py-md border border-outline-variant/50 rounded-xl text-on-surface font-label-md font-bold text-[14px] hover:bg-surface-container-low transition-colors active:scale-[0.99] cursor-pointer">
               Clear Session Cache
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -50,20 +49,14 @@ export default function AdvancedSettings() {
                 <div className="font-label-md text-[14px] text-on-surface font-semibold mb-1">Anonymous Usage Reporting</div>
                 <div className="font-label-sm text-[12px] text-on-surface-variant leading-tight">Share diagnostic data to improve models.</div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input className="sr-only peer" type="checkbox" />
-                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
-              </label>
+              <Switch className="shrink-0" />
             </div>
             <div className="flex items-center justify-between gap-md">
               <div>
                 <div className="font-label-md text-[14px] text-on-surface font-semibold mb-1">Local Data Encryption</div>
                 <div className="font-label-sm text-[12px] text-on-surface-variant leading-tight">Encrypt database with AES-256 standard.</div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input defaultChecked className="sr-only peer" type="checkbox" />
-                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
-              </label>
+              <Switch defaultChecked className="shrink-0" />
             </div>
           </div>
         </div>
@@ -80,23 +73,20 @@ export default function AdvancedSettings() {
             <div className="flex-1">
               <p className="text-on-surface-variant text-body-sm mb-md">Advanced tools for debugging agent behaviors and observing raw kernel output.</p>
               <div className="flex items-center gap-md">
-                <button className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
+                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
                   <span className="material-symbols-outlined text-[16px]">description</span>
                   View System Logs
-                </button>
+                </Button>
                 <span className="text-outline-variant">|</span>
-                <button className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
+                <Button variant="ghost" className="flex items-center gap-xs text-primary font-label-md text-[14px] hover:underline cursor-pointer">
                   <span className="material-symbols-outlined text-[16px]">api</span>
                   Manage API Keys
-                </button>
+                </Button>
               </div>
             </div>
             <div className="flex items-center gap-md bg-surface-container-low p-md rounded-xl border border-outline-variant/20 shrink-0">
               <span className="font-label-md text-[14px] text-on-surface">Enable Debug Console</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input className="sr-only peer" type="checkbox" />
-                <div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-tertiary"></div>
-              </label>
+              <Switch />
             </div>
           </div>
         </div>
@@ -113,9 +103,9 @@ export default function AdvancedSettings() {
                 <p className="text-on-surface-variant text-body-sm max-w-xl">Resetting to factory settings will permanently delete all local agents, conversation history, and fine-tuning parameters. This action cannot be undone.</p>
               </div>
             </div>
-            <button className="px-xl py-md bg-error text-white rounded-xl font-label-md text-[14px] font-bold hover:bg-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer">
+            <Button className="px-xl py-md bg-error text-white rounded-xl font-label-md text-[14px] font-bold hover:bg-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer">
               Reset to Factory Settings
-            </button>
+            </Button>
           </div>
         </div>
       </div>

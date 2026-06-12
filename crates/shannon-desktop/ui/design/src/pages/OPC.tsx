@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function OPC() {
   const agents = [
@@ -77,7 +79,7 @@ export default function OPC() {
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
       <div className="max-w-[1600px] mx-auto animate-in fade-in duration-700">
-        
+
         {/* Mission Statement */}
         <div className="bg-white/70 backdrop-blur-md rounded-2xl p-xl mb-lg border border-outline-variant/30 relative shadow-sm">
           <div className="absolute top-lg right-lg text-primary font-label-md text-[13px] hover:underline cursor-pointer">Edit Strategic Focus</div>
@@ -89,14 +91,14 @@ export default function OPC() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-lg items-start">
-          
+
           {/* Agent Swarm List */}
           <div className="w-full lg:w-[320px] shrink-0 space-y-4">
             <div className="flex items-center gap-3">
               <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant">Agent Swarm</h3>
               <span className="bg-secondary text-white text-[11px] font-bold px-2 py-0.5 rounded-full">12 Active</span>
             </div>
-            
+
             <div className="space-y-sm">
               {agents.map((agent, i) => (
                 <div key={i} className="bg-white/70 backdrop-blur-md border border-outline-variant/20 rounded-xl p-md flex flex-col shadow-sm cursor-pointer hover:border-primary/30 transition-colors group">
@@ -125,26 +127,26 @@ export default function OPC() {
           <div className="flex-1 w-full flex flex-col min-w-0">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant uppercase tracking-widest">KANBAN</h3>
-              
+
               <div className="flex items-center gap-xs">
                 <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Quick inject task..." 
+                  <Input
+                    type="text"
+                    placeholder="Quick inject task..."
                     className="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 w-[200px] text-[13px] font-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   />
-                  <button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-white rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors">
+                  <Button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-white rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors">
                     <span className="material-symbols-outlined text-[16px]">add</span>
-                  </button>
+                  </Button>
                 </div>
-                <button className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors ml-1">
+                <Button className="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors ml-1">
                   <span className="material-symbols-outlined text-[20px]">filter_list</span>
-                </button>
+                </Button>
               </div>
             </div>
 
             <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar items-start min-h-[600px]">
-              
+
               {/* To Do Column */}
               <div className="w-[300px] shrink-0 bg-surface-container-lowest/50 rounded-xl p-xs border border-transparent hover:bg-surface-container-low/30 transition-colors">
                 <div className="flex justify-between items-center px-2 py-3 mb-1">
@@ -154,7 +156,7 @@ export default function OPC() {
                   </div>
                   <span className="font-label-sm text-[11px] text-on-surface-variant">2</span>
                 </div>
-                
+
                 <Link to="/opc/task" className="block bg-white rounded-xl p-md border border-outline-variant/30 shadow-sm mb-3 cursor-pointer hover:border-primary/50 hover:shadow-md transition-all active:scale-[0.99] group/card">
                   <div className="flex justify-between items-start mb-2">
                     <div className="w-8 h-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center group-hover/card:bg-secondary/20 transition-colors">
@@ -172,10 +174,10 @@ export default function OPC() {
                   </div>
                 </Link>
 
-                <button className="w-full py-2.5 border border-dashed border-outline-variant/50 rounded-xl text-on-surface-variant hover:bg-on-surface-variant/5 hover:text-on-surface transition-colors flex items-center justify-center gap-2 font-label-md text-[13px]">
+                <Button className="w-full py-2.5 border border-dashed border-outline-variant/50 rounded-xl text-on-surface-variant hover:bg-on-surface-variant/5 hover:text-on-surface transition-colors flex items-center justify-center gap-2 font-label-md text-[13px]">
                   <span className="material-symbols-outlined text-[16px]">add</span>
                   Add Task
-                </button>
+                </Button>
               </div>
 
               {/* Pending Column */}
@@ -187,7 +189,7 @@ export default function OPC() {
                   </div>
                   <span className="font-label-sm text-[11px] text-on-surface-variant">1</span>
                 </div>
-                
+
                 <div className="bg-white rounded-xl p-md border border-error/20 shadow-sm mb-3 ring-1 ring-error/5 cursor-grab active:cursor-grabbing hover:border-error/40 transition-colors relative">
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-error rounded-l-xl"></div>
                   <div className="flex justify-between items-start mb-2 ml-1">
@@ -198,7 +200,7 @@ export default function OPC() {
                   </div>
                   <h4 className="font-label-md text-[15px] font-bold mb-2 leading-tight ml-1">Upgrade API Rate Limits</h4>
                   <p className="font-body-sm text-[12px] text-on-surface-variant mb-4 ml-1 leading-snug">System load reached 88% on relay. Tier-2 upgrade proposed.</p>
-                  
+
                   <div className="flex justify-between items-center ml-1">
                     <div className="flex -space-x-2">
                       <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[9px] font-bold border border-white z-10">PM</div>
@@ -218,7 +220,7 @@ export default function OPC() {
                   </div>
                   <span className="font-label-sm text-[11px] text-on-surface-variant">2</span>
                 </div>
-                
+
                 <div className="bg-white rounded-xl p-md border border-primary/20 shadow-sm mb-3 cursor-grab active:cursor-grabbing hover:border-primary/50 transition-colors relative">
                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-xl"></div>
                    <div className="flex justify-between items-center mb-2 ml-1">
@@ -226,7 +228,7 @@ export default function OPC() {
                      <span className="material-symbols-outlined text-[16px] text-primary">autorenew</span>
                    </div>
                    <h4 className="font-label-md text-[15px] font-bold mb-4 leading-tight ml-1">Refactoring Neural Bridge v2</h4>
-                   
+
                    <div className="ml-1 mb-2">
                      <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden mb-1">
                         <div className="h-full bg-primary rounded-full w-[65%]"></div>
@@ -245,7 +247,7 @@ export default function OPC() {
                      <span className="material-symbols-outlined text-[16px] text-secondary">database</span>
                    </div>
                    <h4 className="font-label-md text-[15px] font-bold mb-4 leading-tight ml-1">Database Indexing Sweep</h4>
-                   
+
                    <div className="ml-1 mb-2">
                      <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden mb-1">
                         <div className="h-full bg-secondary rounded-full w-[20%]"></div>
@@ -267,7 +269,7 @@ export default function OPC() {
                   </div>
                   <span className="font-label-sm text-[11px] text-on-surface-variant">1</span>
                 </div>
-                
+
                 <div className="bg-white rounded-xl p-3 border border-green-500/20 shadow-sm mb-3 flex items-center justify-between cursor-pointer hover:bg-surface-bright transition-colors bg-green-50/30">
                   <div className="flex items-center gap-2">
                      <span className="material-symbols-outlined text-[16px] text-green-500">check_circle</span>
@@ -285,7 +287,7 @@ export default function OPC() {
                     <span className="font-label-md text-[14px] font-bold text-on-surface-variant">Deprecated</span>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center justify-center p-xl mt-xl">
                    <p className="font-label-sm text-[12px] text-on-surface-variant italic opacity-60">Empty Archive</p>
                 </div>

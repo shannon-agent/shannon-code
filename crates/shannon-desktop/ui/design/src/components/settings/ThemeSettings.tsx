@@ -1,4 +1,6 @@
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ThemeSettings() {
   return (
@@ -47,13 +49,13 @@ export default function ThemeSettings() {
         <div className="space-y-md pt-md">
           <h3 className="font-headline-md text-headline-md">Color Accents</h3>
           <div className="flex items-center gap-lg">
-            <button className="w-12 h-12 rounded-full bg-[#8B5CF6] ring-offset-4 ring-2 ring-[#8B5CF6] transition-transform active:scale-90 shadow-lg relative flex items-center justify-center cursor-pointer">
+            <Button className="w-12 h-12 rounded-full bg-[#8B5CF6] ring-offset-4 ring-2 ring-[#8B5CF6] transition-transform active:scale-90 shadow-lg relative flex items-center justify-center cursor-pointer">
               <span className="material-symbols-outlined text-white text-[20px]" data-icon="check">check</span>
-            </button>
-            <button className="w-10 h-10 rounded-full bg-[#3B82F6] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></button>
-            <button className="w-10 h-10 rounded-full bg-[#14B8A6] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></button>
-            <button className="w-10 h-10 rounded-full bg-[#F59E0B] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></button>
-            <button className="w-10 h-10 rounded-full bg-[#EF4444] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></button>
+            </Button>
+            <Button className="w-10 h-10 rounded-full bg-[#3B82F6] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></Button>
+            <Button className="w-10 h-10 rounded-full bg-[#14B8A6] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></Button>
+            <Button className="w-10 h-10 rounded-full bg-[#F59E0B] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></Button>
+            <Button className="w-10 h-10 rounded-full bg-[#EF4444] hover:scale-110 transition-transform active:scale-90 opacity-60 hover:opacity-100 cursor-pointer"></Button>
           </div>
         </div>
 
@@ -82,13 +84,17 @@ export default function ThemeSettings() {
         <div className="space-y-md pt-lg">
           <h3 className="font-headline-md text-headline-md">Interface Font</h3>
           <div className="relative group max-w-sm">
-            <select className="w-full appearance-none bg-white border border-outline-variant/40 rounded-xl px-lg py-md font-body-md focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all pr-xl cursor-pointer shadow-sm">
-              <option value="inter">Inter (Default)</option>
-              <option value="geist">Geist Sans</option>
-              <option value="sf-pro">SF Pro Display</option>
-              <option value="roboto">Roboto Flex</option>
-            </select>
-            <span className="material-symbols-outlined absolute right-md top-1/2 -translate-y-1/2 pointer-events-none text-outline" data-icon="unfold_more">unfold_more</span>
+            <Select defaultValue="inter">
+              <SelectTrigger className="w-full appearance-none bg-white border border-outline-variant/40 rounded-xl px-lg py-md font-body-md focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all pr-xl cursor-pointer shadow-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="inter">Inter (Default)</SelectItem>
+                <SelectItem value="geist">Geist Sans</SelectItem>
+                <SelectItem value="sf-pro">SF Pro Display</SelectItem>
+                <SelectItem value="roboto">Roboto Flex</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <p className="font-label-sm text-outline px-sm">Primary typeface used for headlines, body text, and labels.</p>
         </div>

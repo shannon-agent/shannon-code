@@ -1,25 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApp } from '@/context/AppContext';
 import * as api from '@/lib/tauri-api';
 
+const TITLE_MAP: [string, string][] = [
+  ['/opc/task', 'OPC Task'],
+  ['/opc', 'One Person Company'],
+  ['/settings', 'Settings'],
+  ['/tasks', 'Tasks'],
+  ['/goals', 'Goals'],
+  ['/extensions', 'Extensions'],
+  ['/chat', 'Chat'],
+]
+
+function getTitle(pathname: string): string {
+  for (const [prefix, title] of TITLE_MAP) {
+    if (pathname.includes(prefix)) return title
+  }
+  return 'Chat'
+}
+
 export function Header() {
   const location = useLocation();
   const { status, models, permissionRequest, respondPermission } = useApp();
   const [modelOpen, setModelOpen] = useState(false);
+  const modelRef = useRef<HTMLDivElement>(null);
 
-  let title = 'Chat';
-  if (location.pathname.includes('/settings')) title = 'Settings';
-  if (location.pathname.includes('/tasks')) title = 'Tasks';
-  if (location.pathname.includes('/goals')) title = 'Goals';
-  if (location.pathname.includes('/extensions')) title = 'Extensions';
-  if (location.pathname.includes('/opc/task')) title = 'OPC Task';
-  else if (location.pathname.includes('/opc')) title = 'One Person Company';
-
+  const title = getTitle(location.pathname);
   const isOpc = location.pathname.includes('/opc') && !location.pathname.includes('/opc/task');
   const isOpcTask = location.pathname.includes('/opc/task');
+
+  // Click outside to close model selector
+  useEffect(() => {
+    if (!modelOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (modelRef.current && !modelRef.current.contains(e.target as Node)) {
+        setModelOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [modelOpen])
 
   const handleModelSwitch = async (modelId: string) => {
     if (!status) return
@@ -31,7 +54,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 right-0 left-[280px] z-40 flex justify-between items-center h-16 px-lg bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/10">
+      <header className="fixed top-0 right-0 z-40 flex justify-between items-center h-16 px-lg bg-surface/80 backdrop-blur-md shadow-sm border-b border-outline-variant/10" style={{ left: 'var(--sidebar-w)' }}>
         <div className="flex items-center gap-md relative w-full overflow-hidden">
           {isOpcTask ? (
             <div className="flex items-center gap-2">
@@ -62,7 +85,7 @@ export function Header() {
         </div>
         <div className="flex items-center gap-lg shrink-0 pl-4 border-l border-outline-variant/20 md:border-none md:pl-0">
           {/* Model selector */}
-          <div className="relative">
+          <div className="relative" ref={modelRef}>
             <Button
               variant="ghost"
               className="flex items-center gap-sm px-md py-sm rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-all"

@@ -48,6 +48,7 @@ export default function App() {
                 <Route path="billing" element={<BillingSettings />} />
                 <Route path="advanced" element={<AdvancedSettings />} />
               </Route>
+              <Route path="*" element={<Navigate to="/chat" replace />} />
             </Route>
           </Routes>
         </BrowserRouter>

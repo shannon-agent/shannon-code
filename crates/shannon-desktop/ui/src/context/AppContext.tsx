@@ -84,35 +84,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [_currentQueryId, setCurrentQueryId] = useState<string | null>(null)
 
   const refreshSessions = useCallback(async () => {
-    try { setSessions(await api.listSessions()) } catch { /* ignore */ }
+    try { setSessions(await api.listSessions()) } catch (e) { console.warn('refreshSessions failed:', e) }
   }, [])
 
   const refreshStatus = useCallback(async () => {
-    try { setStatus(await api.getStatus()) } catch { /* ignore */ }
+    try { setStatus(await api.getStatus()) } catch (e) { console.warn('refreshStatus failed:', e) }
   }, [])
 
   const refreshConfig = useCallback(async () => {
-    try { setConfig(await api.getConfig()) } catch { /* ignore */ }
+    try { setConfig(await api.getConfig()) } catch (e) { console.warn('refreshConfig failed:', e) }
   }, [])
 
   const refreshModels = useCallback(async () => {
-    try { setModels(await api.listModels()) } catch { /* ignore */ }
+    try { setModels(await api.listModels()) } catch (e) { console.warn('refreshModels failed:', e) }
   }, [])
 
   const refreshTasks = useCallback(async () => {
-    try { setTasks(await api.listTasks()) } catch { /* ignore */ }
+    try { setTasks(await api.listTasks()) } catch (e) { console.warn('refreshTasks failed:', e) }
   }, [])
 
   const refreshAgents = useCallback(async () => {
-    try { setAgents(await api.listAgents()) } catch { /* ignore */ }
+    try { setAgents(await api.listAgents()) } catch (e) { console.warn('refreshAgents failed:', e) }
   }, [])
 
   const refreshMcpServers = useCallback(async () => {
-    try { setMcpServers(await api.listMcpServers()) } catch { /* ignore */ }
+    try { setMcpServers(await api.listMcpServers()) } catch (e) { console.warn('refreshMcpServers failed:', e) }
   }, [])
 
   const refreshBackgroundTasks = useCallback(async () => {
-    try { setBackgroundTasks(await api.getBackgroundTasks()) } catch { /* ignore */ }
+    try { setBackgroundTasks(await api.getBackgroundTasks()) } catch (e) { console.warn('refreshBackgroundTasks failed:', e) }
   }, [])
 
   const sendMessage = useCallback(async (message: string, filePaths?: string[]) => {
@@ -186,14 +186,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Register Tauri event listeners
   useEffect(() => {
     const unlisteners: UnlistenFn[] = []
+    let cancelled = false
 
     async function register() {
-      unlisteners.push(
-        await listen(EVENT_NAMES.QUERY_TEXT, (e) => {
+      const handlers = [
+        listen(EVENT_NAMES.QUERY_TEXT, (e) => {
           const p = e.payload as { content: string }
           setStreamingText(prev => prev + p.content)
         }),
-        await listen(EVENT_NAMES.QUERY_TOOL_START, (e) => {
+        listen(EVENT_NAMES.QUERY_TOOL_START, (e) => {
           const p = e.payload as { tool_use_id: string; tool_name: string; tool_input: unknown }
           setActiveToolCalls(prev => [...prev, {
             tool_use_id: p.tool_use_id,
@@ -202,7 +203,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             status: 'running',
           }])
         }),
-        await listen(EVENT_NAMES.QUERY_TOOL_RESULT, (e) => {
+        listen(EVENT_NAMES.QUERY_TOOL_RESULT, (e) => {
           const p = e.payload as { tool_use_id: string; result: string; is_error: boolean }
           setActiveToolCalls(prev => prev.map(tc =>
             tc.tool_use_id === p.tool_use_id
@@ -210,7 +211,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : tc
           ))
         }),
-        await listen(EVENT_NAMES.QUERY_TOOL_PROGRESS, (e) => {
+        listen(EVENT_NAMES.QUERY_TOOL_PROGRESS, (e) => {
           const p = e.payload as { tool_use_id: string; progress: number; message: string }
           setActiveToolCalls(prev => prev.map(tc =>
             tc.tool_use_id === p.tool_use_id
@@ -218,14 +219,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               : tc
           ))
         }),
-        await listen(EVENT_NAMES.QUERY_THINKING, (e) => {
+        listen(EVENT_NAMES.QUERY_THINKING, (e) => {
           const p = e.payload as { content: string }
           setThinkingText(prev => prev + p.content)
         }),
-        await listen(EVENT_NAMES.QUERY_USAGE, (e) => {
+        listen(EVENT_NAMES.QUERY_USAGE, (e) => {
           setUsage(e.payload as UsagePayload)
         }),
-        await listen(EVENT_NAMES.QUERY_COMPLETED, () => {
+        listen(EVENT_NAMES.QUERY_COMPLETED, () => {
           setIsQuerying(false)
           setStreamingText(prev => {
             if (prev) {
@@ -237,27 +238,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
           setCurrentQueryId(null)
           refreshStatus()
         }),
-        await listen(EVENT_NAMES.QUERY_FAILED, (e) => {
+        listen(EVENT_NAMES.QUERY_FAILED, (e) => {
           const p = e.payload as { error: string }
           setError(p.error)
           setIsQuerying(false)
           setCurrentQueryId(null)
         }),
-        await listen(EVENT_NAMES.QUERY_CANCELLED, () => {
+        listen(EVENT_NAMES.QUERY_CANCELLED, () => {
           setIsQuerying(false)
           setCurrentQueryId(null)
         }),
-        await listen(EVENT_NAMES.PERMISSION_REQUEST, (e) => {
+        listen(EVENT_NAMES.PERMISSION_REQUEST, (e) => {
           setPermissionRequest(e.payload as PermissionRequest)
         }),
-        await listen(EVENT_NAMES.SESSIONS_UPDATED, () => { refreshSessions() }),
-        await listen(EVENT_NAMES.CONFIG_UPDATED, () => { refreshConfig() }),
-        await listen(EVENT_NAMES.BACKGROUND_TASKS_UPDATED, () => { refreshBackgroundTasks() }),
-      )
+        listen(EVENT_NAMES.SESSIONS_UPDATED, () => { refreshSessions() }),
+        listen(EVENT_NAMES.CONFIG_UPDATED, () => { refreshConfig() }),
+        listen(EVENT_NAMES.BACKGROUND_TASKS_UPDATED, () => { refreshBackgroundTasks() }),
+      ]
+
+      const results = await Promise.all(handlers)
+      if (cancelled) {
+        results.forEach(fn => fn())
+        return
+      }
+      unlisteners.push(...results)
     }
 
     register()
-    return () => { unlisteners.forEach(fn => fn()) }
+    return () => {
+      cancelled = true
+      unlisteners.forEach(fn => fn())
+    }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initial data load

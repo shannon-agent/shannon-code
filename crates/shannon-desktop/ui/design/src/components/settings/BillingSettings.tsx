@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from "@/components/ui/button";
 
 export default function BillingSettings() {
   return (
@@ -38,8 +39,8 @@ export default function BillingSettings() {
               </div>
             </div>
             <div className="flex gap-3 mt-auto">
-              <button className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">Change Plan</button>
-              <button className="px-4 py-3 border border-outline-variant text-on-surface-variant rounded-xl hover:bg-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold">Cancel</button>
+              <Button className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">Change Plan</Button>
+              <Button className="px-4 py-3 border border-outline-variant text-on-surface-variant rounded-xl hover:bg-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold">Cancel</Button>
             </div>
           </section>
 

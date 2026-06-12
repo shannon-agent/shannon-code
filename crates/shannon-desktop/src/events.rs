@@ -170,6 +170,7 @@ pub struct DiffFileInfo {
 
 /// Diff hunk containing changed lines.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DiffHunk {
     pub old_start: u32,
     pub old_lines: u32,

@@ -127,13 +127,13 @@ export interface ProviderSwitchRequest {
 }
 
 export interface DesktopConfig {
-  provider: string
-  api_key: string
+  provider?: string
+  api_key?: string
   base_url?: string
-  model: string
+  model?: string
   working_dir?: string
   theme?: string
-  mcp_servers: McpServerConfig[]
+  mcp_servers?: McpServerConfig[]
   approval_mode?: string
 }
 
@@ -260,8 +260,12 @@ export interface WorkingDirInfo {
 export interface AgentInfo {
   id: string
   name: string
+  model: string
   status: string
   task?: string
+  progress?: number
+  tools_used?: number
+  duration?: number
 }
 
 // --- Enums ---

@@ -1,5 +1,7 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export function Header() {
   const location = useLocation();
@@ -30,9 +32,9 @@ export function Header() {
         
         {isOpc && (
           <div className="flex-1 max-w-[400px] ml-auto mr-lg relative hidden md:block">
-            <input 
-              type="text" 
-              placeholder="Search proposals..." 
+            <Input
+              type="text"
+              placeholder="Search proposals..."
               className="w-full bg-surface-container-low border-none rounded-full py-2 pl-4 pr-10 text-sm font-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none"
             />
             <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
@@ -48,13 +50,13 @@ export function Header() {
       </div>
       <div className="flex items-center gap-lg shrink-0 pl-4 border-l border-outline-variant/20 md:border-none md:pl-0">
         <div className="flex gap-md mr-md">
-          <button className="text-on-surface-variant hover:text-primary transition-all active:scale-95">
+          <Button variant="ghost" className="text-on-surface-variant hover:text-primary transition-all active:scale-95">
             <span className="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
-          </button>
+          </Button>
           {!isOpc && (
-            <button className="text-on-surface-variant hover:text-primary transition-all active:scale-95">
+            <Button variant="ghost" className="text-on-surface-variant hover:text-primary transition-all active:scale-95">
               <span className="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
-            </button>
+            </Button>
           )}
         </div>
         <div className="h-8 w-8 rounded-full overflow-hidden bg-surface-container flex items-center justify-center ring-2 ring-primary/10">

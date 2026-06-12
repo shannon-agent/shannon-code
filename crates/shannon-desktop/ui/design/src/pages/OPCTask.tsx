@@ -1,16 +1,17 @@
 import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
+import { Button } from "@/components/ui/button";
 
 export default function OPCTask() {
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
       <div className="max-w-[1400px] mx-auto animate-in fade-in duration-700">
-        
+
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-lg pb-10">
-          
+
           {/* Left Column (Main Content) */}
           <div className="xl:col-span-8 flex flex-col gap-lg">
-             
+
              {/* Agent Workflow Card */}
              <div className="bg-white rounded-2xl p-xl border border-outline-variant/30 shadow-sm">
                 <div className="flex items-center gap-2 mb-8">
@@ -23,7 +24,7 @@ export default function OPCTask() {
                   <div className="absolute left-10 md:left-16 right-10 md:right-16 top-6 h-0.5 bg-outline-variant/20 z-0"></div>
                   {/* Connecting Line Active */}
                   <div className="absolute left-10 md:left-16 w-1/2 top-6 h-0.5 bg-primary z-0"></div>
-                  
+
                   {/* Step 1 */}
                   <div className="relative z-10 flex flex-col items-center gap-2">
                     <div className="w-12 h-12 rounded-full border border-primary bg-white text-primary flex items-center justify-center shrink-0">
@@ -168,7 +169,7 @@ export default function OPCTask() {
 
           {/* Right Column (Sidebar Panels) */}
           <div className="xl:col-span-4 flex flex-col gap-lg">
-             
+
              {/* HUMAN-IN-THE-LOOP Panel */}
              <div className="border border-primary/30 bg-white rounded-2xl p-xl shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-secondary"></div>
@@ -176,23 +177,23 @@ export default function OPCTask() {
                   <span className="material-symbols-outlined text-primary text-[20px]">lock_open</span>
                   <h3 className="font-label-md text-[14px] font-bold text-primary uppercase tracking-widest">HUMAN-IN-THE-LOOP REQUIRED</h3>
                 </div>
-                
-                <button className="w-full bg-primary text-white py-3 rounded-xl font-label-md font-bold text-[14px] mb-4 flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
+
+                <Button className="w-full bg-primary text-white py-3 rounded-xl font-label-md font-bold text-[14px] mb-4 flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer">
                   <span className="material-symbols-outlined text-[20px]">call_merge</span>
                   Approve Final Merge
-                </button>
-                
+                </Button>
+
                 <div className="flex gap-3 mb-6">
-                  <button className="flex-1 bg-white border border-outline-variant/30 text-on-surface py-2.5 rounded-xl font-label-md text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer">
+                  <Button className="flex-1 bg-white border border-outline-variant/30 text-on-surface py-2.5 rounded-xl font-label-md text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer">
                     <span className="material-symbols-outlined text-[18px]">history</span>
                     Rollback
-                  </button>
-                  <button className="flex-1 bg-white border border-outline-variant/30 text-on-surface py-2.5 rounded-xl font-label-md text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer">
+                  </Button>
+                  <Button className="flex-1 bg-white border border-outline-variant/30 text-on-surface py-2.5 rounded-xl font-label-md text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors cursor-pointer">
                     <span className="material-symbols-outlined text-[18px]">edit_note</span>
                     Revision
-                  </button>
+                  </Button>
                 </div>
-                
+
                 <p className="font-label-sm text-[11px] text-on-surface-variant leading-relaxed text-center opacity-80">
                   Finalizing this action will trigger automatic deployment to Vercel/Production.
                 </p>
@@ -204,7 +205,7 @@ export default function OPCTask() {
                   <span className="material-symbols-outlined text-[20px] text-primary">inventory_2</span>
                   <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Task Artifacts</h3>
                 </div>
-                
+
                 <div className="border border-outline-variant/30 rounded-xl p-4 flex items-start gap-4 hover:border-primary/40 hover:bg-surface-container-lowest transition-colors cursor-pointer group">
                   <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-on-surface-variant group-hover:text-primary group-hover:bg-primary/10 transition-colors">
                     <span className="material-symbols-outlined text-[20px]">link</span>
@@ -232,7 +233,7 @@ export default function OPCTask() {
                   <span className="material-symbols-outlined text-[20px] text-primary">monitoring</span>
                   <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Efficiency Metrics</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-sm">
                    <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/20">
                       <div className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Compute Cost</div>
@@ -241,7 +242,7 @@ export default function OPCTask() {
                         <span className="material-symbols-outlined text-[14px]">trending_down</span> -12% avg
                       </div>
                    </div>
-                   
+
                    <div className="bg-surface-container-lowest rounded-xl p-md border border-outline-variant/20">
                       <div className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider mb-2">Token Usage</div>
                       <div className="font-headline-md text-[18px] font-bold text-on-surface mb-1">14.8k</div>
@@ -269,7 +270,7 @@ export default function OPCTask() {
              </div>
 
           </div>
-          
+
         </div>
       </div>
     </div>

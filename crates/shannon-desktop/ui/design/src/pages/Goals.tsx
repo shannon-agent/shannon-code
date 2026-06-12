@@ -1,4 +1,6 @@
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function Goals() {
   return (
@@ -10,7 +12,7 @@ export default function Goals() {
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[20px]">
               search
             </span>
-            <input
+            <Input
               className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant/50 rounded-lg text-body-sm focus:outline-none focus:border-primary transition-all outline-none"
               placeholder="Search goals..."
               type="text"
@@ -24,7 +26,7 @@ export default function Goals() {
             </p>
           </div>
           <div className="px-sm space-y-1">
-            <button className="w-full flex flex-col gap-1 p-md rounded-xl bg-primary/10 border border-primary/20 text-left cursor-pointer">
+            <Button className="w-full flex flex-col gap-1 p-md rounded-xl bg-primary/10 border border-primary/20 text-left cursor-pointer">
               <div className="flex justify-between items-start">
                 <span className="font-label-md text-primary font-bold">
                   Launch a New Product Campaign
@@ -34,8 +36,8 @@ export default function Goals() {
               <div className="w-full h-1 bg-primary/20 rounded-full overflow-hidden">
                 <div className="h-full bg-primary w-[34%]"></div>
               </div>
-            </button>
-            <button className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all text-left cursor-pointer duration-300">
+            </Button>
+            <Button className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all text-left cursor-pointer duration-300">
               <div className="flex justify-between items-start">
                 <span className="font-label-md text-on-surface">
                   Q3 Financial Audit
@@ -47,8 +49,8 @@ export default function Goals() {
               <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
                 <div className="h-full bg-green-500 w-[82%]"></div>
               </div>
-            </button>
-            <button className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all text-left cursor-pointer duration-300">
+            </Button>
+            <Button className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all text-left cursor-pointer duration-300">
               <div className="flex justify-between items-start">
                 <span className="font-label-md text-on-surface">
                   Customer Support Automation
@@ -60,7 +62,7 @@ export default function Goals() {
               <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
                 <div className="h-full bg-primary w-[15%]"></div>
               </div>
-            </button>
+            </Button>
           </div>
         </div>
       </aside>
@@ -174,9 +176,9 @@ export default function Goals() {
                     strategies, and audience segmentation for the Q4 launch.
                   </p>
                 </div>
-                <button className="p-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <Button className="p-sm text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                   <span className="material-symbols-outlined">more_vert</span>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -231,12 +233,12 @@ export default function Goals() {
                         Awaiting verification of brand tone intensity.
                       </span>
                       <div className="mt-md flex gap-sm">
-                        <button className="px-md py-sm bg-tertiary text-on-tertiary rounded-lg font-label-md shadow-sm hover:brightness-110 active:scale-95 transition-all">
+                        <Button className="px-md py-sm bg-tertiary text-on-tertiary rounded-lg font-label-md shadow-sm hover:brightness-110 active:scale-95 transition-all">
                           Approve Tone
-                        </button>
-                        <button className="px-md py-sm border border-outline-variant text-on-surface rounded-lg font-label-md hover:bg-surface-container-high/50 transition-all">
+                        </Button>
+                        <Button className="px-md py-sm border border-outline-variant text-on-surface rounded-lg font-label-md hover:bg-surface-container-high/50 transition-all">
                           Adjust Constraints
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -272,21 +274,21 @@ export default function Goals() {
 
         {/* Input area */}
         <div className="absolute bottom-6 left-xl right-xl z-20 max-w-4xl mx-auto shadow-lg bg-white/90 backdrop-blur-md border border-outline-variant/30 rounded-2xl flex items-center p-xs group focus-within:border-primary focus-within:shadow-primary/10 transition-all duration-300">
-            <button className="p-3 text-on-surface-variant hover:text-primary transition-colors cursor-pointer hover:bg-surface-container-low rounded-xl">
+            <Button className="p-3 text-on-surface-variant hover:text-primary transition-colors cursor-pointer hover:bg-surface-container-low rounded-xl">
               <span className="material-symbols-outlined" data-icon="attach_file">attach_file</span>
-            </button>
-            <input
+            </Button>
+            <Input
               className="flex-1 bg-transparent border-none outline-none focus:ring-0 font-body-lg py-md px-sm placeholder:text-on-surface-variant/60"
               placeholder="Add a sub-task or message the Agent..."
               type="text"
             />
             <div className="flex items-center gap-2 px-sm">
-              <button className="p-3 text-on-surface-variant hover:text-primary rounded-xl transition-colors cursor-pointer hover:bg-surface-container-low">
+              <Button className="p-3 text-on-surface-variant hover:text-primary rounded-xl transition-colors cursor-pointer hover:bg-surface-container-low">
                 <span className="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
-              </button>
-              <button className="bg-primary text-on-primary p-3 rounded-xl active:scale-95 transition-all shadow-md cursor-pointer hover:shadow-primary/30 flex items-center justify-center">
+              </Button>
+              <Button className="bg-primary text-on-primary p-3 rounded-xl active:scale-95 transition-all shadow-md cursor-pointer hover:shadow-primary/30 flex items-center justify-center">
                 <span className="material-symbols-outlined text-[20px]" data-icon="arrow_upward">arrow_upward</span>
-              </button>
+              </Button>
             </div>
         </div>
       </div>

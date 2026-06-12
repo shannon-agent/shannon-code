@@ -1,4 +1,7 @@
 import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Chat() {
   return (
@@ -13,7 +16,7 @@ export default function Chat() {
             >
               search
             </span>
-            <input
+            <Input
               className="w-full pl-xl pr-md py-xs bg-surface-container border-none rounded-lg text-body-sm focus:ring-1 focus:ring-primary/30"
               placeholder="Search sessions..."
               type="text"
@@ -97,7 +100,7 @@ export default function Chat() {
         </div>
 
         {/* Conversation Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-xl space-y-xl pb-32">
+        <ScrollArea className="flex-1 p-xl space-y-xl pb-32">
           {/* User Message */}
           <div className="flex justify-end">
             <div className="max-w-[80%] bg-primary-fixed text-on-primary-fixed px-lg py-md rounded-2xl rounded-tr-none shadow-sm">
@@ -175,34 +178,34 @@ export default function Chat() {
               </div>
 
               <div className="flex gap-sm">
-                <button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+                <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                   <span
                     className="material-symbols-outlined text-[18px]"
                     data-icon="thumb_up"
                   >
                     thumb_up
                   </span>
-                </button>
-                <button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+                </Button>
+                <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                   <span
                     className="material-symbols-outlined text-[18px]"
                     data-icon="content_copy"
                   >
                     content_copy
                   </span>
-                </button>
-                <button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+                </Button>
+                <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
                   <span
                     className="material-symbols-outlined text-[18px]"
                     data-icon="refresh"
                   >
                     refresh
                   </span>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
-        </div>
+        </ScrollArea>
 
         {/* Command Bar Area */}
         <div className="absolute bottom-6 md:bottom-12 w-full px-lg md:px-xl py-lg bg-gradient-to-t from-background via-background/90 to-transparent">
@@ -215,22 +218,22 @@ export default function Chat() {
               >
                 auto_awesome
               </span>
-              <input
+              <Input
                 className="flex-1 bg-transparent border-none outline-none focus:ring-0 font-body-lg py-md px-sm placeholder:text-outline-variant/80 text-on-surface"
                 placeholder="Ask Aether about the EU regulatory impact..."
                 type="text"
               />
               <div className="flex items-center gap-2 px-sm">
-                <button className="p-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-colors cursor-pointer">
+                <Button className="p-3 text-on-surface-variant hover:text-primary hover:bg-surface-container-low rounded-xl transition-colors cursor-pointer">
                   <span className="material-symbols-outlined" data-icon="attach_file">
                     attach_file
                   </span>
-                </button>
-                <button className="bg-primary text-on-primary p-3 rounded-xl active:scale-95 hover:shadow-md hover:shadow-primary/30 transition-all cursor-pointer flex items-center justify-center">
+                </Button>
+                <Button className="bg-primary text-on-primary p-3 rounded-xl active:scale-95 hover:shadow-md hover:shadow-primary/30 transition-all cursor-pointer flex items-center justify-center">
                   <span className="material-symbols-outlined text-[20px]" data-icon="arrow_upward">
                     arrow_upward
                   </span>
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -332,9 +335,9 @@ export default function Chat() {
                 src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=400&h=400"
               />
               <div className="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                <button className="bg-white text-primary px-lg py-md rounded-xl font-label-md shadow-lg cursor-pointer">
+                <Button className="bg-white text-primary px-lg py-md rounded-xl font-label-md shadow-lg cursor-pointer">
                   Expand Visual
-                </button>
+                </Button>
               </div>
             </div>
             <p className="text-body-sm text-center opacity-60">

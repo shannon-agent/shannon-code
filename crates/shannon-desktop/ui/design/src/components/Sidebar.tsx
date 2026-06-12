@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '../lib/utils';
 
 export function Sidebar() {
@@ -47,12 +49,13 @@ export function Sidebar() {
         </div>
       </div>
 
-      <button className="mb-lg w-full py-3 px-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all">
+      <Button className="mb-lg w-full py-3 px-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all">
         <span className="material-symbols-outlined text-[20px]">add</span>
         <span>New Request</span>
-      </button>
+      </Button>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto">
+      <nav className="flex-1 space-y-1">
+        <ScrollArea className="h-full">
         <NavLink to="/chat" className={getNavClass}>
            <span className="material-symbols-outlined">chat_bubble</span>
            <span>Chat</span>
@@ -66,8 +69,9 @@ export function Sidebar() {
            <span>Tasks</span>
         </NavLink>
         <div className="space-y-1">
-          <button 
-            onClick={() => setExtensionsOpen(!extensionsOpen)} 
+          <Button
+            variant="ghost"
+            onClick={() => setExtensionsOpen(!extensionsOpen)}
             className={cn("w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-label-md text-label-md transition-all duration-300", isExtensionsActive ? "bg-primary/10 text-primary font-bold shadow-sm" : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary hover:-translate-y-0.5")}
           >
             <div className="flex items-center gap-3">
@@ -75,7 +79,7 @@ export function Sidebar() {
               <span>Extensions</span>
             </div>
             <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: extensionsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-          </button>
+          </Button>
           
           {extensionsOpen && (
             <div className="pl-4 pr-2 space-y-1 mt-1 transition-all">
@@ -108,8 +112,9 @@ export function Sidebar() {
         </div>
         
         <div className="space-y-1">
-          <button 
-            onClick={() => setOpcOpen(!opcOpen)} 
+          <Button
+            variant="ghost"
+            onClick={() => setOpcOpen(!opcOpen)}
             className={cn("w-full flex items-center justify-between gap-3 px-4 py-3 rounded-lg font-label-md text-label-md transition-all duration-200", isOpcActive ? "bg-primary/10 text-primary font-bold" : "text-on-surface-variant hover:bg-surface-container-high/50 hover:text-primary")}
           >
             <div className="flex items-center gap-3">
@@ -117,7 +122,7 @@ export function Sidebar() {
               <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Experiment</span>
             </div>
             <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: opcOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-          </button>
+          </Button>
           
           {opcOpen && (
             <div className="pl-4 pr-2 space-y-1 mt-1 transition-all">
@@ -129,26 +134,28 @@ export function Sidebar() {
                     </>
                   )}
                </NavLink>
-               <button className="w-full flex items-center px-4 py-2 rounded-lg font-label-md text-[13px] text-on-surface-variant hover:text-primary transition-all duration-200">
+               <Button variant="ghost" className="w-full flex items-center px-4 py-2 rounded-lg font-label-md text-[13px] text-on-surface-variant hover:text-primary transition-all duration-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-outline-variant mr-3 shrink-0"></span>
                   Project Hermes
-               </button>
-               <button className="w-full flex items-center px-4 py-2 rounded-lg font-label-md text-[13px] text-on-surface-variant hover:text-primary transition-all duration-200">
+               </Button>
+               <Button variant="ghost" className="w-full flex items-center px-4 py-2 rounded-lg font-label-md text-[13px] text-on-surface-variant hover:text-primary transition-all duration-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-outline-variant mr-3 shrink-0"></span>
                   Digital Nomad Studio
-               </button>
-               <button className="w-full flex items-center px-2 py-2 rounded-lg font-label-md text-[13px] italic text-primary hover:bg-primary/5 transition-all duration-200">
+               </Button>
+               <Button variant="ghost" className="w-full flex items-center px-2 py-2 rounded-lg font-label-md text-[13px] italic text-primary hover:bg-primary/5 transition-all duration-200">
                   <span className="material-symbols-outlined text-[16px] mr-2">add</span>
                   New OPC
-               </button>
+               </Button>
             </div>
           )}
         </div>
+        </ScrollArea>
       </nav>
 
       <div className="mt-auto pt-lg border-t border-outline-variant/20 space-y-1">
-        <button 
-          onClick={() => setSettingsOpen(!settingsOpen)} 
+        <Button
+          variant="ghost"
+          onClick={() => setSettingsOpen(!settingsOpen)}
           className={cn("w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl font-label-md text-label-md transition-all duration-300", isSettingsActive ? "bg-primary/10 text-primary font-bold shadow-sm" : "text-on-surface-variant hover:bg-surface-container-low hover:text-primary hover:-translate-y-0.5")}
         >
           <div className="flex items-center gap-3">
@@ -156,7 +163,7 @@ export function Sidebar() {
             <span>Settings</span>
           </div>
           <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: settingsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
-        </button>
+        </Button>
 
         {settingsOpen && (
           <div className="pl-4 pr-2 space-y-1 mt-1 transition-all">

@@ -144,7 +144,7 @@ export default function Chat() {
           )}
 
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} />
+            <MessageBubble key={`${msg.timestamp}-${i}`} message={msg} />
           ))}
 
           {/* Streaming response */}

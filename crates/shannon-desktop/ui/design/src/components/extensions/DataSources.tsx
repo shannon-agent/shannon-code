@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function DataSources() {
   return (
@@ -27,7 +28,7 @@ export default function DataSources() {
                 </div>
               </div>
             </div>
-            <button className="px-md py-sm border border-outline-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant/50 transition-all cursor-pointer">Configure</button>
+            <Button variant="outline" className="px-md py-sm border border-outline-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant/50 transition-all cursor-pointer">Configure</Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-lg relative z-10">
@@ -107,7 +108,7 @@ export default function DataSources() {
                 </div>
               </div>
             </div>
-            <button className="w-full mt-lg py-sm bg-surface-container text-on-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/30">View Real-time Logs</button>
+            <Button variant="outline" className="w-full mt-lg py-sm bg-surface-container text-on-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-container-high transition-colors cursor-pointer border border-outline-variant/30">View Real-time Logs</Button>
           </div>
         </div>
 

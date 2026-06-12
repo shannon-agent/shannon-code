@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function MyAgents() {
   return (
@@ -10,10 +11,10 @@ export default function MyAgents() {
           <p className="text-body-md text-on-surface-variant">Manage and monitor your deployed autonomous intelligence units.</p>
         </div>
         <div className="flex items-center gap-md">
-          <button className="flex items-center gap-sm border border-outline-variant px-lg py-sm rounded-xl font-bold text-label-md hover:bg-surface-variant/50 transition-colors cursor-pointer">
+          <Button variant="outline" className="flex items-center gap-sm border border-outline-variant px-lg py-sm rounded-xl font-bold text-label-md hover:bg-surface-variant/50 transition-colors cursor-pointer">
             <span className="material-symbols-outlined" data-icon="upload">upload</span>
             Import Agent
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -54,10 +55,10 @@ export default function MyAgents() {
           </div>
           
           <div className="mt-auto pt-md border-t border-outline-variant flex gap-sm">
-            <button className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer">Configure</button>
-            <button className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+            <Button variant="ghost" className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer">Configure</Button>
+            <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
               <span className="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -96,10 +97,10 @@ export default function MyAgents() {
           </div>
           
           <div className="mt-auto pt-md border-t border-outline-variant flex gap-sm">
-            <button className="flex-grow py-2 rounded-lg bg-primary text-on-primary font-bold text-label-md hover:opacity-90 transition-opacity cursor-pointer">Deploy Now</button>
-            <button className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+            <Button variant="ghost" className="flex-grow py-2 rounded-lg bg-primary text-on-primary font-bold text-label-md hover:opacity-90 transition-opacity cursor-pointer">Deploy Now</Button>
+            <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
               <span className="material-symbols-outlined" data-icon="settings">settings</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -138,10 +139,10 @@ export default function MyAgents() {
           </div>
           
           <div className="mt-auto pt-md border-t border-outline-variant flex gap-sm">
-            <button className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer">Configure</button>
-            <button className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+            <Button variant="ghost" className="flex-grow py-2 rounded-lg bg-surface-variant/50 font-bold text-label-md hover:bg-surface-variant transition-colors cursor-pointer">Configure</Button>
+            <Button variant="ghost" className="p-2 rounded-lg border border-outline-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
               <span className="material-symbols-outlined" data-icon="analytics">analytics</span>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -220,7 +221,7 @@ export default function MyAgents() {
               <span className="text-label-sm font-bold">12%</span>
             </div>
           </div>
-          <button className="w-full mt-lg text-primary text-label-md font-bold hover:underline cursor-pointer text-left">Manage All Scopes →</button>
+          <Button variant="ghost" className="w-full mt-lg text-primary text-label-md font-bold hover:underline cursor-pointer text-left">Manage All Scopes →</Button>
         </div>
       </section>
     </div>

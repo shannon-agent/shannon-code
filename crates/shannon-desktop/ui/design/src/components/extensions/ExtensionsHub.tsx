@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 export default function ExtensionsHub() {
   return (
@@ -7,8 +8,8 @@ export default function ExtensionsHub() {
         <div className="flex items-center justify-between mb-lg">
           <h3 className="font-headline-md text-headline-md">Available Skills</h3>
           <div className="flex gap-sm">
-            <button className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">Trending</button>
-            <button className="px-md py-sm rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">Recent</button>
+            <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">Trending</Button>
+            <Button variant="ghost" className="px-md py-sm rounded-full font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer">Recent</Button>
           </div>
         </div>
 

@@ -1,4 +1,8 @@
 import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ModelsSettings() {
   return (
@@ -12,11 +16,13 @@ export default function ModelsSettings() {
         {/* Performance Strategy */}
         <section className="bg-white border border-outline-variant/30 rounded-xl p-lg shadow-sm">
           <h3 className="font-headline-md text-on-surface mb-md">Performance Strategy</h3>
-          <div className="flex bg-surface-container-low p-xs rounded-xl gap-xs max-w-2xl">
-            <button className="flex-1 py-sm font-label-md rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer">Balanced</button>
-            <button className="flex-1 py-sm font-label-md rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer">Speed</button>
-            <button className="flex-1 py-sm font-label-md rounded-lg bg-surface-container-lowest text-primary shadow-sm ring-1 ring-black/5 transition-all outline-none font-bold">High Quality</button>
-          </div>
+          <Tabs defaultValue="high-quality">
+            <TabsList className="flex bg-surface-container-low p-xs rounded-xl gap-xs max-w-2xl">
+              <TabsTrigger value="balanced" className="flex-1 py-sm font-label-md rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer">Balanced</TabsTrigger>
+              <TabsTrigger value="speed" className="flex-1 py-sm font-label-md rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all cursor-pointer">Speed</TabsTrigger>
+              <TabsTrigger value="high-quality" className="flex-1 py-sm font-label-md rounded-lg bg-surface-container-lowest text-primary shadow-sm ring-1 ring-black/5 transition-all outline-none font-bold">High Quality</TabsTrigger>
+            </TabsList>
+          </Tabs>
           <p className="mt-md text-label-sm text-on-surface-variant opacity-70 flex items-center gap-xs">
             <span className="material-symbols-outlined text-[16px]">info</span>
             Prioritizes complex reasoning and detailed outputs across all enabled providers.
@@ -33,12 +39,16 @@ export default function ModelsSettings() {
                 <span className="font-label-md font-bold text-primary">Pro Tier</span>
               </div>
               <div className="relative">
-                <select className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
-                  <option defaultValue="gpt4o">GPT-4o</option>
-                  <option>Claude 3.5 Sonnet</option>
-                  <option>Llama 3 (70B)</option>
-                </select>
-                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                <Select defaultValue="gpt4o">
+                  <SelectTrigger className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt4o">GPT-4o</SelectItem>
+                    <SelectItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                    <SelectItem value="llama-3-70b">Llama 3 (70B)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col gap-sm">
@@ -47,12 +57,16 @@ export default function ModelsSettings() {
                 <span className="font-label-md font-bold text-primary">Standard Tier</span>
               </div>
               <div className="relative">
-                <select className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
-                  <option defaultValue="gpt4t">GPT-4 Turbo</option>
-                  <option>Claude 3 Haiku</option>
-                  <option>Gemini 1.5 Pro</option>
-                </select>
-                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                <Select defaultValue="gpt4t">
+                  <SelectTrigger className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt4t">GPT-4 Turbo</SelectItem>
+                    <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="p-md bg-surface-container-low rounded-xl border border-outline-variant/30 flex flex-col gap-sm">
@@ -61,12 +75,16 @@ export default function ModelsSettings() {
                 <span className="font-label-md font-bold text-primary">Lite Tier</span>
               </div>
               <div className="relative">
-                <select className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
-                  <option defaultValue="gpt35">GPT-3.5 Turbo</option>
-                  <option>Llama 3 (8B)</option>
-                  <option>Mistral 7B</option>
-                </select>
-                <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant text-[18px]">expand_more</span>
+                <Select defaultValue="gpt35">
+                  <SelectTrigger className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-sm py-xs font-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gpt35">GPT-3.5 Turbo</SelectItem>
+                    <SelectItem value="llama-3-8b">Llama 3 (8B)</SelectItem>
+                    <SelectItem value="mistral-7b">Mistral 7B</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -75,12 +93,14 @@ export default function ModelsSettings() {
         {/* OpenAI Models Config */}
         <section className="bg-white border border-outline-variant/30 rounded-xl shadow-sm overflow-hidden">
           <div className="border-b border-outline-variant/30 bg-surface-container-low/30 px-lg pt-md">
-            <div className="flex gap-lg overflow-x-auto custom-scrollbar">
-              <button className="pb-sm px-xs border-b-2 border-primary text-primary font-bold font-label-md whitespace-nowrap outline-none">OpenAI</button>
-              <button className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Anthropic</button>
-              <button className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Google</button>
-              <button className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Meta</button>
-            </div>
+            <Tabs defaultValue="openai">
+              <TabsList className="flex gap-lg overflow-x-auto custom-scrollbar">
+                <TabsTrigger value="openai" className="pb-sm px-xs border-b-2 border-primary text-primary font-bold font-label-md whitespace-nowrap outline-none">OpenAI</TabsTrigger>
+                <TabsTrigger value="anthropic" className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Anthropic</TabsTrigger>
+                <TabsTrigger value="google" className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Google</TabsTrigger>
+                <TabsTrigger value="meta" className="pb-sm px-xs border-b-2 border-transparent text-on-surface-variant font-label-md hover:text-on-surface transition-colors whitespace-nowrap cursor-pointer">Meta</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           <div className="p-lg">
@@ -150,15 +170,15 @@ export default function ModelsSettings() {
             </div>
             <div className="flex gap-md max-w-xl">
               <div className="relative flex-1">
-                <input className="w-full px-md py-sm bg-surface text-on-surface border border-outline-variant/50 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all font-body-sm" type="password" defaultValue="sk-••••••••••••••••••••••••" />
-                <button className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer">
+                <Input className="w-full px-md py-sm bg-surface text-on-surface border border-outline-variant/50 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all font-body-sm" type="password" defaultValue="sk-••••••••••••••••••••••••" />
+                <Button variant="ghost" className="absolute right-md top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer">
                   <span className="material-symbols-outlined text-[20px]">visibility</span>
-                </button>
+                </Button>
               </div>
-              <button className="px-lg py-sm border border-outline-variant bg-white text-on-surface font-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer">
+              <Button className="px-lg py-sm border border-outline-variant bg-white text-on-surface font-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer">
                 <span className="material-symbols-outlined text-[18px]">sync</span>
                 Test Connection
-              </button>
+              </Button>
             </div>
           </div>
         </section>

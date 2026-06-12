@@ -19,7 +19,7 @@ function wrap(ui: React.ReactElement) {
 describe('Tasks page', () => {
   it('renders page title', () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('Tasks')).toBeInTheDocument()
+    expect(screen.getByText('Scheduled Tasks')).toBeInTheDocument()
   })
 
   it('renders new task button', () => {
@@ -32,9 +32,9 @@ describe('Tasks page', () => {
     expect(screen.getByText('No tasks yet.')).toBeInTheDocument()
   })
 
-  it('renders active agents section', () => {
+  it('renders calendar widget', () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('Active Agents')).toBeInTheDocument()
+    expect(screen.getByText('Schedule')).toBeInTheDocument()
   })
 })
 
@@ -64,7 +64,7 @@ describe('OPC page', () => {
   it('renders kanban columns', () => {
     render(wrap(<OPC />))
     expect(screen.getByText('To Do')).toBeInTheDocument()
-    expect(screen.getByText('In Progress')).toBeInTheDocument()
+    expect(screen.getByText('Doing')).toBeInTheDocument()
     expect(screen.getByText('Done')).toBeInTheDocument()
   })
 

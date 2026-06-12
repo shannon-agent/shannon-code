@@ -9,13 +9,13 @@ export function Layout() {
   useKeyboardShortcuts();
 
   return (
-    <div className="bg-background text-on-surface font-body-md overflow-hidden min-h-screen">
+    <div className="bg-background text-on-surface font-body-md overflow-hidden min-h-screen" style={{ '--sidebar-w': '280px' } as React.CSSProperties}>
       <Sidebar />
       <Header />
-      <main className="ml-[280px] pt-16 pb-8 h-screen flex flex-col relative w-[calc(100%-280px)]">
+      <main className="pt-16 pb-8 h-screen flex flex-col relative" style={{ marginLeft: 'var(--sidebar-w)', width: 'calc(100% - var(--sidebar-w))' }}>
         <Outlet />
       </main>
-      <footer className="fixed bottom-0 right-0 left-[280px] h-8 bg-surface-container-low/90 backdrop-blur-sm border-t border-outline-variant/20 flex items-center justify-between px-lg z-40">
+      <footer className="fixed bottom-0 right-0 h-8 bg-surface-container-low/90 backdrop-blur-sm border-t border-outline-variant/20 flex items-center justify-between px-lg z-40" style={{ left: 'var(--sidebar-w)' }}>
         <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-xs">
           {usage
             ? `${(usage.input_tokens + usage.output_tokens).toLocaleString()} tokens · $${usage.cost_usd.toFixed(4)}`

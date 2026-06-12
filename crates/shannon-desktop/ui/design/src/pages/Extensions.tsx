@@ -1,14 +1,16 @@
 import React from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function Extensions() {
   const location = useLocation();
   const path = location.pathname;
-  
+
   let searchPlaceholder = "Search extensions...";
   let ctaText = "";
   let ctaIcon = "";
-  
+
   if (path.includes('agents')) {
     searchPlaceholder = "Search components...";
     ctaText = "Create New Agent";
@@ -26,19 +28,19 @@ export default function Extensions() {
         <div className="flex items-center gap-xl w-full">
           <div className="hidden lg:flex items-center bg-surface-container-lowest/50 rounded-full px-md py-xs border border-outline-variant/30 flex-1 max-w-md">
             <span className="material-symbols-outlined text-outline mr-sm">search</span>
-            <input 
-              className="bg-transparent border-none outline-none focus:ring-0 text-label-md font-label-md w-full" 
-              placeholder={searchPlaceholder} 
-              type="text" 
+            <Input
+              className="bg-transparent border-none outline-none focus:ring-0 text-label-md font-label-md w-full"
+              placeholder={searchPlaceholder}
+              type="text"
             />
           </div>
         </div>
         <div className="flex items-center gap-md shrink-0">
            {ctaText && (
-             <button className="bg-primary text-on-primary px-lg py-sm rounded-full font-bold text-label-md hover:bg-primary/90 flex items-center gap-1 cursor-pointer whitespace-nowrap">
+             <Button className="bg-primary text-on-primary px-lg py-sm rounded-full font-bold text-label-md hover:bg-primary/90 flex items-center gap-1 cursor-pointer whitespace-nowrap">
                 <span className="material-symbols-outlined text-[18px]">{ctaIcon}</span>
                 {ctaText}
-             </button>
+             </Button>
            )}
         </div>
       </div>

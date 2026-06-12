@@ -343,17 +343,12 @@ pub async fn send_message(
     message: String,
     file_paths: Option<Vec<String>>,
 ) -> Result<SendMessageResponse, String> {
-    // Prevent concurrent queries
+    // Prevent concurrent queries — check and set in a single lock scope to avoid TOCTOU race
     {
-        let querying = state.querying.lock().await;
+        let mut querying = state.querying.lock().await;
         if *querying {
             return Err("A query is already in progress".into());
         }
-    }
-
-    // Mark as querying
-    {
-        let mut querying = state.querying.lock().await;
         *querying = true;
     }
 
@@ -956,16 +951,22 @@ pub async fn switch_provider(
     state: tauri::State<'_, AppState>,
     request: ProviderSwitchRequest,
 ) -> Result<(), String> {
+    // Preserve existing config, only update provider fields
+    let existing = state.desktop_config.read().await;
     let new_config = DesktopConfig {
         provider: Some(request.provider.clone()),
-        api_key: request.api_key.clone(),
-        base_url: request.base_url.clone(),
+        api_key: request.api_key.clone().or_else(|| existing.api_key.clone()),
+        base_url: request
+            .base_url
+            .clone()
+            .or_else(|| existing.base_url.clone()),
         model: Some(request.model.clone()),
-        working_dir: None,
-        theme: None,
-        mcp_servers: Vec::new(),
-        approval_mode: None, // Keep existing approval mode
+        working_dir: existing.working_dir.clone(),
+        theme: existing.theme.clone(),
+        mcp_servers: existing.mcp_servers.clone(),
+        approval_mode: existing.approval_mode.clone(),
     };
+    drop(existing);
 
     let client_config = AppState::build_client_config(&new_config);
 
@@ -1459,8 +1460,9 @@ pub async fn duplicate_session(
     let new_title = format!("Copy of {}", original_session.title);
     let now = chrono_timestamp();
 
+    let model_name = state.model.lock().await.clone();
     let metadata = shannon_core::state::SessionPersistMetadata {
-        model: original_session.title.clone(), // This should be model name, but we'll fix that
+        model: model_name,
         turn_count: session_data.messages.len() / 2,
         title: Some(new_title.clone()),
         ..Default::default()
@@ -1472,12 +1474,17 @@ pub async fn duplicate_session(
         .map_err(|e| e.to_string())?;
 
     // Add to sessions list
-    let _new_session_meta = SessionMeta {
+    let new_session_meta = SessionMeta {
         id: new_id_str.clone(),
         title: new_title.clone(),
         created_at: now,
         message_count: session_data.messages.len(),
     };
+    drop(sessions);
+    {
+        let mut sessions = state.sessions.lock().await;
+        sessions.push(new_session_meta);
+    }
 
     // Emit sessions updated event
     let _ = app_handle.emit(event_names::SESSIONS_UPDATED, ());
@@ -2184,6 +2191,15 @@ pub async fn apply_diff(file_path: String, hunks: Vec<HunkAction>) -> Result<(),
     use std::fs;
     use std::io::Write;
 
+    // Validate file path — prevent path traversal
+    let path = std::path::Path::new(&file_path);
+    if file_path.contains("..") {
+        return Err("Invalid file path: path traversal not allowed".into());
+    }
+    if !path.is_file() {
+        return Err(format!("File not found: {}", file_path));
+    }
+
     // Read current file content
     let content = fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read file {}: {}", file_path, e))?;
@@ -2268,14 +2284,25 @@ pub async fn start_background_task(
     let tools = state.tools.clone();
     let _qe_config = state.qe_config.read().await.clone();
     let model = state.model.lock().await.clone();
+    let approval_mode_str = state.desktop_config.read().await.approval_mode.clone();
 
     tokio::spawn(async move {
         // Build query engine for this task
         let client = LlmClient::new(client_config);
 
-        // Create PermissionManager with default approval mode for background tasks
+        // Create PermissionManager — use configured approval mode for background tasks
         let mut permissions = PermissionManager::new();
-        permissions.set_approval_mode(ApprovalMode::FullAuto); // Background tasks use auto-approve
+        let mode = approval_mode_str
+            .as_deref()
+            .and_then(|s| match s {
+                "full_auto" => Some(ApprovalMode::FullAuto),
+                "auto_edit" => Some(ApprovalMode::AutoEdit),
+                "auto" => Some(ApprovalMode::Auto),
+                "plan" => Some(ApprovalMode::Plan),
+                _ => None,
+            })
+            .unwrap_or(ApprovalMode::FullAuto);
+        permissions.set_approval_mode(mode);
 
         let engine =
             QueryEngine::with_defaults_arc(client, tools, permissions, StateManager::new());
