@@ -7,7 +7,13 @@ import * as api from '@/lib/tauri-api'
 export default function ModelsSettings() {
   const { models, status, config, refreshModels, refreshStatus } = useApp()
   const [switching, setSwitching] = useState<string | null>(null)
-  const [strategy, setStrategy] = useState<'speed' | 'balanced' | 'high-quality'>('high-quality')
+  const [strategy, setStrategyState] = useState<'speed' | 'balanced' | 'high-quality'>('high-quality')
+
+  const setStrategy = (s: 'speed' | 'balanced' | 'high-quality') => {
+    setStrategyState(s)
+    api.configure({ key: 'performance_strategy', value: s }).catch(e => console.warn('ModelsSettings error:', e))
+  }
+  const [showKey, setShowKey] = useState(false)
 
   const handleModelSwitch = async (modelId: string) => {
     if (!status) return
@@ -15,7 +21,7 @@ export default function ModelsSettings() {
     try {
       await api.switchProvider({ provider: status.provider, model: modelId })
       await Promise.all([refreshModels(), refreshStatus()])
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("ModelsSettings error:", e) }
     setSwitching(null)
   }
 
@@ -143,7 +149,10 @@ export default function ModelsSettings() {
             </div>
             <div className="flex gap-md max-w-xl">
               <div className="relative flex-1">
-                <Input className="w-full px-md py-sm bg-surface text-on-surface border border-outline-variant/50 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all font-body-sm" type="password" value={config?.api_key ? 'sk-••••••••••••' : ''} readOnly />
+                <Input className="w-full px-md py-sm bg-surface text-on-surface border border-outline-variant/50 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all font-body-sm pr-10" type={showKey ? 'text' : 'password'} value={config?.api_key ? 'sk-••••••••••••' : ''} readOnly />
+                <Button variant="ghost" className="absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary cursor-pointer" onClick={() => setShowKey(v => !v)}>
+                  <span className="material-symbols-outlined text-[20px]">{showKey ? 'visibility_off' : 'visibility'}</span>
+                </Button>
               </div>
               <Button
                 className="px-lg py-sm border border-outline-variant bg-white text-on-surface font-label-md rounded-lg hover:bg-surface-container transition-colors flex items-center gap-sm whitespace-nowrap cursor-pointer"
@@ -161,8 +170,8 @@ export default function ModelsSettings() {
           <h3 className="font-headline-md text-on-surface mb-lg">Global Parameters</h3>
           <p className="text-body-sm text-on-surface-variant mb-xl -mt-md">These settings apply to the default model unless overridden at the agent level.</p>
           <div className="space-y-xl max-w-2xl">
-            <ParameterSlider label="Temperature" value={0.7} min={0} max={1} step={0.1} />
-            <ParameterSlider label="Max Tokens" value={4096} min={256} max={128000} step={256} formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} />
+            <ParameterSlider label="Temperature" value={0.7} min={0} max={1} step={0.1} lowLabel="Precise" highLabel="Creative" />
+            <ParameterSlider label="Max Tokens" value={4096} min={256} max={128000} step={256} formatValue={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)} lowLabel="Short" highLabel="Long Context" />
           </div>
         </section>
       </div>
@@ -170,13 +179,15 @@ export default function ModelsSettings() {
   )
 }
 
-function ParameterSlider({ label, value: initialValue, min, max, step, formatValue }: {
+function ParameterSlider({ label, value: initialValue, min, max, step, formatValue, lowLabel, highLabel }: {
   label: string
   value: number
   min: number
   max: number
   step: number
   formatValue?: (v: number) => string
+  lowLabel?: string
+  highLabel?: string
 }) {
   const [value, setValue] = useState(initialValue)
   const display = formatValue ? formatValue(value) : String(value)
@@ -192,6 +203,12 @@ function ParameterSlider({ label, value: initialValue, min, max, step, formatVal
         min={min} max={max} step={step} type="range" value={value}
         onChange={e => setValue(Number(e.target.value))}
       />
+      {lowLabel && highLabel ? (
+        <div className="flex justify-between mt-xs">
+          <span className="font-label-sm text-on-surface-variant opacity-50">{lowLabel}</span>
+          <span className="font-label-sm text-on-surface-variant opacity-50">{highLabel}</span>
+        </div>
+      ) : null}
     </div>
   )
 }

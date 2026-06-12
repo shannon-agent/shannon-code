@@ -29,7 +29,7 @@ export default function GeneralSettings() {
     try {
       await api.configure({ key: 'approval_mode', value: APPROVAL_MODES[idx].value })
       await refreshConfig()
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("GeneralSettings error:", e) }
     setSaving(false)
   }
 

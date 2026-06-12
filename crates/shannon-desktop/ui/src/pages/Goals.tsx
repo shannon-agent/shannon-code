@@ -1,13 +1,22 @@
+import { useState } from 'react'
 import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 
 export default function Goals() {
-  const { tasks, agents } = useApp()
+  const { tasks, agents, respondPermission } = useApp()
+  const [searchQuery, setSearchQuery] = useState('')
 
   // Group tasks by status to create a goal-like view
   const activeTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
   const completedTasks = tasks.filter(t => t.status === 'completed')
   const pendingTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo')
+
+  // Apply search filter
+  const query = searchQuery.toLowerCase()
+  const filteredActive = query ? activeTasks.filter(t => t.title.toLowerCase().includes(query)) : activeTasks
+  const filteredPending = query ? pendingTasks.filter(t => t.title.toLowerCase().includes(query)) : pendingTasks
+  const filteredCompleted = query ? completedTasks.filter(t => t.title.toLowerCase().includes(query)) : completedTasks
 
   return (
     <div className="flex-1 flex w-full h-full pb-10">
@@ -16,18 +25,18 @@ export default function Goals() {
         <div className="p-md border-b border-outline-variant/20">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[20px]">search</span>
-            <Input className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant/50 rounded-lg text-body-sm focus:outline-none focus:border-primary transition-all outline-none" placeholder="Search tasks..." type="text" readOnly />
+            <Input className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant/50 rounded-lg text-body-sm focus:outline-none focus:border-primary transition-all outline-none" placeholder="Search tasks..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto py-sm">
           <div className="px-md py-xs">
-            <p className="font-label-sm text-on-surface-variant/60 uppercase tracking-wider">Active Tasks ({activeTasks.length})</p>
+            <p className="font-label-sm text-on-surface-variant/60 uppercase tracking-wider">Active Tasks ({filteredActive.length})</p>
           </div>
           <div className="px-sm space-y-1">
-            {activeTasks.length === 0 && pendingTasks.length === 0 ? (
+            {filteredActive.length === 0 && filteredPending.length === 0 ? (
               <p className="text-body-sm text-on-surface-variant text-center py-lg opacity-60">No tasks</p>
             ) : null}
-            {activeTasks.map(task => (
+            {filteredActive.map(task => (
               <div key={task.id} className="w-full flex flex-col gap-1 p-md rounded-xl bg-primary/10 border border-primary/20 cursor-pointer">
                 <div className="flex justify-between items-start">
                   <span className="font-label-md text-primary font-bold truncate">{task.title}</span>
@@ -36,7 +45,7 @@ export default function Goals() {
                 {task.assignee ? <span className="font-label-sm text-on-surface-variant">Assigned to: {task.assignee}</span> : null}
               </div>
             ))}
-            {pendingTasks.map(task => (
+            {filteredPending.map(task => (
               <div key={task.id} className="w-full flex flex-col gap-1 p-md rounded-xl hover:bg-surface-container-high/60 hover:shadow-sm hover:-translate-y-0.5 transition-all cursor-pointer duration-300">
                 <div className="flex justify-between items-start">
                   <span className="font-label-md text-on-surface truncate">{task.title}</span>
@@ -47,13 +56,13 @@ export default function Goals() {
             ))}
           </div>
 
-          {completedTasks.length > 0 ? (
+          {filteredCompleted.length > 0 ? (
             <>
               <div className="px-md py-xs mt-lg">
-                <p className="font-label-sm text-on-surface-variant/60 uppercase tracking-wider">Completed ({completedTasks.length})</p>
+                <p className="font-label-sm text-on-surface-variant/60 uppercase tracking-wider">Completed ({filteredCompleted.length})</p>
               </div>
               <div className="px-sm space-y-1">
-                {completedTasks.map(task => (
+                {filteredCompleted.map(task => (
                   <div key={task.id} className="w-full flex items-center gap-sm p-md rounded-xl opacity-60">
                     <span className="material-symbols-outlined text-green-500 text-[16px]">check_circle</span>
                     <span className="font-label-md text-on-surface truncate">{task.title}</span>
@@ -141,6 +150,70 @@ export default function Goals() {
             )}
           </div>
         </div>
+
+        {/* Agent Reasoning - Human-in-the-Loop Approval */}
+        {activeTasks.length > 0 && (
+          <div className="mt-xl">
+            <div className="glass-card bg-white/80 p-lg rounded-xl border-primary/20">
+              <div className="flex items-center gap-sm mb-lg">
+                <span className="material-symbols-outlined text-primary text-[22px]">smart_toy</span>
+                <h3 className="font-headline-md text-on-surface">Agent Reasoning</h3>
+                <span className="ml-auto px-sm py-xs bg-primary/10 text-primary font-label-sm rounded-full">{activeTasks.length} active</span>
+              </div>
+              <div className="space-y-lg">
+                {activeTasks.map(task => (
+                  <div key={task.id} className="glass-card bg-white/70 p-md rounded-xl">
+                    <div className="flex items-center justify-between mb-sm">
+                      <div className="flex items-center gap-sm">
+                        <div className="w-3 h-3 rounded-full bg-primary animate-pulse" />
+                        <span className="font-label-md text-on-surface font-bold">{task.title}</span>
+                      </div>
+                      <span className="px-sm py-xs bg-primary/10 text-primary font-label-sm rounded-lg flex items-center gap-1">
+                        <span className="material-symbols-outlined text-[12px]">sync</span>
+                        {task.status === 'in_progress' ? 'In Progress' : 'Running'}
+                      </span>
+                    </div>
+
+                    {/* Step visualization */}
+                    <div className="flex items-start gap-md my-md pl-sm">
+                      <div className="flex flex-col items-center">
+                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-primary text-[14px]">psychology</span>
+                        </div>
+                        <div className="node-connector w-px flex-1 min-h-[24px]" />
+                        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-amber-600 text-[14px]">pending</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-sm pt-xs">
+                        <span className="font-label-sm text-on-surface-variant">Analyzing task requirements</span>
+                        <span className="font-label-sm text-amber-600">Awaiting your approval</span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex gap-sm mt-md">
+                      <button
+                        className="px-md py-sm rounded-lg bg-primary/10 text-primary font-label-md hover:bg-primary/20 transition-colors flex items-center gap-1"
+                        onClick={() => respondPermission(task.id, true)}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">check</span>
+                        Approve
+                      </button>
+                      <button
+                        className="px-md py-sm rounded-lg border border-outline-variant/50 text-on-surface-variant font-label-md hover:bg-surface-container-high/60 transition-colors flex items-center gap-1"
+                        onClick={() => respondPermission(task.id, false)}
+                      >
+                        <span className="material-symbols-outlined text-[16px]">tune</span>
+                        Adjust
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Right Sidebar */}
@@ -154,6 +227,26 @@ export default function Goals() {
           </div>
         </div>
       </aside>
+
+      {/* Sticky Bottom Input */}
+      <div className="absolute bottom-0 left-[320px] right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
+        <div className="glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
+          <Button variant="ghost" className="p-md text-on-surface-variant hover:text-primary">
+            <span className="material-symbols-outlined text-[20px]">attach_file</span>
+          </Button>
+          <input
+            className="flex-1 bg-transparent border-none outline-none font-body-md text-on-surface placeholder:text-outline-variant/80"
+            placeholder="Ask about this goal..."
+            type="text"
+          />
+          <Button variant="ghost" className="p-md text-primary">
+            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+          </Button>
+          <Button className="bg-primary text-on-primary p-2 rounded-xl hover:shadow-md hover:shadow-primary/30 transition-all">
+            <span className="material-symbols-outlined text-[20px]">arrow_upward</span>
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

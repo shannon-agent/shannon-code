@@ -18,19 +18,19 @@ export default function AdvancedSettings() {
     try {
       await api.configure({ key, value: String(value) })
       await refreshConfig()
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("AdvancedSettings error:", e) }
   }
 
   const handleClearCache = async () => {
     setClearing(true)
-    try { await api.configure({ key: 'clear_cache', value: 'true' }) } catch { /* ignore */ }
+    try { await api.configure({ key: 'clear_cache', value: 'true' }) } catch (e) { console.warn("AdvancedSettings error:", e) }
     setClearing(false)
   }
 
   const handleFactoryReset = async () => {
     if (!confirm('This will permanently delete all local agents, conversation history, and configuration. This cannot be undone. Continue?')) return
     setResetting(true)
-    try { await api.configure({ key: 'factory_reset', value: 'true' }) } catch { /* ignore */ }
+    try { await api.configure({ key: 'factory_reset', value: 'true' }) } catch (e) { console.warn("AdvancedSettings error:", e) }
     setResetting(false)
   }
 

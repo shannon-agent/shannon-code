@@ -25,6 +25,9 @@ export function useKeyboardShortcuts() {
     }
 
     const handler = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.isContentEditable) return
+
       const mod = e.metaKey || e.ctrlKey
       const key = e.key.toLowerCase()
 

@@ -49,7 +49,7 @@ export function Header() {
     try {
       await api.switchProvider({ provider: status.provider, model: modelId })
       setModelOpen(false)
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("Header error:", e) }
   }
 
   return (
@@ -111,6 +111,12 @@ export function Header() {
             )}
           </div>
 
+          <Button variant="ghost" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors relative">
+            <span className="material-symbols-outlined text-[20px]">notifications</span>
+          </Button>
+          <Button variant="ghost" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors">
+            <span className="material-symbols-outlined text-[20px]">help</span>
+          </Button>
           <div className="h-8 w-8 rounded-full overflow-hidden bg-surface-container flex items-center justify-center ring-2 ring-primary/10">
             <span className="material-symbols-outlined text-on-surface-variant text-[18px]">person</span>
           </div>

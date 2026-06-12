@@ -10,7 +10,7 @@ export default function ExtensionsHub() {
   useEffect(() => {
     api.listSkills()
       .then(setSkills)
-      .catch(() => {})
+      .catch(e => console.warn('Failed to load skills:', e))
       .finally(() => setLoading(false))
   }, [])
 
@@ -41,9 +41,15 @@ export default function ExtensionsHub() {
       <section className="mb-xl mt-4">
         <div className="flex items-center justify-between mb-lg">
           <h3 className="font-headline-md text-headline-md">Available Skills</h3>
-          <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
-            {skills.length} Skills
-          </Button>
+          <div className="flex items-center gap-sm">
+            <div className="flex bg-surface-container-low rounded-lg p-xs gap-xs">
+              <button className="px-sm py-xs rounded-md text-label-sm font-bold bg-surface-container-lowest text-primary shadow-sm cursor-pointer">Trending</button>
+              <button className="px-sm py-xs rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high cursor-pointer">Recent</button>
+            </div>
+            <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
+              {skills.length} Skills
+            </Button>
+          </div>
         </div>
 
         {loading ? (

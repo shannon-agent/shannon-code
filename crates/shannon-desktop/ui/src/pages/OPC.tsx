@@ -29,6 +29,15 @@ export default function OPC() {
   const { agents, tasks, config } = useApp()
   const [quickTask, setQuickTask] = useState('')
 
+  const handleQuickTask = async () => {
+    const trimmed = quickTask.trim()
+    if (!trimmed) return
+    try {
+      await import('@/lib/tauri-api').then(api => api.startBackgroundTask(trimmed))
+      setQuickTask('')
+    } catch (e) { console.warn('Failed to start quick task:', e) }
+  }
+
   const todoTasks = tasks.filter(t => t.status === 'pending' || t.status === 'todo')
   const pendingTasks = tasks.filter(t => t.status === 'review' || t.status === 'blocked')
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
@@ -110,7 +119,7 @@ export default function OPC() {
                     onChange={e => setQuickTask(e.target.value)}
                     className="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 w-[200px] text-[13px] font-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   />
-                  <Button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-white rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors">
+                  <Button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-white rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors" onClick={handleQuickTask}>
                     <span className="material-symbols-outlined text-[16px]">add</span>
                   </Button>
                 </div>

@@ -1,12 +1,17 @@
 import { useApp } from '@/context/AppContext'
 import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 export default function OPCTask() {
-  const { tasks, agents, usage } = useApp()
+  const { tasks, agents, usage, respondPermission } = useApp()
+  const [revisionNote, setRevisionNote] = useState('')
+  const [showRevisionInput, setShowRevisionInput] = useState<string | null>(null)
   const { id } = useParams()
 
-  // Find the task by ID param, or fall back to the first in-progress task
-  const task = (id ? tasks.find(t => t.id === id) : null) ?? tasks.find(t => t.status === 'in_progress' || t.status === 'running') ?? tasks[0]
+  // Find the task by URL param, or the first in-progress task
+  const task = (id ? tasks.find(t => t.id === id) : null) ?? tasks.find(t => t.status === 'in_progress' || t.status === 'running')
+  const hasRunningTasks = tasks.some(t => t.status === 'in_progress' || t.status === 'running' || t.status === 'pending')
+  const taskId = task?.id ?? ''
 
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
@@ -114,6 +119,67 @@ export default function OPCTask() {
                 </div>
               )}
             </div>
+
+            {/* Human-in-the-Loop Review */}
+            {hasRunningTasks && (
+              <div className="glass-card bg-white/80 rounded-2xl p-xl border border-amber-200/40 shadow-sm">
+                <div className="flex items-center gap-2 mb-6">
+                  <span className="material-symbols-outlined text-[20px] text-amber-600">verified_user</span>
+                  <h3 className="font-headline-md text-[20px] font-bold text-on-surface">Human-in-the-Loop Review</h3>
+                  <span className="ml-auto w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                </div>
+
+                <p className="text-body-sm text-on-surface-variant mb-lg">
+                  The following actions require your review before proceeding. Approve to continue execution, or request adjustments.
+                </p>
+
+                <div className="flex flex-col gap-sm">
+                  <button
+                    className="w-full px-md py-sm rounded-xl bg-primary text-on-primary font-label-md hover:brightness-110 transition-all flex items-center justify-center gap-sm"
+                    onClick={() => respondPermission(taskId, true)}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                    Approve Final Merge
+                  </button>
+                  <button
+                    className="w-full px-md py-sm rounded-xl border border-red-300 text-red-600 font-label-md hover:bg-red-50 transition-all flex items-center justify-center gap-sm"
+                    onClick={() => respondPermission(taskId, false)}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">undo</span>
+                    Rollback
+                  </button>
+                  <button
+                    className="w-full px-md py-sm rounded-xl border border-outline-variant/50 text-on-surface-variant font-label-md hover:bg-surface-container-high/60 transition-all flex items-center justify-center gap-sm"
+                    onClick={() => setShowRevisionInput(showRevisionInput === taskId ? null : taskId)}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">rate_review</span>
+                    Request Revision
+                  </button>
+
+                  {showRevisionInput === taskId && (
+                    <div className="mt-sm flex flex-col gap-sm">
+                      <textarea
+                        className="w-full px-md py-sm rounded-xl border border-outline-variant/50 bg-surface-container-lowest text-body-sm text-on-surface resize-none focus:outline-none focus:border-primary transition-colors"
+                        rows={3}
+                        placeholder="Describe the revision needed..."
+                        value={revisionNote}
+                        onChange={e => setRevisionNote(e.target.value)}
+                      />
+                      <button
+                        className="self-end px-md py-xs rounded-lg bg-primary/10 text-primary font-label-sm hover:bg-primary/20 transition-colors"
+                        onClick={() => {
+                          respondPermission(taskId, false)
+                          setRevisionNote('')
+                          setShowRevisionInput(null)
+                        }}
+                      >
+                        Submit Revision Request
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column */}

@@ -22,7 +22,7 @@ export default function DataSources() {
       setNewArgs('')
       setAdding(false)
       await refreshMcpServers()
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("DataSources error:", e) }
   }
 
   const handleRemove = async (name: string) => {
@@ -30,12 +30,12 @@ export default function DataSources() {
     try {
       await api.removeMcpServer(name)
       await refreshMcpServers()
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("DataSources error:", e) }
   }
 
   const handleRestart = async (name: string) => {
     setRestarting(name)
-    try { await api.restartMcpServer(name) } catch { /* ignore */ }
+    try { await api.restartMcpServer(name) } catch (e) { console.warn("DataSources error:", e) }
     setRestarting(null)
     await refreshMcpServers()
   }

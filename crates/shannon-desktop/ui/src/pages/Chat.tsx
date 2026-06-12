@@ -191,6 +191,9 @@ export default function Chat() {
           <div className="max-w-4xl mx-auto relative group">
             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full opacity-50 group-focus-within:opacity-100 transition-opacity duration-500"></div>
             <div className="relative glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
+              <Button variant="ghost" className="p-md text-on-surface-variant hover:text-primary">
+                <span className="material-symbols-outlined text-[20px]">attach_file</span>
+              </Button>
               <span className="material-symbols-outlined p-md text-primary">{isQuerying ? 'hourglass_empty' : 'auto_awesome'}</span>
               <textarea
                 className="flex-1 bg-transparent border-none outline-none focus:ring-0 font-body-lg py-md px-sm placeholder:text-outline-variant/80 text-on-surface resize-none min-h-[24px] max-h-[200px]"
@@ -299,7 +302,13 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         </div>
         <div className="flex gap-sm">
           <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+            <span className="material-symbols-outlined text-[18px]">thumb_up</span>
+          </Button>
+          <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
             <span className="material-symbols-outlined text-[18px]">content_copy</span>
+          </Button>
+          <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+            <span className="material-symbols-outlined text-[18px]">refresh</span>
           </Button>
         </div>
       </div>
@@ -322,7 +331,7 @@ function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
       {expanded && (
         <div className="mt-sm space-y-xs">
           {toolCall.tool_input ? (
-            <pre className="text-body-sm text-on-surface-variant bg-surface-container p-sm rounded-lg overflow-x-auto max-h-[200px]">{JSON.stringify(toolCall.tool_input as object, null, 2)}</pre>
+            <pre className="text-body-sm text-on-surface-variant bg-surface-container p-sm rounded-lg overflow-x-auto max-h-[200px]">{JSON.stringify(toolCall.tool_input ?? null, null, 2)}</pre>
           ) : null}
           {toolCall.result && (
             <pre className={`text-body-sm p-sm rounded-lg overflow-x-auto max-h-[200px] ${toolCall.is_error ? 'bg-error/5 text-error' : 'bg-surface-container text-on-surface-variant'}`}>{toolCall.result}</pre>

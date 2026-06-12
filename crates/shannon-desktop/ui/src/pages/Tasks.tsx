@@ -6,6 +6,8 @@ import * as api from '@/lib/tauri-api'
 export default function Tasks() {
   const { tasks, backgroundTasks, agents, refreshTasks } = useApp()
   const [running, setRunning] = useState<string | null>(null)
+  const [viewMonth, setViewMonth] = useState(new Date().getMonth())
+  const [viewYear, setViewYear] = useState(new Date().getFullYear())
 
   const handleStartTask = async () => {
     const taskPrompt = window.prompt('Enter a task prompt for background execution:')
@@ -13,11 +15,11 @@ export default function Tasks() {
     try {
       await api.startBackgroundTask(taskPrompt)
       await refreshTasks()
-    } catch { /* ignore */ }
+    } catch (e) { console.warn("Tasks error:", e) }
   }
 
   const handleCancelTask = async (id: string) => {
-    try { await api.cancelBackgroundTask(id) } catch { /* ignore */ }
+    try { await api.cancelBackgroundTask(id) } catch (e) { console.warn("Tasks error:", e) }
     await refreshTasks()
   }
 
@@ -44,10 +46,14 @@ export default function Tasks() {
   // Calendar helper
   const today = new Date()
   const dayNames = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']
-  const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const startOfMonth = new Date(viewYear, viewMonth, 1)
   const startDay = (startOfMonth.getDay() + 6) % 7 // Monday-based
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
-  const prevMonthDays = new Date(today.getFullYear(), today.getMonth(), 0).getDate()
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate()
+
+  const prevMonth = () => { if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1) } else { setViewMonth(viewMonth - 1) } }
+  const nextMonth = () => { if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1) } else { setViewMonth(viewMonth + 1) } }
 
   const completedCount = tasks.filter(t => t.status === 'completed').length
   const totalCount = tasks.length
@@ -73,6 +79,14 @@ export default function Tasks() {
             <p className="text-on-surface-variant mt-xs">Manage and monitor your automated intelligence workflows.</p>
           </div>
           <div className="flex gap-sm">
+            <Button className="px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors">
+              <span className="material-symbols-outlined text-[18px]">filter_list</span>
+              Filters
+            </Button>
+            <Button className="px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors">
+              <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+              Month View
+            </Button>
             <Button className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={handleStartTask}>
               <span className="material-symbols-outlined text-[20px]">add</span>
               New Background Task
@@ -192,10 +206,13 @@ export default function Tasks() {
             {/* Calendar Widget */}
             <div className="bg-white border border-outline-variant/30 rounded-2xl p-lg shadow-sm">
               <div className="flex items-center justify-between mb-lg">
-                <h4 className="font-headline-md text-[18px] text-on-surface">Schedule</h4>
+                <div>
+                  <h4 className="font-headline-md text-[18px] text-on-surface">Schedule</h4>
+                  <span className="font-label-sm text-on-surface-variant">{monthNames[viewMonth]} {viewYear}</span>
+                </div>
                 <div className="flex gap-sm">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer">chevron_left</span>
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer">chevron_right</span>
+                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={prevMonth}>chevron_left</span>
+                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={nextMonth}>chevron_right</span>
                 </div>
               </div>
               <div className="grid grid-cols-7 text-center mb-sm">
@@ -207,7 +224,7 @@ export default function Tasks() {
                 ))}
                 {Array.from({ length: daysInMonth }, (_, i) => {
                   const day = i + 1
-                  const isToday = day === today.getDate()
+                  const isToday = viewMonth === today.getMonth() && viewYear === today.getFullYear() && day === today.getDate()
                   const hasTask = tasks.some(t => {
                     // Simple heuristic: highlight days with tasks
                     return t.status === 'running' || t.status === 'in_progress'

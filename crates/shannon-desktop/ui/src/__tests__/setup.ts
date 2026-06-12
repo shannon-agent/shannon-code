@@ -28,6 +28,9 @@ class ResizeObserverMock {
 }
 global.ResizeObserver = ResizeObserverMock as any
 
+// Mock scrollIntoView for jsdom
+Element.prototype.scrollIntoView = vi.fn()
+
 class IntersectionObserverMock {
   readonly root = null
   readonly rootMargin = ''

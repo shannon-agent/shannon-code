@@ -132,7 +132,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const cancelQuery = useCallback(async () => {
-    try { await api.cancelQuery() } catch { /* ignore */ }
+    try { await api.cancelQuery() } catch (e) { console.warn("AppContext error:", e) }
   }, [])
 
   const createSession = useCallback(async () => {
