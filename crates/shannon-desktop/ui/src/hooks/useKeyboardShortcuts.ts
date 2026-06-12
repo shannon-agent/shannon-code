@@ -19,6 +19,9 @@ export function useKeyboardShortcuts(onTogglePalette?: () => void, onToggleHelp?
         const sidebar = document.querySelector('[data-sidebar]')
         sidebar?.classList.toggle('collapsed')
       },
+      'mod+1': () => navigate('/chat'),
+      'mod+2': () => navigate('/goals'),
+      'mod+3': () => navigate('/tasks'),
       '?': () => onToggleHelp?.(),
       'escape': () => {
         if (isQuerying) cancelQuery()

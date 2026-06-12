@@ -1,12 +1,13 @@
 const SHORTCUTS = [
   { keys: '⌘ K', action: 'Open command palette' },
   { keys: '⌘ N', action: 'New chat' },
-  { keys: '⌘ 1–3', action: 'Switch pages' },
+  { keys: '⌘ 1', action: 'Go to Chat' },
+  { keys: '⌘ 2', action: 'Go to Goals' },
+  { keys: '⌘ 3', action: 'Go to Tasks' },
   { keys: '⌘ /', action: 'Toggle sidebar' },
   { keys: 'Enter', action: 'Send message' },
   { keys: 'Shift + Enter', action: 'New line in input' },
   { keys: 'Escape', action: 'Cancel query' },
-  { keys: 'Alt + ↑', action: 'Recall last message' },
   { keys: '?', action: 'Show this help' },
 ]
 

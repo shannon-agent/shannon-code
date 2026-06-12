@@ -445,7 +445,7 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
   }
 
   const handleRegenerate = () => {
-    sendMessage('Regenerate the previous response').catch(() => {})
+    sendMessage('Regenerate the previous response').catch(() => toast.error('Regeneration failed'))
   }
 
   if (isUser) {

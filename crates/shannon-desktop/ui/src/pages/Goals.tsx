@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
@@ -224,14 +224,14 @@ export default function Goals() {
                     <div className="flex gap-sm mt-md">
                       <button
                         className="px-md py-sm rounded-lg bg-primary/10 text-primary font-label-md hover:bg-primary/20 transition-colors flex items-center gap-1"
-                        onClick={() => respondPermission(task.id, true)}
+                        onClick={() => { respondPermission(task.id, true); toast.success('Approved') }}
                       >
                         <span className="material-symbols-outlined text-[16px]">check</span>
                         Approve
                       </button>
                       <button
                         className="px-md py-sm rounded-lg border border-outline-variant/50 text-on-surface-variant font-label-md hover:bg-surface-container-high/60 transition-colors flex items-center gap-1"
-                        onClick={() => respondPermission(task.id, false)}
+                        onClick={() => { respondPermission(task.id, false); toast.info('Adjustments requested') }}
                       >
                         <span className="material-symbols-outlined text-[16px]">tune</span>
                         Adjust
