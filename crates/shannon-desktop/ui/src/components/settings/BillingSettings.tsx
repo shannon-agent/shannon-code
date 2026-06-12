@@ -14,6 +14,27 @@ export default function BillingSettings() {
   const [showChangePlan, setShowChangePlan] = useState(false)
   const [showLegal, setShowLegal] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [changingPlan, setChangingPlan] = useState<string | null>(null)
+
+  const handleCancelSubscription = async () => {
+    setCancelling(true)
+    try {
+      await api.configure({ key: 'cancel_subscription', value: 'true' })
+      setShowCancelConfirm(false)
+    } catch (e) { console.warn("BillingSettings cancel error:", e) }
+    setCancelling(false)
+  }
+
+  const handleChangePlan = async (planName: string) => {
+    setChangingPlan(planName)
+    try {
+      await api.configure({ key: 'plan', value: planName.toLowerCase() })
+      setShowChangePlan(false)
+    } catch (e) { console.warn("BillingSettings plan error:", e) }
+    setChangingPlan(null)
+  }
+
   useEffect(() => {
     Promise.all([
       api.getBillingPlan().then(setPlan).catch(() => {}),
@@ -247,7 +268,7 @@ export default function BillingSettings() {
             <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to cancel? This will downgrade you to the free tier at the end of your billing period.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowCancelConfirm(false)}>Keep Plan</Button>
-              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => { api.configure({ key: 'cancel_subscription', value: 'true' }).catch(() => {}); setShowCancelConfirm(false) }}>Cancel Plan</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={handleCancelSubscription} disabled={cancelling}>{cancelling ? 'Cancelling...' : 'Cancel Plan'}</Button>
             </div>
           </div>
         </div>
@@ -265,7 +286,7 @@ export default function BillingSettings() {
             </div>
             <div className="space-y-md">
               {(['Free', 'Pro', 'Enterprise'] as const).map(p => (
-                <button key={p} className={`w-full p-md rounded-xl border text-left cursor-pointer transition-all ${plan?.name?.toLowerCase() === p.toLowerCase() ? 'border-2 border-primary bg-primary/5' : 'border-outline-variant/30 hover:border-primary/50'}`} onClick={() => { api.configure({ key: 'plan', value: p.toLowerCase() }).catch(() => {}); setShowChangePlan(false) }}>
+                <button key={p} disabled={changingPlan !== null} className={`w-full p-md rounded-xl border text-left cursor-pointer transition-all disabled:opacity-50 ${plan?.name?.toLowerCase() === p.toLowerCase() ? 'border-2 border-primary bg-primary/5' : 'border-outline-variant/30 hover:border-primary/50'}`} onClick={() => handleChangePlan(p)}>
                   <div className="font-label-md font-bold text-on-surface">{p}</div>
                   <div className="font-label-sm text-on-surface-variant">{p === 'Free' ? '$0/mo — 100K tokens' : p === 'Pro' ? '$29/mo — 1M tokens' : 'Custom pricing'}</div>
                 </button>
