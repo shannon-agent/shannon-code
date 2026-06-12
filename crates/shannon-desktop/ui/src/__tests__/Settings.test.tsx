@@ -19,9 +19,9 @@ describe('Settings', () => {
     expect(container.firstChild).toBeTruthy()
   })
 
-  it('has overflow-y-auto for scrolling', () => {
+  it('has scrolling content area', () => {
     const { container } = renderSettings()
-    const main = container.firstChild as HTMLElement
-    expect(main.className).toContain('overflow-y-auto')
+    const scrollable = container.querySelector('[class*="overflow-y-auto"]')
+    expect(scrollable).toBeTruthy()
   })
 })

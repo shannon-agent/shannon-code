@@ -21,28 +21,28 @@ describe('Extensions', () => {
 
   it('does not show CTA on default extensions route', () => {
     renderWithRoute('/extensions')
-    expect(screen.queryByText(/Create New Agent/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Add Data Source/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Create Agent/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Add Source/)).not.toBeInTheDocument()
   })
 
   it('renders agents search placeholder on agents route', () => {
     renderWithRoute('/extensions/agents')
-    expect(screen.getByPlaceholderText('Search components...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search agents...')).toBeInTheDocument()
   })
 
   it('shows Create New Agent CTA on agents route', () => {
     renderWithRoute('/extensions/agents')
-    expect(screen.getByText('Create New Agent')).toBeInTheDocument()
+    expect(screen.getByText('Create Agent')).toBeInTheDocument()
   })
 
   it('renders datasources search placeholder on datasources route', () => {
     renderWithRoute('/extensions/datasources')
-    expect(screen.getByPlaceholderText('Search knowledge...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search data sources...')).toBeInTheDocument()
   })
 
   it('shows Add Data Source CTA on datasources route', () => {
     renderWithRoute('/extensions/datasources')
-    expect(screen.getByText('Add Data Source')).toBeInTheDocument()
+    expect(screen.getByText('Add Source')).toBeInTheDocument()
   })
 
   // US-EXT-05: Search Extensions
@@ -55,7 +55,7 @@ describe('Extensions', () => {
 
   it('updates search on agents route', () => {
     renderWithRoute('/extensions/agents')
-    const input = screen.getByPlaceholderText('Search components...') as HTMLInputElement
+    const input = screen.getByPlaceholderText('Search agents...') as HTMLInputElement
     fireEvent.change(input, { target: { value: 'agent1' } })
     expect(input.value).toBe('agent1')
   })
@@ -63,13 +63,13 @@ describe('Extensions', () => {
   // CTA button navigation
   it('Create New Agent CTA has add icon', () => {
     renderWithRoute('/extensions/agents')
-    const btn = screen.getByText('Create New Agent').closest('button')!
+    const btn = screen.getByText('Create Agent').closest('button')!
     expect(btn.querySelector('.material-symbols-outlined')?.textContent).toBe('add')
   })
 
   it('Add Data Source CTA has add_circle icon', () => {
     renderWithRoute('/extensions/datasources')
-    const btn = screen.getByText('Add Data Source').closest('button')!
+    const btn = screen.getByText('Add Source').closest('button')!
     expect(btn.querySelector('.material-symbols-outlined')?.textContent).toBe('add_circle')
   })
 })

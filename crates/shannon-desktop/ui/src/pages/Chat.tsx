@@ -27,6 +27,7 @@ export default function Chat() {
   const [isDragging, setIsDragging] = useState(false)
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
   const [sessionPage, setSessionPage] = useState(1)
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -138,7 +139,7 @@ export default function Chat() {
               onClick={() => switchSession(session.id)}
               onContextMenu={e => {
                 e.preventDefault()
-                if (confirm('Delete this session?')) deleteSession(session.id)
+                setDeleteTarget(session.id)
               }}
               onDoubleClick={() => {
                 setEditingSessionId(session.id)
@@ -325,6 +326,23 @@ export default function Chat() {
           </div>
         </div>
       </section>
+
+      {/* Delete Confirmation Modal */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[80] bg-black/30 backdrop-blur-sm flex items-center justify-center" onClick={() => setDeleteTarget(null)}>
+          <div className="bg-surface-container-lowest rounded-2xl p-xl shadow-xl border border-outline-variant/30 max-w-sm w-full mx-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-sm mb-md">
+              <span className="material-symbols-outlined text-error text-[24px]">delete</span>
+              <h3 className="font-headline-md text-on-surface">Delete Session</h3>
+            </div>
+            <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to delete this session? This cannot be undone.</p>
+            <div className="flex justify-end gap-sm">
+              <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => { deleteSession(deleteTarget); setDeleteTarget(null) }}>Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Right Sidebar - Context */}
       <aside className="w-[300px] border-l border-outline-variant/10 glass-panel shrink-0 p-lg overflow-y-auto bg-surface-container-lowest/50 hidden lg:block">
