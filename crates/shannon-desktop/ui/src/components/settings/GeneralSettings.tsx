@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { toast } from 'sonner'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 import type { ApprovalMode } from '@/types'
@@ -29,7 +30,8 @@ export default function GeneralSettings() {
     try {
       await api.configure({ key: 'approval_mode', value: APPROVAL_MODES[idx].value })
       await refreshConfig()
-    } catch (e) { console.warn("GeneralSettings error:", e) }
+      toast.success(`Approval mode: ${APPROVAL_MODES[idx].label}`)
+    } catch (e) { console.warn("GeneralSettings error:", e); toast.error('Failed to update approval mode') }
     setSaving(false)
   }
 
