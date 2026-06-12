@@ -20,19 +20,9 @@ describe('BillingSettings', () => {
     expect(screen.getByText('Usage & Billing')).toBeInTheDocument()
   })
 
-  it('renders current session section', () => {
+  it('renders usage quota overview section', () => {
     render(wrap(<BillingSettings />))
-    expect(screen.getByText('Current Session')).toBeInTheDocument()
-  })
-
-  it('renders cost overview section', () => {
-    render(wrap(<BillingSettings />))
-    expect(screen.getByText('Cost Overview')).toBeInTheDocument()
-  })
-
-  it('renders token breakdown section', () => {
-    render(wrap(<BillingSettings />))
-    expect(screen.getByText('Token Breakdown')).toBeInTheDocument()
+    expect(screen.getByText('Usage Quota Overview')).toBeInTheDocument()
   })
 
   it('renders token usage display', () => {
@@ -45,9 +35,18 @@ describe('BillingSettings', () => {
     expect(screen.getByText('Session Cost')).toBeInTheDocument()
   })
 
-  it('renders input/output token labels', () => {
+  it('renders cost analysis section', () => {
     render(wrap(<BillingSettings />))
-    expect(screen.getAllByText('Input Tokens').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getAllByText('Output Tokens').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Cost Analysis')).toBeInTheDocument()
+  })
+
+  it('renders active plan badge', () => {
+    render(wrap(<BillingSettings />))
+    expect(screen.getByText('Active Plan')).toBeInTheDocument()
+  })
+
+  it('renders footer help section', () => {
+    render(wrap(<BillingSettings />))
+    expect(screen.getByText(/Enterprise Team/i)).toBeInTheDocument()
   })
 })
