@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 
 export default function Goals() {
-  const { tasks, agents, respondPermission } = useApp()
+  const { tasks, agents, respondPermission, sendMessage } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
+  const [goalInput, setGoalInput] = useState('')
 
   // Group tasks by status to create a goal-like view
   const activeTasks = tasks.filter(t => t.status === 'in_progress' || t.status === 'running')
@@ -231,19 +232,22 @@ export default function Goals() {
       {/* Sticky Bottom Input */}
       <div className="absolute bottom-0 left-[320px] right-[300px] px-lg py-md bg-gradient-to-t from-background via-background/90 to-transparent">
         <div className="glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg">
-          <Button variant="ghost" className="p-md text-on-surface-variant hover:text-primary">
-            <span className="material-symbols-outlined text-[20px]">attach_file</span>
+          <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
           </Button>
           <input
             className="flex-1 bg-transparent border-none outline-none font-body-md text-on-surface placeholder:text-outline-variant/80"
             placeholder="Ask about this goal..."
             type="text"
+            value={goalInput}
+            onChange={e => setGoalInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}
           />
-          <Button variant="ghost" className="p-md text-primary">
-            <span className="material-symbols-outlined text-[20px]">auto_awesome</span>
+          <Button variant="ghost" aria-label="AI assistant" className="p-md text-primary">
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">auto_awesome</span>
           </Button>
-          <Button className="bg-primary text-on-primary p-2 rounded-xl hover:shadow-md hover:shadow-primary/30 transition-all">
-            <span className="material-symbols-outlined text-[20px]">arrow_upward</span>
+          <Button aria-label="Send message" className="bg-primary text-on-primary p-2 rounded-xl hover:shadow-md hover:shadow-primary/30 transition-all" disabled={!goalInput.trim()} onClick={() => { if (goalInput.trim()) { sendMessage(goalInput); setGoalInput('') } }}>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_upward</span>
           </Button>
         </div>
       </div>

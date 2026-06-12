@@ -191,10 +191,10 @@ export default function Chat() {
           <div className="max-w-4xl mx-auto relative group">
             <div className="absolute inset-0 bg-primary/10 blur-xl rounded-full opacity-50 group-focus-within:opacity-100 transition-opacity duration-500"></div>
             <div className="relative glass-card bg-white/80 rounded-2xl border border-outline-variant/30 px-sm py-xs flex items-center shadow-lg group-focus-within:border-primary/50 group-focus-within:shadow-primary/10 transition-all duration-300">
-              <Button variant="ghost" className="p-md text-on-surface-variant hover:text-primary">
-                <span className="material-symbols-outlined text-[20px]">attach_file</span>
+              <Button variant="ghost" aria-label="Attach file" className="p-md text-on-surface-variant hover:text-primary">
+                <span className="material-symbols-outlined text-[20px]" aria-hidden="true">attach_file</span>
               </Button>
-              <span className="material-symbols-outlined p-md text-primary">{isQuerying ? 'hourglass_empty' : 'auto_awesome'}</span>
+              <span className="material-symbols-outlined p-md text-primary" aria-hidden="true">{isQuerying ? 'hourglass_empty' : 'auto_awesome'}</span>
               <textarea
                 className="flex-1 bg-transparent border-none outline-none focus:ring-0 font-body-lg py-md px-sm placeholder:text-outline-variant/80 text-on-surface resize-none min-h-[24px] max-h-[200px]"
                 placeholder={isQuerying ? 'Processing...' : 'Ask Shannon anything...'}
@@ -206,16 +206,17 @@ export default function Chat() {
               />
               <div className="flex items-center gap-2 px-sm">
                 {isQuerying ? (
-                  <Button className="bg-error/80 text-white p-3 rounded-xl active:scale-95 transition-all" onClick={cancelQuery}>
-                    <span className="material-symbols-outlined text-[20px]">stop</span>
+                  <Button aria-label="Stop generation" className="bg-error/80 text-white p-3 rounded-xl active:scale-95 transition-all" onClick={cancelQuery}>
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">stop</span>
                   </Button>
                 ) : (
                   <Button
+                    aria-label="Send message"
                     className="bg-primary text-on-primary p-3 rounded-xl active:scale-95 hover:shadow-md hover:shadow-primary/30 transition-all disabled:opacity-40"
                     onClick={handleSend}
                     disabled={!input.trim()}
                   >
-                    <span className="material-symbols-outlined text-[20px]">arrow_upward</span>
+                    <span className="material-symbols-outlined text-[20px]" aria-hidden="true">arrow_upward</span>
                   </Button>
                 )}
               </div>
@@ -273,6 +274,16 @@ export default function Chat() {
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const isUser = message.role === 'user'
+  const [liked, setLiked] = useState(false)
+  const { sendMessage } = useApp()
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.content).catch(() => {})
+  }
+
+  const handleRegenerate = () => {
+    sendMessage('Regenerate the previous response').catch(() => {})
+  }
 
   if (isUser) {
     return (
@@ -301,14 +312,14 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           )}
         </div>
         <div className="flex gap-sm">
-          <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
-            <span className="material-symbols-outlined text-[18px]">thumb_up</span>
+          <Button aria-label="Like message" onClick={() => setLiked(!liked)} className={`flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container transition-colors ${liked ? 'text-primary' : 'text-on-surface-variant'}`}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">{liked ? 'thumb_up' : 'thumb_up_off_alt'}</span>
           </Button>
-          <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
-            <span className="material-symbols-outlined text-[18px]">content_copy</span>
+          <Button aria-label="Copy message" onClick={handleCopy} className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">content_copy</span>
           </Button>
-          <Button className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
-            <span className="material-symbols-outlined text-[18px]">refresh</span>
+          <Button aria-label="Regenerate response" onClick={handleRegenerate} className="flex items-center gap-xs px-sm py-xs rounded-lg hover:bg-surface-container text-on-surface-variant transition-colors">
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span>
           </Button>
         </div>
       </div>

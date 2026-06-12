@@ -558,3 +558,14 @@
   --color-background: #f8f9fa;
   --color-on-background: #1e293b;
 }
+
+/* Focus-visible styles for accessibility */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

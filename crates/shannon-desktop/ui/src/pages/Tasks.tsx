@@ -8,6 +8,8 @@ export default function Tasks() {
   const [running, setRunning] = useState<string | null>(null)
   const [viewMonth, setViewMonth] = useState(new Date().getMonth())
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
+  const [showFilters, setShowFilters] = useState(false)
+  const [calendarView, setCalendarView] = useState(false)
 
   const handleStartTask = async () => {
     const taskPrompt = window.prompt('Enter a task prompt for background execution:')
@@ -79,13 +81,13 @@ export default function Tasks() {
             <p className="text-on-surface-variant mt-xs">Manage and monitor your automated intelligence workflows.</p>
           </div>
           <div className="flex gap-sm">
-            <Button className="px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors">
+            <Button onClick={() => setShowFilters(!showFilters)} className={`px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${showFilters ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">filter_list</span>
               Filters
             </Button>
-            <Button className="px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors">
+            <Button onClick={() => setCalendarView(!calendarView)} className={`px-md py-sm border border-outline-variant bg-white text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${calendarView ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">calendar_month</span>
-              Month View
+              {calendarView ? 'List View' : 'Month View'}
             </Button>
             <Button className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={handleStartTask}>
               <span className="material-symbols-outlined text-[20px]">add</span>
@@ -93,6 +95,16 @@ export default function Tasks() {
             </Button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="flex gap-sm mb-lg flex-wrap">
+            {['All', 'Pending', 'Running', 'Completed'].map(status => (
+              <Button key={status} variant="ghost" className="px-sm py-xs rounded-full text-label-sm bg-surface-container-low text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
+                {status}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {/* Bento Grid */}
         <div className="grid grid-cols-12 gap-gutter">
@@ -140,8 +152,8 @@ export default function Tasks() {
                       </div>
                       <div className="flex items-center gap-sm">
                         {task.status === 'running' || task.status === 'in_progress' ? (
-                          <Button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" onClick={() => handleCancelTask(task.id)}>
-                            <span className="material-symbols-outlined">stop_circle</span>
+                          <Button aria-label="Cancel task" className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors cursor-pointer" onClick={() => handleCancelTask(task.id)}>
+                            <span className="material-symbols-outlined" aria-hidden="true">stop_circle</span>
                           </Button>
                         ) : null}
                         <Button
@@ -188,8 +200,8 @@ export default function Tasks() {
                             {bt.output ? <pre className="mt-sm text-body-sm text-on-surface bg-surface-container-low p-sm rounded-lg max-h-[120px] overflow-auto">{bt.output}</pre> : null}
                           </div>
                           {bt.status === 'running' ? (
-                            <Button className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant cursor-pointer" onClick={() => handleCancelTask(bt.task_id)}>
-                              <span className="material-symbols-outlined">stop_circle</span>
+                            <Button aria-label="Cancel background task" className="p-2 rounded-lg hover:bg-surface-container-high text-on-surface-variant cursor-pointer" onClick={() => handleCancelTask(bt.task_id)}>
+                              <span className="material-symbols-outlined" aria-hidden="true">stop_circle</span>
                             </Button>
                           ) : null}
                         </div>
@@ -211,8 +223,8 @@ export default function Tasks() {
                   <span className="font-label-sm text-on-surface-variant">{monthNames[viewMonth]} {viewYear}</span>
                 </div>
                 <div className="flex gap-sm">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={prevMonth}>chevron_left</span>
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={nextMonth}>chevron_right</span>
+                  <button aria-label="Previous month" className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={prevMonth}>chevron_left</button>
+                  <button aria-label="Next month" className="material-symbols-outlined text-on-surface-variant text-[20px] cursor-pointer hover:text-primary transition-colors" onClick={nextMonth}>chevron_right</button>
                 </div>
               </div>
               <div className="grid grid-cols-7 text-center mb-sm">

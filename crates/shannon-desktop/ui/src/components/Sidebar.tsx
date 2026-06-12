@@ -76,7 +76,7 @@ export function Sidebar() {
               <span className="material-symbols-outlined">grid_view</span>
               <span>Extensions</span>
             </div>
-            <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: extensionsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: extensionsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} aria-hidden="true">expand_more</span>
           </Button>
 
           {extensionsOpen && (
@@ -119,7 +119,7 @@ export function Sidebar() {
               <span>OPC</span>
               <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Experiment</span>
             </div>
-            <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: opcOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
+            <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: opcOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} aria-hidden="true">expand_more</span>
           </Button>
 
           {opcOpen && (
@@ -148,7 +148,7 @@ export function Sidebar() {
             <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>settings</span>
             <span>Settings</span>
           </div>
-          <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: settingsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>expand_more</span>
+          <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: settingsOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} aria-hidden="true">expand_more</span>
         </Button>
 
         {settingsOpen && (

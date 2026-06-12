@@ -6,6 +6,7 @@ import type { SkillInfo } from '@/types'
 export default function ExtensionsHub() {
   const [skills, setSkills] = useState<SkillInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [filterMode, setFilterMode] = useState<'trending' | 'recent'>('trending')
 
   useEffect(() => {
     api.listSkills()
@@ -15,6 +16,7 @@ export default function ExtensionsHub() {
   }, [])
 
   const categories = [...new Set(skills.map(s => s.category ?? 'Uncategorized'))]
+  const sortedCategories = filterMode === 'recent' ? [...categories].reverse() : categories
 
   const iconForCategory = (cat: string) => {
     switch (cat.toLowerCase()) {
@@ -43,8 +45,8 @@ export default function ExtensionsHub() {
           <h3 className="font-headline-md text-headline-md">Available Skills</h3>
           <div className="flex items-center gap-sm">
             <div className="flex bg-surface-container-low rounded-lg p-xs gap-xs">
-              <button className="px-sm py-xs rounded-md text-label-sm font-bold bg-surface-container-lowest text-primary shadow-sm cursor-pointer">Trending</button>
-              <button className="px-sm py-xs rounded-md text-label-sm text-on-surface-variant hover:bg-surface-container-high cursor-pointer">Recent</button>
+              <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
+              <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
             </div>
             <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
               {skills.length} Skills
@@ -63,7 +65,7 @@ export default function ExtensionsHub() {
             <p className="font-body-sm text-on-surface-variant opacity-60">Skills can be added via MCP servers or plugin configuration.</p>
           </div>
         ) : (
-          categories.map(cat => (
+          sortedCategories.map(cat => (
             <div key={cat} className="mb-lg">
               <h4 className="font-label-md text-label-md text-outline uppercase tracking-widest mb-md">{cat}</h4>
               <div className="flex flex-wrap gap-md">
