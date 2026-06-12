@@ -25,7 +25,7 @@ describe('ThemeSettings', () => {
 
   it('renders theme selection section', () => {
     render(wrap(<ThemeSettings />))
-    expect(screen.getByText('Theme')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Theme' })).toBeInTheDocument()
   })
 
   it('renders active theme section', () => {

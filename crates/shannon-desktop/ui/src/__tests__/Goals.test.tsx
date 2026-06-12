@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { AppProvider } from '@/context/AppContext'
 import { MemoryRouter } from 'react-router-dom'
 import Goals from '@/pages/Goals'
@@ -15,26 +15,26 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe('Goals page', () => {
-  it('renders task management heading', () => {
+  it('renders task management heading', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByText('Task Management')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Task Management')).toBeInTheDocument())
   })
 
-  it('renders functional search input', () => {
+  it('renders functional search input', async () => {
     render(wrap(<Goals />))
+    await waitFor(() => expect(screen.getByPlaceholderText('Search tasks...')).toBeInTheDocument())
     const input = screen.getByPlaceholderText('Search tasks...')
-    expect(input).toBeInTheDocument()
     fireEvent.change(input, { target: { value: 'my task' } })
     expect(input).toHaveValue('my task')
   })
 
-  it('renders task summary sidebar', () => {
+  it('renders task summary sidebar', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByText('Task Summary')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Task Summary')).toBeInTheDocument())
   })
 
-  it('renders active agents section', () => {
+  it('renders active agents section', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByText(/Active Agents/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Active Agents/)).toBeInTheDocument())
   })
 })

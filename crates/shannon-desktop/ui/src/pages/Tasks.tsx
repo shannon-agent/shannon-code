@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
+import { CardSkeleton } from '@/components/SkeletonLoader'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 
 type FilterStatus = 'all' | 'pending' | 'running' | 'completed'
 
 export default function Tasks() {
-  const { tasks, backgroundTasks, agents, refreshTasks } = useApp()
+  const { tasks, backgroundTasks, agents, refreshTasks, loading } = useApp()
   const [running, setRunning] = useState<string | null>(null)
   const [viewMonth, setViewMonth] = useState(new Date().getMonth())
   const [viewYear, setViewYear] = useState(new Date().getFullYear())
@@ -17,6 +18,8 @@ export default function Tasks() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [showNewTask, setShowNewTask] = useState(false)
+  const [newTaskPrompt, setNewTaskPrompt] = useState('')
 
   const selectedTask = selectedTaskId ? tasks.find(t => t.id === selectedTaskId) ?? backgroundTasks.find(t => t.task_id === selectedTaskId) : null
 
@@ -31,11 +34,12 @@ export default function Tasks() {
   const filteredTasks = tasks.filter(t => statusMatchesFilter(t.status))
 
   const handleStartTask = async () => {
-    const taskPrompt = window.prompt('Enter a task prompt for background execution:')
-    if (!taskPrompt) return
+    if (!newTaskPrompt.trim()) return
     try {
       setErrorMsg(null)
-      await api.startBackgroundTask(taskPrompt)
+      await api.startBackgroundTask(newTaskPrompt.trim())
+      setNewTaskPrompt('')
+      setShowNewTask(false)
       await refreshTasks()
     } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to start task') }
   }
@@ -117,7 +121,7 @@ export default function Tasks() {
               <span className="material-symbols-outlined text-[18px]">calendar_month</span>
               {calendarView ? 'List View' : 'Month View'}
             </Button>
-            <Button className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={handleStartTask}>
+            <Button className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={() => setShowNewTask(!showNewTask)}>
               <span className="material-symbols-outlined text-[20px]">add</span>
               New Background Task
             </Button>
@@ -131,6 +135,24 @@ export default function Tasks() {
             <button className="ml-auto text-red-400 hover:text-red-600 cursor-pointer" onClick={() => setErrorMsg(null)}>
               <span className="material-symbols-outlined text-[18px]">close</span>
             </button>
+          </div>
+        )}
+
+        {showNewTask && (
+          <div className="bg-surface-container-lowest border border-primary/30 rounded-xl p-lg mb-lg flex flex-col gap-md shadow-sm">
+            <h3 className="font-body-lg font-bold text-on-surface">Create Background Task</h3>
+            <textarea
+              className="w-full h-20 p-sm bg-surface-container-low rounded-lg border border-outline-variant/30 text-body-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+              placeholder="Describe the task for background execution..."
+              value={newTaskPrompt}
+              onChange={e => setNewTaskPrompt(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleStartTask() } }}
+              autoFocus
+            />
+            <div className="flex gap-sm">
+              <Button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={handleStartTask}>Create Task</Button>
+              <Button variant="ghost" className="px-md py-sm rounded-lg border border-outline-variant font-label-md cursor-pointer" onClick={() => { setShowNewTask(false); setNewTaskPrompt('') }}>Cancel</Button>
+            </div>
           </div>
         )}
 
@@ -283,7 +305,9 @@ export default function Tasks() {
         <div className="grid grid-cols-12 gap-gutter">
           {/* Tasks List */}
           <div className="col-span-12 lg:col-span-8 space-y-md">
-            {filteredTasks.length === 0 && backgroundTasks.length === 0 ? (
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)
+            ) : filteredTasks.length === 0 && backgroundTasks.length === 0 ? (
               <EmptyState
                 icon="task_alt"
                 title="No tasks yet."

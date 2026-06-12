@@ -90,6 +90,7 @@ export function Header() {
           <div className="relative" ref={modelRef}>
             <Button
               variant="ghost"
+              aria-label="Select model"
               className="flex items-center gap-sm px-md py-sm rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-all"
               onClick={() => setModelOpen(!modelOpen)}
             >
@@ -116,7 +117,7 @@ export function Header() {
           <Button variant="ghost" aria-label="Notifications" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors relative">
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">notifications</span>
           </Button>
-          <Button variant="ghost" aria-label="Help" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors">
+          <Button variant="ghost" aria-label="Help" className="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" onClick={() => window.dispatchEvent(new CustomEvent('shannon:toggle-help'))}>
             <span className="material-symbols-outlined text-[20px]" aria-hidden="true">help</span>
           </Button>
           <div className="h-8 w-8 rounded-full overflow-hidden bg-surface-container flex items-center justify-center ring-2 ring-primary/10">
@@ -128,7 +129,7 @@ export function Header() {
       {/* Permission Modal */}
       {permissionRequest && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 backdrop-blur-sm">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/20 p-xl max-w-md w-full mx-md">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-outline-variant/20 p-xl max-w-md w-full mx-md" role="dialog" aria-modal="true">
             <div className="flex items-center gap-md mb-lg">
               <div className="h-10 w-10 rounded-full bg-tertiary-container flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-tertiary-container">shield</span>
@@ -158,7 +159,7 @@ export function Header() {
               Always allow this tool
             </label>
             <div className="flex gap-md">
-              <Button className="flex-1 py-sm bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-high transition-all font-label-md" onClick={() => respondPermission(permissionRequest.request_id, false)}>
+              <Button autoFocus className="flex-1 py-sm bg-surface-container text-on-surface rounded-xl hover:bg-surface-container-high transition-all font-label-md" onClick={() => respondPermission(permissionRequest.request_id, false)}>
                 Deny
               </Button>
               <Button className="flex-1 py-sm bg-primary text-white rounded-xl hover:shadow-md hover:shadow-primary/30 active:scale-95 transition-all font-label-md" onClick={() => respondPermission(permissionRequest.request_id, true)}>

@@ -16,13 +16,13 @@ function wrap(ui: React.ReactElement) {
 
 async function renderReady() {
   render(wrap(<BillingSettings />))
-  await waitFor(() => expect(screen.getByText('Usage & Billing')).toBeInTheDocument())
+  await waitFor(() => expect(screen.getAllByText(/Usage & Billing/).length).toBeGreaterThanOrEqual(1))
 }
 
 describe('BillingSettings', () => {
   it('renders usage and billing heading', async () => {
     await renderReady()
-    expect(screen.getByText('Usage & Billing')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Usage & Billing/ })).toBeInTheDocument()
   })
 
   it('renders usage quota overview section', async () => {

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
@@ -30,6 +31,11 @@ export default function ModelsSettings() {
 
   return (
     <div className="max-w-[1200px] pr-8 pb-10">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
+        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
+        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span className="text-on-surface">Models</span>
+      </nav>
       <header className="mb-md">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-xs">Model Configuration</h2>
         <p className="font-body-md text-on-surface-variant">Manage your active AI providers and configure default models for your workspace.</p>

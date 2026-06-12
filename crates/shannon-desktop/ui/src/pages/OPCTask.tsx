@@ -15,10 +15,11 @@ export default function OPCTask() {
 
   return (
     <div className="flex-1 w-full bg-background overflow-y-auto h-full px-lg py-xl">
-      <Link to="/opc" className="inline-flex items-center gap-xs text-primary hover:underline font-label-md mb-md">
-        <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-        Back to Board
-      </Link>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-lg">
+        <Link to="/opc" className="hover:text-primary transition-colors">OPC Board</Link>
+        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span className="text-on-surface">Task Detail</span>
+      </nav>
       <div className="max-w-[1400px] mx-auto">
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-lg pb-10">
           {/* Left Column */}

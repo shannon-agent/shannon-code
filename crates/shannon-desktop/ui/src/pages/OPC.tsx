@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
+import { CardSkeleton } from '@/components/SkeletonLoader'
 import { Input } from '@/components/ui/input'
 import { useApp } from '@/context/AppContext'
 
@@ -28,7 +29,7 @@ function iconForAgent(name: string): string {
 }
 
 export default function OPC() {
-  const { agents, tasks, config } = useApp()
+  const { agents, tasks, config, loading } = useApp()
   const [quickTask, setQuickTask] = useState('')
   const [editingFocus, setEditingFocus] = useState(false)
   const [focusText, setFocusText] = useState('')
@@ -92,6 +93,11 @@ export default function OPC() {
           )}
         </div>
 
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
+            {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : (
         <div className="flex flex-col lg:flex-row gap-lg items-start">
 
           {/* Agent Swarm Sidebar */}
@@ -240,6 +246,7 @@ export default function OPC() {
             </div>
           </div>
         </div>
+        )}
 
       </div>
     </div>

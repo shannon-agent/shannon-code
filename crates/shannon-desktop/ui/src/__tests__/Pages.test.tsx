@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AppProvider } from '@/context/AppContext'
 import Tasks from '@/pages/Tasks'
@@ -17,59 +17,61 @@ function wrap(ui: React.ReactElement) {
 }
 
 describe('Tasks page', () => {
-  it('renders page title', () => {
+  it('renders page title', async () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('Scheduled Tasks')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Scheduled Tasks')).toBeInTheDocument())
   })
 
-  it('renders new task button', () => {
+  it('renders new task button', async () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('New Background Task')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('New Background Task')).toBeInTheDocument())
   })
 
-  it('renders empty state when no tasks', () => {
+  it('renders empty state when no tasks', async () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('No tasks yet.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('No tasks yet.')).toBeInTheDocument())
   })
 
-  it('renders calendar widget', () => {
+  it('renders calendar widget', async () => {
     render(wrap(<Tasks />))
-    expect(screen.getByText('Schedule')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Schedule')).toBeInTheDocument())
   })
 })
 
 describe('Goals page', () => {
-  it('renders page heading', () => {
+  it('renders page heading', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByText('Task Management')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Task Management')).toBeInTheDocument())
   })
 
-  it('renders search input', () => {
+  it('renders search input', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByPlaceholderText('Search tasks...')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByPlaceholderText('Search tasks...')).toBeInTheDocument())
   })
 
-  it('renders task summary section', () => {
+  it('renders task summary section', async () => {
     render(wrap(<Goals />))
-    expect(screen.getByText('Task Summary')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Task Summary')).toBeInTheDocument())
   })
 })
 
 describe('OPC page', () => {
-  it('renders kanban header', () => {
+  it('renders kanban header', async () => {
     render(wrap(<OPC />))
-    expect(screen.getByText('KANBAN')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('KANBAN')).toBeInTheDocument())
   })
 
-  it('renders kanban columns', () => {
+  it('renders kanban columns', async () => {
     render(wrap(<OPC />))
-    expect(screen.getByText('To Do')).toBeInTheDocument()
-    expect(screen.getByText('Doing')).toBeInTheDocument()
-    expect(screen.getByText('Done')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('To Do')).toBeInTheDocument()
+      expect(screen.getByText('Doing')).toBeInTheDocument()
+      expect(screen.getByText('Done')).toBeInTheDocument()
+    })
   })
 
-  it('renders agent swarm section', () => {
+  it('renders agent swarm section', async () => {
     render(wrap(<OPC />))
-    expect(screen.getByText('Agent Swarm')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Agent Swarm')).toBeInTheDocument())
   })
 })

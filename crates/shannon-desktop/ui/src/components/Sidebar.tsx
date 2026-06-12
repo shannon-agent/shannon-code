@@ -100,7 +100,7 @@ export const Sidebar = memo(function Sidebar() {
         <span>New Chat</span>
       </Button>
 
-      <nav className="flex-1 space-y-1">
+      <nav aria-label="Main navigation" className="flex-1 space-y-1">
         <ScrollArea className="h-full">
         <NavLink to="/chat" className={getNavClass}>
            <span className="material-symbols-outlined">chat_bubble</span>
@@ -131,7 +131,7 @@ export const Sidebar = memo(function Sidebar() {
           </Button>
 
           {extensionsOpen && (
-            <div className="pl-4 pr-2 space-y-1 mt-1 transition-all">
+            <div className="pl-4 pr-2 space-y-1 mt-1 transition-all" aria-label="Extensions">
                <NavLink to="/extensions/skills" className={getSubNavClass}>
                   {({ isActive }) => (
                     <>
@@ -203,7 +203,7 @@ export const Sidebar = memo(function Sidebar() {
         </Button>
 
         {settingsOpen && (
-          <div className="pl-4 pr-2 space-y-1 mt-1 transition-all">
+          <div className="pl-4 pr-2 space-y-1 mt-1 transition-all" aria-label="Settings">
              <NavLink to="/settings/general" className={getSubNavClass}>
                 {({ isActive }) => (
                   <>

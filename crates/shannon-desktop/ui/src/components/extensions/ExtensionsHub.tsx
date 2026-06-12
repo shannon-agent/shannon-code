@@ -9,6 +9,7 @@ export default function ExtensionsHub() {
   const [loading, setLoading] = useState(true)
   const [filterMode, setFilterMode] = useState<'trending' | 'recent'>('trending')
   const [selectedSkill, setSelectedSkill] = useState<SkillInfo | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     api.listSkills()
@@ -17,11 +18,16 @@ export default function ExtensionsHub() {
       .finally(() => setLoading(false))
   }, [])
 
-  const categories = [...new Set(skills.map(s => s.category ?? 'Uncategorized'))]
+  const filteredSkills = skills.filter(s => !searchQuery ||
+    s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const categories = [...new Set(filteredSkills.map(s => s.category ?? 'Uncategorized'))]
   const sortedCategories = filterMode === 'recent' ? [...categories].reverse() : categories
 
   const sortedSkills = (cat: string) => {
-    const catSkills = skills.filter(s => (s.category ?? 'Uncategorized') === cat)
+    const catSkills = filteredSkills.filter(s => (s.category ?? 'Uncategorized') === cat)
     return filterMode === 'recent' ? [...catSkills].reverse() : catSkills
   }
 
@@ -51,12 +57,22 @@ export default function ExtensionsHub() {
         <div className="flex items-center justify-between mb-lg">
           <h3 className="font-headline-md text-headline-md">Available Skills</h3>
           <div className="flex items-center gap-sm">
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search skills..."
+                className="pl-[36px] pr-md py-xs rounded-lg bg-surface-container-low border border-outline-variant/30 text-body-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none focus:ring-2 focus:ring-primary/20 w-[200px]"
+              />
+            </div>
             <div className="flex bg-surface-container-low rounded-lg p-xs gap-xs">
               <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
               <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
             </div>
             <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
-              {skills.length} Skills
+              {filteredSkills.length} Skills
             </Button>
           </div>
         </div>
@@ -65,11 +81,11 @@ export default function ExtensionsHub() {
           <div className="flex items-center justify-center py-xl">
             <span className="material-symbols-outlined animate-spin text-[32px] text-primary">progress_activity</span>
           </div>
-        ) : skills.length === 0 ? (
+        ) : filteredSkills.length === 0 ? (
           <EmptyState
             icon="extension_off"
-            title="No skills available."
-            description="Skills can be added via MCP servers or plugin configuration."
+            title={searchQuery ? 'No skills match your search.' : 'No skills available.'}
+            description={searchQuery ? 'Try a different search term.' : 'Skills can be added via MCP servers or plugin configuration.'}
           />
         ) : (
           sortedCategories.map(cat => (

@@ -15,10 +15,10 @@ export default function KeyboardShortcutsHelp({ open, onClose }: { open: boolean
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl p-xl max-w-md w-full mx-md" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl p-xl max-w-md w-full mx-md" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-lg">
           <h3 className="font-headline-md text-on-surface">Keyboard Shortcuts</h3>
-          <button className="p-xs rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={onClose}>
+          <button autoFocus className="p-xs rounded-lg hover:bg-surface-container text-on-surface-variant" onClick={onClose}>
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useApp } from '@/context/AppContext'
 import { CardSkeleton } from '@/components/SkeletonLoader'
@@ -29,6 +30,11 @@ export default function BillingSettings() {
 
   return (
     <div className="pb-xl">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
+        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
+        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span className="text-on-surface">Usage &amp; Billing</span>
+      </nav>
       {/* Page Header */}
       <div className="mb-xl">
         <h2 className="font-headline-lg text-[32px] font-semibold text-on-surface mb-xs">Usage &amp; Billing</h2>

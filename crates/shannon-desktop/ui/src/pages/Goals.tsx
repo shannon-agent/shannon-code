@@ -3,10 +3,11 @@ import { useState, useRef } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
+import { CardSkeleton } from '@/components/SkeletonLoader'
 import { useApp } from '@/context/AppContext'
 
 export default function Goals() {
-  const { tasks, agents, respondPermission, sendMessage } = useApp()
+  const { tasks, agents, loading, respondPermission, sendMessage } = useApp()
   const [searchQuery, setSearchQuery] = useState('')
   const [goalInput, setGoalInput] = useState('')
   const [aiMenuOpen, setAiMenuOpen] = useState(false)
@@ -87,6 +88,12 @@ export default function Goals() {
 
       {/* Main Canvas */}
       <div className="flex-1 flex flex-col overflow-y-auto p-xl relative">
+        {loading ? (
+          <div className="flex-1 p-lg space-y-md">
+            {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
+          </div>
+        ) : (
+        <>
         <div className="flex items-end justify-between mb-xl">
           <div>
             <div className="flex items-center gap-sm mb-xs">
@@ -236,6 +243,8 @@ export default function Goals() {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
 

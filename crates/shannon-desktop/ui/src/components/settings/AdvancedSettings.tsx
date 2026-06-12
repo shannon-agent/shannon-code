@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { useApp } from '@/context/AppContext'
@@ -38,6 +39,11 @@ export default function AdvancedSettings() {
 
   return (
     <div className="pb-xl">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-xs text-label-sm text-on-surface-variant mb-md">
+        <Link to="/settings/general" className="hover:text-primary transition-colors">Settings</Link>
+        <span className="material-symbols-outlined text-[14px]">chevron_right</span>
+        <span className="text-on-surface">Advanced</span>
+      </nav>
       <div className="mb-xl">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-sm">Advanced Settings</h2>
         <p className="text-on-surface-variant font-body-md">Configure underlying engine parameters and data sovereignty protocols.</p>

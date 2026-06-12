@@ -2,13 +2,16 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { AppProvider } from '@/context/AppContext'
 import { ThemeProvider } from '@/context/ThemeContext'
+import { MemoryRouter } from 'react-router-dom'
 import ModelsSettings from '@/components/settings/ModelsSettings'
 
 function wrap(ui: React.ReactElement) {
   return (
     <ThemeProvider>
       <AppProvider>
-        {ui}
+        <MemoryRouter>
+          {ui}
+        </MemoryRouter>
       </AppProvider>
     </ThemeProvider>
   )

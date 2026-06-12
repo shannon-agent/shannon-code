@@ -35,6 +35,7 @@ interface AppState {
   agents: AgentInfo[]
   mcpServers: McpServerInfo[]
   error: string | null
+  loading: boolean
 }
 
 interface AppActions {
@@ -81,6 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [agents, setAgents] = useState<AgentInfo[]>([])
   const [mcpServers, setMcpServers] = useState<McpServerInfo[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const [_currentQueryId, setCurrentQueryId] = useState<string | null>(null)
 
   const refreshSessions = useCallback(async () => {
@@ -273,22 +275,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   // Initial data load
   useEffect(() => {
-    refreshStatus()
-    refreshConfig()
-    refreshSessions()
-    refreshModels()
-    refreshTasks()
-    refreshAgents()
-    refreshMcpServers()
-    refreshBackgroundTasks()
-
-    api.getConversation().then(setMessages).catch(() => {})
+    Promise.all([
+      refreshStatus(),
+      refreshConfig(),
+      refreshSessions(),
+      refreshModels(),
+      refreshTasks(),
+      refreshAgents(),
+      refreshMcpServers(),
+      refreshBackgroundTasks(),
+      api.getConversation().then(setMessages).catch(() => {}),
+    ]).finally(() => setLoading(false))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const value: AppState & AppActions = {
     messages, streamingText, thinkingText, isQuerying, activeToolCalls, usage,
     sessions, currentSessionId, status, config, models, permissionRequest,
-    backgroundTasks, tasks, agents, mcpServers, error,
+    backgroundTasks, tasks, agents, mcpServers, error, loading,
     sendMessage, cancelQuery, createSession, switchSession: switchToSession,
     deleteSession: deleteSessionAction, renameSession: renameSessionAction,
     respondPermission: respondPermissionAction, refreshSessions, refreshStatus,
