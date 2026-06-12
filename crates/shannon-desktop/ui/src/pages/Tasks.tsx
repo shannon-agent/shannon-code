@@ -124,15 +124,15 @@ export default function Tasks() {
             <p className="text-on-surface-variant mt-xs">Manage and monitor your automated intelligence workflows.</p>
           </div>
           <div className="flex gap-sm">
-            <Button onClick={() => setShowFilters(!showFilters)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${showFilters ? 'ring-2 ring-primary' : ''}`}>
+            <Button aria-label="Toggle filters" onClick={() => setShowFilters(!showFilters)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${showFilters ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">filter_list</span>
               Filters
             </Button>
-            <Button onClick={() => setCalendarView(!calendarView)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${calendarView ? 'ring-2 ring-primary' : ''}`}>
+            <Button aria-label="Toggle calendar view" onClick={() => setCalendarView(!calendarView)} className={`px-md py-sm border border-outline-variant bg-surface-container-lowest text-on-surface rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:bg-surface-container transition-colors ${calendarView ? 'ring-2 ring-primary' : ''}`}>
               <span className="material-symbols-outlined text-[18px]">calendar_month</span>
               {calendarView ? 'List View' : 'Month View'}
             </Button>
-            <Button className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={() => setShowNewTask(!showNewTask)}>
+            <Button aria-label="Create new task" className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all" onClick={() => setShowNewTask(!showNewTask)}>
               <span className="material-symbols-outlined text-[20px]">add</span>
               New Background Task
             </Button>
