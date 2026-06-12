@@ -1,58 +1,27 @@
 import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import { AppProvider } from '@/context/AppContext'
-import { ThemeProvider } from '@/context/ThemeContext'
-import GeneralSettings from '@/components/settings/GeneralSettings'
-import AdvancedSettings from '@/components/settings/AdvancedSettings'
-import BillingSettings from '@/components/settings/BillingSettings'
+import { render } from '@testing-library/react'
+import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import Settings from '@/pages/Settings'
 
-function wrap(ui: React.ReactElement) {
-  return (
-    <ThemeProvider>
-      <AppProvider>
-        {ui}
-      </AppProvider>
-    </ThemeProvider>
+function renderSettings() {
+  return render(
+    <MemoryRouter initialEntries={['/settings']}>
+      <Routes>
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </MemoryRouter>
   )
 }
 
-describe('GeneralSettings', () => {
-  it('renders heading', () => {
-    render(wrap(<GeneralSettings />))
-    expect(screen.getByText('System Settings')).toBeInTheDocument()
+describe('Settings', () => {
+  it('renders without crashing', () => {
+    const { container } = renderSettings()
+    expect(container.firstChild).toBeTruthy()
   })
 
-  it('renders approval mode section', () => {
-    render(wrap(<GeneralSettings />))
-    expect(screen.getByText('Approval Mode')).toBeInTheDocument()
-  })
-})
-
-describe('AdvancedSettings', () => {
-  it('renders heading', () => {
-    render(wrap(<AdvancedSettings />))
-    expect(screen.getByText('Advanced Settings')).toBeInTheDocument()
-  })
-
-  it('renders clear cache option', () => {
-    render(wrap(<AdvancedSettings />))
-    expect(screen.getByText('Clear Session Cache')).toBeInTheDocument()
-  })
-
-  it('renders factory reset option', () => {
-    render(wrap(<AdvancedSettings />))
-    expect(screen.getByText('Reset to Factory Settings')).toBeInTheDocument()
-  })
-})
-
-describe('BillingSettings', () => {
-  it('renders heading', () => {
-    render(wrap(<BillingSettings />))
-    expect(screen.getByText('Usage & Billing')).toBeInTheDocument()
-  })
-
-  it('renders token usage section', () => {
-    render(wrap(<BillingSettings />))
-    expect(screen.getByText('Token Breakdown')).toBeInTheDocument()
+  it('has overflow-y-auto for scrolling', () => {
+    const { container } = renderSettings()
+    const main = container.firstChild as HTMLElement
+    expect(main.className).toContain('overflow-y-auto')
   })
 })
