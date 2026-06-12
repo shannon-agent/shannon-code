@@ -74,11 +74,11 @@ export default function Tasks() {
 
   const statusBadge = (status: string) => {
     switch (status) {
-      case 'completed': return { bg: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-500', label: 'Completed', icon: 'check_circle' }
-      case 'running': case 'in_progress': return { bg: 'bg-primary/10 text-primary border-primary/20', dot: 'bg-primary animate-pulse', label: 'Running', icon: 'autorenew' }
-      case 'failed': case 'error': return { bg: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Failed', icon: 'error' }
-      case 'pending': return { bg: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/30', dot: 'bg-outline', label: 'Pending', icon: 'schedule' }
-      default: return { bg: 'bg-surface-container-high text-on-surface-variant border-outline-variant/30', dot: 'bg-outline-variant', label: status, icon: 'task_alt' }
+      case 'completed': return { bg: 'bg-green-100 text-green-700 border-green-200', dot: 'bg-green-500', label: 'Completed', icon: 'check_circle', tip: 'Task finished successfully' }
+      case 'running': case 'in_progress': return { bg: 'bg-primary/10 text-primary border-primary/20', dot: 'bg-primary animate-pulse', label: 'Running', icon: 'autorenew', tip: 'Task is currently executing' }
+      case 'failed': case 'error': return { bg: 'bg-error/10 text-error border-error/20', dot: 'bg-error', label: 'Failed', icon: 'error', tip: 'Task encountered an error' }
+      case 'pending': return { bg: 'bg-surface-container-highest text-on-surface-variant border-outline-variant/30', dot: 'bg-outline', label: 'Pending', icon: 'schedule', tip: 'Waiting to be executed' }
+      default: return { bg: 'bg-surface-container-high text-on-surface-variant border-outline-variant/30', dot: 'bg-outline-variant', label: status, icon: 'task_alt', tip: status }
     }
   }
 
@@ -253,7 +253,7 @@ export default function Tasks() {
                                 {task.assignee ? <span className="font-label-sm text-on-surface-variant">{task.assignee}</span> : null}
                               </div>
                             </div>
-                            <div className={`flex items-center gap-xs px-sm py-1 rounded-full border ${badge.bg}`}>
+                            <div title={badge.tip} className={`flex items-center gap-xs px-sm py-1 rounded-full border ${badge.bg}`}>
                               <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
                               <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">{badge.label}</span>
                             </div>
@@ -356,7 +356,7 @@ export default function Tasks() {
                       </div>
                     </div>
                     <div className="flex items-center gap-lg">
-                      <div className={`flex items-center gap-xs px-sm py-1 rounded-full border ${badge.bg}`}>
+                      <div title={badge.tip} className={`flex items-center gap-xs px-sm py-1 rounded-full border ${badge.bg}`}>
                         <span className={`w-2 h-2 rounded-full ${badge.dot}`} />
                         <span className="font-label-sm text-[11px] font-bold uppercase tracking-wider">{badge.label}</span>
                       </div>

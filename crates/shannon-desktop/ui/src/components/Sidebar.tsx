@@ -114,17 +114,17 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
         <NavLink to="/chat" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">chat_bubble</span>
            <span className="flex-1">Chat</span>
-           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘1</kbd>
+           <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘1</kbd>
         </NavLink>
         <NavLink to="/goals" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">ads_click</span>
            <span className="flex-1">Goals</span>
-           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘2</kbd>
+           <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘2</kbd>
         </NavLink>
         <NavLink to="/tasks" className={getNavClass} onClick={handleNavClick}>
            <span className="material-symbols-outlined">task_alt</span>
            <span className="flex-1">Scheduled</span>
-           <kbd className="hidden group-hover:inline text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘3</kbd>
+           <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘3</kbd>
         </NavLink>
         <div className="space-y-1">
           <Button
