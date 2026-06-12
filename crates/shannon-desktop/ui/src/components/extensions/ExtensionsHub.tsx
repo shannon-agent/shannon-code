@@ -54,7 +54,7 @@ export default function ExtensionsHub() {
       case 'productivity': return 'bg-primary/10 text-primary'
       case 'design': return 'bg-secondary/10 text-secondary'
       case 'data': case 'analysis': return 'bg-tertiary/10 text-tertiary'
-      case 'code': return 'bg-orange-500/10 text-orange-600'
+      case 'code': return 'bg-tertiary/10 text-tertiary'
       default: return 'bg-surface-container-high text-on-surface-variant'
     }
   }
@@ -76,8 +76,8 @@ export default function ExtensionsHub() {
               />
             </div>
             <div className="flex bg-surface-container-low rounded-lg p-xs gap-xs">
-              <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
-              <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
+              <button onClick={() => setFilterMode('trending')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors ${filterMode === 'trending' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Trending</button>
+              <button onClick={() => setFilterMode('recent')} className={`px-sm py-xs rounded-md text-label-sm font-bold cursor-pointer transition-colors ${filterMode === 'recent' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:bg-surface-container-high'}`}>Recent</button>
             </div>
             <Button variant="ghost" className="px-md py-sm rounded-full bg-surface-container-high font-label-md text-label-md text-on-surface cursor-pointer">
               {filteredSkills.length} Skills
@@ -121,7 +121,7 @@ export default function ExtensionsHub() {
                       <span className="flex items-center gap-xs"><span className="material-symbols-outlined text-[14px]">terminal</span>Trigger: {skill.trigger}</span>
                       <span className="flex items-center gap-xs"><span className="material-symbols-outlined text-[14px]">source</span>{skill.source}</span>
                     </div>
-                    <button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90 transition-opacity" onClick={() => setSelectedSkill(null)}>Close</button>
+                    <button className="px-md py-sm bg-primary text-on-primary rounded-lg font-label-md hover:opacity-90 transition-all" onClick={() => setSelectedSkill(null)}>Close</button>
                   </div>
                 ))}
               </div>
