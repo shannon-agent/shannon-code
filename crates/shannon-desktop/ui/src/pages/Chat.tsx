@@ -133,12 +133,16 @@ export default function Chat() {
           {pagedSessions.map(session => (
             <div
               key={session.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`Session: ${session.title || 'Untitled'}`}
               className={`p-sm rounded-lg cursor-pointer group ${
                 session.id === currentSessionId
                   ? 'bg-primary-fixed/40 border-l-4 border-primary shadow-sm'
                   : 'hover:bg-surface-container-high/50'
               }`}
               onClick={() => switchSession(session.id)}
+              onKeyDown={e => { if (e.key === 'Enter') switchSession(session.id); if (e.key === 'Delete') setDeleteTarget(session.id) }}
               onContextMenu={e => {
                 e.preventDefault()
                 setDeleteTarget(session.id)
@@ -215,7 +219,7 @@ export default function Chat() {
 
           {/* Streaming response */}
           {(streamingText || thinkingText || activeToolCalls.length > 0) && (
-            <div className="flex gap-md max-w-[90%]">
+            <div className="flex gap-md max-w-[90%]" aria-live="polite" aria-label="AI response streaming">
               <div className="h-10 w-10 rounded-full bg-primary-container flex items-center justify-center shrink-0 shadow-md">
                 <span className="material-symbols-outlined text-on-primary-container">smart_toy</span>
               </div>

@@ -30,6 +30,7 @@ export function Header() {
   const { toggle: toggleSidebar } = useSidebar();
   const [modelOpen, setModelOpen] = useState(false);
   const modelRef = useRef<HTMLDivElement>(null);
+  const [modelFocus, setModelFocus] = useState(-1);
 
   const title = getTitle(location.pathname);
   const isOpc = location.pathname.includes('/opc') && !location.pathname.includes('/opc/task');
@@ -97,19 +98,27 @@ export function Header() {
               variant="ghost"
               aria-label="Select model"
               className="flex items-center gap-sm px-md py-sm rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-all"
-              onClick={() => setModelOpen(!modelOpen)}
+              onClick={() => { setModelOpen(!modelOpen); setModelFocus(-1) }}
             >
               <span className={`w-2 h-2 rounded-full shrink-0 ${status?.querying ? 'bg-amber-500 animate-pulse' : 'bg-green-500'}`}></span>
               <span className="font-label-sm text-[12px] whitespace-nowrap max-w-[120px] truncate">{status?.model || 'No model'}</span>
               <span className="material-symbols-outlined text-[16px]">expand_more</span>
             </Button>
             {modelOpen && models.length > 0 && (
-              <div className="absolute right-0 top-full mt-sm w-[280px] bg-surface-container-lowest/95 backdrop-blur-lg rounded-xl border border-outline-variant/20 shadow-xl z-50 py-sm">
-                {models.map(m => (
+              <div className="absolute right-0 top-full mt-sm w-[280px] bg-surface-container-lowest/95 backdrop-blur-lg rounded-xl border border-outline-variant/20 shadow-xl z-50 py-sm" role="listbox" onKeyDown={e => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); setModelFocus(f => Math.min(f + 1, models.length - 1)) }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setModelFocus(f => Math.max(f - 1, 0)) }
+                else if (e.key === 'Enter' && modelFocus >= 0) { handleModelSwitch(models[modelFocus].id) }
+                else if (e.key === 'Escape') { setModelOpen(false) }
+              }}>
+                {models.map((m, i) => (
                   <button
                     key={m.id}
-                    className={`w-full text-left px-md py-sm hover:bg-primary/5 flex items-center justify-between transition-colors ${m.id === status?.model ? 'text-primary font-bold' : 'text-on-surface'}`}
+                    role="option"
+                    aria-selected={m.id === status?.model}
+                    className={`w-full text-left px-md py-sm flex items-center justify-between transition-colors ${i === modelFocus ? 'bg-primary/10 text-primary' : m.id === status?.model ? 'text-primary font-bold' : 'text-on-surface hover:bg-primary/5'}`}
                     onClick={() => handleModelSwitch(m.id)}
+                    onMouseEnter={() => setModelFocus(i)}
                   >
                     <span className="font-label-md truncate">{m.name}</span>
                     <span className="text-label-sm text-on-surface-variant">{m.context_window > 0 ? `${(m.context_window / 1000).toFixed(0)}k` : ''}</span>
