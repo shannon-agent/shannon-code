@@ -237,6 +237,32 @@ export async function listAgents(): Promise<AgentInfo[]> {
   return invoke('list_agents')
 }
 
+export interface AgentDefinitionInfo {
+  name: string
+  description: string
+  tools: string[]
+  model: string
+  prompt: string
+  source_path: string
+}
+
+export async function listAgentDefinitions(): Promise<AgentDefinitionInfo[]> {
+  return invoke('list_agent_definitions')
+}
+
+export async function createAgentDefinition(
+  name: string,
+  model: string | undefined,
+  systemPrompt: string | undefined,
+  tools: string[],
+): Promise<string> {
+  return invoke('create_agent_definition', { name, model: model ?? null, systemPrompt: systemPrompt ?? null, tools })
+}
+
+export async function deleteAgentDefinition(name: string): Promise<boolean> {
+  return invoke('delete_agent_definition', { name })
+}
+
 export async function listTasks(): Promise<TaskItem[]> {
   return invoke('list_tasks')
 }

@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import EmptyState from '@/components/ui/empty-state'
 import { useApp } from '@/context/AppContext'
+import * as api from '@/lib/tauri-api'
 
 export default function MyAgents() {
   const { agents, backgroundTasks, models, sendMessage } = useApp()
@@ -217,14 +218,18 @@ export default function MyAgents() {
                   </div>
                 </div>
                 <div className="flex gap-sm">
-                  <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={() => {
+                  <Button className="flex-1 py-2 bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={async () => {
                     if (!agentName.trim()) { setNameError('Agent name is required'); return }
                     const tools = Object.entries(agentTools).filter(([, v]) => v).map(([k]) => k)
-                    const config = { name: agentName, model: agentModel || undefined, systemPrompt: agentPrompt, tools }
-                    sendMessage(`Create agent: ${JSON.stringify(config)}`)
-                    toast.success(`Agent "${agentName}" created`)
-                    setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true }); setNameError('')
-                    setShowAddAgent(false)
+                    try {
+                      await api.createAgentDefinition(agentName.trim(), agentModel || undefined, agentPrompt || undefined, tools)
+                      toast.success(`Agent "${agentName}" created`)
+                      setAgentName(''); setAgentModel(''); setAgentPrompt(''); setAgentTools({ bash: true, read: true, write: true }); setNameError('')
+                      setShowAddAgent(false)
+                    } catch (e) {
+                      console.warn('Failed to create agent:', e)
+                      toast.error(e instanceof Error ? e.message : 'Failed to create agent')
+                    }
                   }}>
                     Create Agent
                   </Button>
