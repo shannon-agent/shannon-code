@@ -757,15 +757,7 @@ impl AgentCoordinator {
         }
 
         // Append to long-lived message history (best-effort).
-        self.record_to_history(
-            team_name,
-            from,
-            to,
-            &message.content,
-            crate::message::MessagePriority::Normal,
-            message.timestamp,
-            message.id,
-        );
+        self.record_to_history(team_name, &message);
 
         if let Err(e) = self
             .event_sender
@@ -826,15 +818,16 @@ impl AgentCoordinator {
                     }
 
                     // Append to long-lived message history (best-effort).
-                    self.record_to_history(
-                        team_name,
-                        from,
-                        agent_name,
-                        &MessageContent::Text(content.clone()),
-                        crate::message::MessagePriority::Normal,
-                        message.timestamp,
-                        message.id,
-                    );
+                    let per_recipient = crate::message::AgentMessage {
+                        id: message.id,
+                        from: message.from.clone(),
+                        to: agent_name.to_string(),
+                        message_type: message.message_type.clone(),
+                        priority: message.priority,
+                        content: MessageContent::Text(content.clone()),
+                        timestamp: message.timestamp,
+                    };
+                    self.record_to_history(team_name, &per_recipient);
 
                     if let Err(e) = self
                         .event_sender
@@ -1916,20 +1909,11 @@ impl AgentCoordinator {
 
     /// Record an outgoing message to history (if configured). Best-effort:
     /// failures are logged as warnings, not propagated.
-    fn record_to_history(
-        &self,
-        team_name: &str,
-        from: &str,
-        to: &str,
-        content: &MessageContent,
-        priority: crate::message::MessagePriority,
-        timestamp: chrono::DateTime<chrono::Utc>,
-        message_id: uuid::Uuid,
-    ) {
+    fn record_to_history(&self, team_name: &str, message: &AgentMessage) {
         let Some(ref store) = self.message_history else {
             return;
         };
-        let (kind, preview) = match content {
+        let (kind, preview) = match &message.content {
             MessageContent::Text(t) => (ContentKind::Text, t.clone()),
             MessageContent::Structured(v) => (
                 ContentKind::Structured,
@@ -1938,14 +1922,14 @@ impl AgentCoordinator {
             MessageContent::Protocol(p) => (ContentKind::Protocol, format!("{p:?}")),
         };
         let rec = crate::message_history::MessageRecord {
-            message_id: message_id.to_string(),
+            message_id: message.id.to_string(),
             team: team_name.to_string(),
-            from: from.to_string(),
-            to: to.to_string(),
+            from: message.from.clone(),
+            to: message.to.clone(),
             content_preview: crate::message_history::MessageRecord::truncate_preview(&preview),
             content_kind: kind,
-            priority: format!("{:?}", priority).to_lowercase(),
-            timestamp,
+            priority: format!("{:?}", message.priority).to_lowercase(),
+            timestamp: message.timestamp,
             revision: 0,
         };
         if let Err(e) = store.record(&rec) {
@@ -3273,15 +3257,16 @@ mod tests {
         coordinator.set_message_history(store);
 
         let id = Uuid::new_v4();
-        coordinator.record_to_history(
-            "alpha",
-            "alice",
-            "bob",
-            &MessageContent::Text("hello world".into()),
-            crate::message::MessagePriority::Normal,
-            chrono::Utc::now(),
+        let msg = crate::message::AgentMessage {
             id,
-        );
+            from: "alice".into(),
+            to: "bob".into(),
+            message_type: crate::message::MessageType::Chat,
+            priority: crate::message::MessagePriority::Normal,
+            content: MessageContent::Text("hello world".into()),
+            timestamp: chrono::Utc::now(),
+        };
+        coordinator.record_to_history("alpha", &msg);
 
         let history = coordinator.message_history().unwrap();
         let list = history.list_by_team("alpha", 10).unwrap();
@@ -3300,15 +3285,16 @@ mod tests {
         // No history configured — record_to_history should silently no-op.
         let config = CoordinatorConfig::default();
         let coordinator = AgentCoordinator::new(config).await.unwrap();
-        coordinator.record_to_history(
-            "alpha",
-            "alice",
-            "bob",
-            &MessageContent::Text("hello".into()),
-            crate::message::MessagePriority::Normal,
-            chrono::Utc::now(),
-            Uuid::new_v4(),
-        );
+        let msg = crate::message::AgentMessage {
+            id: Uuid::new_v4(),
+            from: "alice".into(),
+            to: "bob".into(),
+            message_type: crate::message::MessageType::Chat,
+            priority: crate::message::MessagePriority::Normal,
+            content: MessageContent::Text("hello".into()),
+            timestamp: chrono::Utc::now(),
+        };
+        coordinator.record_to_history("alpha", &msg);
         assert!(coordinator.message_history().is_none());
     }
 
@@ -3322,15 +3308,16 @@ mod tests {
         let mut coordinator = AgentCoordinator::new(config).await.unwrap();
         coordinator.set_message_history(store);
 
-        coordinator.record_to_history(
-            "beta",
-            "carol",
-            "dave",
-            &MessageContent::Structured(serde_json::json!({"key": "value"})),
-            crate::message::MessagePriority::High,
-            chrono::Utc::now(),
-            Uuid::new_v4(),
-        );
+        let msg = crate::message::AgentMessage {
+            id: Uuid::new_v4(),
+            from: "carol".into(),
+            to: "dave".into(),
+            message_type: crate::message::MessageType::Chat,
+            priority: crate::message::MessagePriority::High,
+            content: MessageContent::Structured(serde_json::json!({"key": "value"})),
+            timestamp: chrono::Utc::now(),
+        };
+        coordinator.record_to_history("beta", &msg);
 
         let history = coordinator.message_history().unwrap();
         let list = history.list_by_team("beta", 10).unwrap();
