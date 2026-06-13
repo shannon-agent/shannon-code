@@ -85,8 +85,15 @@ export default function Tasks() {
     setRunning(id)
     try {
       setErrorMsg(null)
-      await api.startBackgroundTask(`Execute task: ${tasks.find(t => t.id === id)?.title ?? id}`)
-      toast.success('Task started')
+      const routine = scheduledTasks.find(t => t.id === id)
+      if (routine) {
+        await api.triggerTaskNow(id)
+        toast.success(`Triggered "${routine.name}"`)
+      } else {
+        const fallbackTitle = tasks.find(t => t.id === id)?.title ?? id
+        await api.startBackgroundTask(`Execute task: ${fallbackTitle}`)
+        toast.success('Task started')
+      }
       await refreshTasks()
     } catch (e) { setErrorMsg(e instanceof Error ? e.message : 'Failed to run task'); toast.error('Failed to run task') }
     setTimeout(() => setRunning(null), 1500)
