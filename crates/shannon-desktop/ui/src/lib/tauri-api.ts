@@ -21,6 +21,20 @@ import type {
   FileNode,
   WorkingDirInfo,
 } from '@/types'
+import type {
+  ScheduledRoutine,
+  CreateTaskPayload,
+  UpdateTaskPayload,
+  CronPreview,
+  TriageItem,
+  TriageFilter,
+  TriageStats,
+  TaskExecution,
+  TaskExecutionDetail,
+  TriggeredRoutineDto,
+  TriggerResponse,
+  TaskWorktreeDto,
+} from '@/types'
 
 // --- Chat ---
 
@@ -206,4 +220,96 @@ export async function getFileContext(): Promise<import('@/types').FileContext[]>
 
 export async function getTaskDetail(id: string): Promise<TaskItem> {
   return invoke('get_task_detail', { id })
+}
+
+// --- Scheduled Tasks (Sprint 2) ---
+//
+// Thin invoke() wrappers over the 19 Tauri commands in
+// shannon-desktop/src/scheduled_commands.rs. Field names match the Rust DTOs
+// exactly (no rename to "ScheduledTask").
+
+// Scheduled tasks (CRUD)
+
+export async function listScheduledTasks(): Promise<ScheduledRoutine[]> {
+  return invoke('list_scheduled_tasks')
+}
+
+export async function createScheduledTask(payload: CreateTaskPayload): Promise<ScheduledRoutine> {
+  return invoke('create_scheduled_task', { payload })
+}
+
+export async function updateScheduledTask(payload: UpdateTaskPayload): Promise<ScheduledRoutine> {
+  return invoke('update_scheduled_task', { payload })
+}
+
+export async function deleteScheduledTask(id: string): Promise<boolean> {
+  return invoke('delete_scheduled_task', { id })
+}
+
+export async function toggleScheduledTask(id: string, enabled: boolean): Promise<ScheduledRoutine> {
+  return invoke('toggle_scheduled_task', { id, enabled })
+}
+
+export async function triggerTaskNow(id: string): Promise<TriggerResponse> {
+  return invoke('trigger_task_now', { id })
+}
+
+export async function previewCron(expr: string): Promise<CronPreview> {
+  return invoke('preview_cron', { expr })
+}
+
+// Triage
+
+export async function listTriageItems(filter?: TriageFilter): Promise<TriageItem[]> {
+  return invoke('list_triage_items', { filter: filter ?? null })
+}
+
+export async function markTriageRead(id: string): Promise<boolean> {
+  return invoke('mark_triage_read', { id })
+}
+
+export async function archiveTriageItem(id: string): Promise<boolean> {
+  return invoke('archive_triage_item', { id })
+}
+
+export async function getTriageStats(): Promise<TriageStats> {
+  return invoke('get_triage_stats')
+}
+
+// History
+
+export async function listTaskExecutions(taskId?: string, limit?: number): Promise<TaskExecution[]> {
+  return invoke('list_task_executions', { taskId: taskId ?? null, limit: limit ?? null })
+}
+
+export async function getExecutionDetail(id: string): Promise<TaskExecutionDetail> {
+  return invoke('get_execution_detail', { id })
+}
+
+// Triggered routines
+
+export async function listTriggeredRoutines(): Promise<TriggeredRoutineDto[]> {
+  return invoke('list_triggered_routines')
+}
+
+export async function toggleTriggeredRoutine(name: string, enabled: boolean): Promise<boolean> {
+  return invoke('toggle_triggered_routine', { name, enabled })
+}
+
+// Worktrees (B9)
+
+export async function createTaskWorktree(taskId: string): Promise<TaskWorktreeDto> {
+  return invoke('create_task_worktree', { taskId })
+}
+
+export async function listTaskWorktrees(): Promise<TaskWorktreeDto[]> {
+  return invoke('list_task_worktrees')
+}
+
+export async function removeTaskWorktree(path: string): Promise<void> {
+  return invoke('remove_task_worktree', { path })
+}
+
+export async function pruneTaskWorktrees(): Promise<string[]> {
+  return invoke('prune_task_worktrees')
 }

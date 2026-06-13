@@ -81,6 +81,9 @@ toml = "0.8"
 # Landlock support (Linux-only, optional)
 landlock = { version = "0.4", optional = true }
 
+# Cron expression parsing (5-field, Claude Code / Codex compatible)
+croner = "3.0"
+
 [features]
 default = []
 landlock = ["dep:landlock"]

@@ -56,6 +56,27 @@ fn main() {
             commands::list_tasks,
             commands::get_file_tree,
             commands::get_working_dir_info,
+            // Scheduled tasks, triage, history, triggered routines (Sprint 2)
+            shannon_desktop::scheduled_commands::list_scheduled_tasks,
+            shannon_desktop::scheduled_commands::create_scheduled_task,
+            shannon_desktop::scheduled_commands::update_scheduled_task,
+            shannon_desktop::scheduled_commands::delete_scheduled_task,
+            shannon_desktop::scheduled_commands::toggle_scheduled_task,
+            shannon_desktop::scheduled_commands::trigger_task_now,
+            shannon_desktop::scheduled_commands::preview_cron,
+            shannon_desktop::scheduled_commands::list_triage_items,
+            shannon_desktop::scheduled_commands::mark_triage_read,
+            shannon_desktop::scheduled_commands::archive_triage_item,
+            shannon_desktop::scheduled_commands::get_triage_stats,
+            shannon_desktop::scheduled_commands::list_task_executions,
+            shannon_desktop::scheduled_commands::get_execution_detail,
+            shannon_desktop::scheduled_commands::list_triggered_routines,
+            shannon_desktop::scheduled_commands::toggle_triggered_routine,
+            // Worktree management (B9)
+            shannon_desktop::scheduled_commands::create_task_worktree,
+            shannon_desktop::scheduled_commands::list_task_worktrees,
+            shannon_desktop::scheduled_commands::remove_task_worktree,
+            shannon_desktop::scheduled_commands::prune_task_worktrees,
         ])
         .setup(|app| {
             let state = commands::AppState::new();

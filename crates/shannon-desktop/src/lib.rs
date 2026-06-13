@@ -11,3 +11,6 @@ pub mod mcp;
 
 #[cfg(feature = "tauri")]
 pub mod commands;
+
+#[cfg(feature = "tauri")]
+pub mod scheduled_commands;

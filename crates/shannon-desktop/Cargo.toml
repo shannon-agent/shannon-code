@@ -27,6 +27,7 @@ chrono = { workspace = true }
 futures = { workspace = true }
 tempfile = "3"
 base64 = "0.22"
+dirs = "5"
 
 tauri = { version = "2", optional = true, features = ["tray-icon"] }
 tauri-plugin-shell = { version = "2", optional = true }

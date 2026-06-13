@@ -126,6 +126,10 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
            <span className="flex-1">Scheduled</span>
            <kbd className="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-mono opacity-60">⌘3</kbd>
         </NavLink>
+        <NavLink to="/triage" className={getNavClass} onClick={handleNavClick}>
+           <span className="material-symbols-outlined">flag</span>
+           <span className="flex-1">Triage</span>
+        </NavLink>
         <div className="space-y-1">
           <Button
             variant="ghost"

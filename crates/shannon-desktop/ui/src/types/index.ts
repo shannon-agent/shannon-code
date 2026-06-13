@@ -305,6 +305,159 @@ export interface FileContext {
   relevant_lines?: { start: number; end: number }[]
 }
 
+// --- Scheduled Tasks (Sprint 2) ---
+//
+// Field names mirror Rust structs in shannon-desktop/src/scheduled_commands.rs
+// and shannon-core/src/scheduled_routines.rs exactly. The frontend passes
+// these structs through verbatim — do NOT rename to "ScheduledTask".
+
+/// Trigger type for scheduled routines (lowercase wire format).
+export type TriggerType = 'interval' | 'cron' | 'webhook' | 'event'
+
+/// Execution policy for scheduled tasks.
+export interface ExecutionPolicy {
+  max_retries: number
+  timeout_secs: number
+  worktree?: string | null
+  notify_on_failure: boolean
+  budget_usd?: number | null
+  auto_archive_when_empty: boolean
+}
+
+/// A single scheduled routine (wire-level type, matches Rust `ScheduledRoutine`).
+export interface ScheduledRoutine {
+  id: string
+  name: string
+  prompt: string
+  interval_secs: number
+  trigger_type: TriggerType
+  cron_expr?: string | null
+  timezone?: string | null
+  next_fire_at?: number | null
+  expires_at?: number | null
+  created_at: number
+  last_fired?: number | null
+  enabled: boolean
+  fire_count: number
+  max_fires?: number | null
+  policy?: ExecutionPolicy | null
+  last_run_id?: string | null
+  last_error?: string | null
+}
+
+/// Payload for `create_scheduled_task`.
+export interface CreateTaskPayload {
+  name: string
+  prompt: string
+  trigger_type?: TriggerType
+  interval_secs?: number
+  cron_expr?: string
+  timezone?: string
+  expires_at?: number
+  max_fires?: number
+  policy?: ExecutionPolicy
+}
+
+/// Payload for `update_scheduled_task`. All fields optional except `id`.
+export interface UpdateTaskPayload {
+  id: string
+  name?: string
+  prompt?: string
+  trigger_type?: TriggerType
+  interval_secs?: number
+  cron_expr?: string
+  timezone?: string
+  enabled?: boolean
+  expires_at?: number
+  max_fires?: number
+  policy?: ExecutionPolicy
+}
+
+/// Result of `preview_cron`.
+export interface CronPreview {
+  expression: string
+  valid: boolean
+  error?: string
+  next_fires: number[]
+}
+
+/// Response from `trigger_task_now`.
+export interface TriggerResponse {
+  run_id: string
+  task_id: string
+  task_name: string
+}
+
+/// A single triage item needing user attention.
+export interface TriageItem {
+  id: string
+  task_id?: string
+  task_name?: string
+  run_id?: string
+  kind: string
+  message: string
+  created_at: number
+  revision?: number
+  read?: boolean
+  archived?: boolean
+}
+
+/// Filters for `list_triage_items`. All fields optional.
+export interface TriageFilter {
+  unread_only?: boolean
+  unarchived_only?: boolean
+  kind?: string
+  limit?: number
+}
+
+/// Aggregate triage counts for the sidebar badge.
+export interface TriageStats {
+  total: number
+  unread: number
+  archived: number
+  by_kind: Record<string, number>
+}
+
+/// Lightweight execution record for the history list.
+export interface TaskExecution {
+  run_id: string
+  task_id: string
+  task_name: string
+  started_at: number
+  finished_at?: number
+  status: string
+  error_message?: string
+  cost_usd?: number
+  token_usage?: number
+}
+
+/// Full execution detail view (history list item + task metadata).
+/// `execution` is flattened by Rust serde, so spread its fields inline.
+export interface TaskExecutionDetail extends TaskExecution {
+  prompt?: string
+  cron_expr?: string
+  next_fire_at?: number
+}
+
+/// Triggered routine row for the routines panel.
+export interface TriggeredRoutineDto {
+  name: string
+  trigger: string
+  matcher?: string
+  pattern?: string
+  command: string
+  enabled: boolean
+  description?: string
+}
+
+/// DTO mirroring Rust `TaskWorktreeDto`.
+export interface TaskWorktreeDto {
+  task_id: string
+  task_name: string
+  path: string
+  branch: string
+}
+
 // --- Enums ---
 
 export type ViewMode = 'verbose' | 'normal' | 'summary'

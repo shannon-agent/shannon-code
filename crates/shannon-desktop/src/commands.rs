@@ -76,6 +76,17 @@ pub struct AppState {
     skill_registry: Arc<SkillRegistry>,
     /// MCP process pool for real server connections.
     mcp_pool: Arc<McpProcessPool>,
+    /// Scheduled task store (`~/.shannon/scheduled-tasks/`).
+    pub(crate) scheduled_task_store: Arc<shannon_core::scheduled_task_store::ScheduledTaskStore>,
+    /// Execution history store (`~/.shannon/scheduled-runs/`).
+    pub(crate) scheduled_runs_store: Arc<shannon_core::scheduled_runs::ScheduledRunsStore>,
+    /// Triage items needing user attention.
+    pub(crate) triage_store: Arc<crate::scheduled_commands::TriageStore>,
+    /// Triggered-routine enabled/disabled overrides.
+    pub(crate) routine_overrides: Arc<crate::scheduled_commands::RoutineOverrideStore>,
+    /// Triggered-routine registry (reloaded on demand).
+    pub(crate) triggered_registry:
+        Arc<tokio::sync::RwLock<shannon_core::triggered_routines::TriggeredRoutineRegistry>>,
 }
 
 /// Session metadata for session list.
@@ -305,6 +316,15 @@ impl AppState {
             background_tasks: Arc::new(Mutex::new(Vec::new())),
             skill_registry: Arc::new(SkillRegistry::new()),
             mcp_pool: Arc::new(McpProcessPool::new()),
+            scheduled_task_store: Arc::new(
+                shannon_core::scheduled_task_store::ScheduledTaskStore::new(),
+            ),
+            scheduled_runs_store: Arc::new(shannon_core::scheduled_runs::ScheduledRunsStore::new()),
+            triage_store: Arc::new(crate::scheduled_commands::TriageStore::new()),
+            routine_overrides: Arc::new(crate::scheduled_commands::RoutineOverrideStore::new()),
+            triggered_registry: Arc::new(tokio::sync::RwLock::new(
+                shannon_core::triggered_routines::TriggeredRoutineRegistry::load_from_dirs(),
+            )),
         }
     }
 
