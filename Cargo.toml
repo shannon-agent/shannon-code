@@ -83,6 +83,9 @@ urlencoding = "2.1"
 # Image processing
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp", "gif"] }
 
+# Archive handling (Desktop Extensions: .dxt / .mcpb are ZIP archives)
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
+
 # Property-based testing
 proptest = "1"
 
