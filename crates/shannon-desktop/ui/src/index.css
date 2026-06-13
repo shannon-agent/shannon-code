@@ -279,14 +279,14 @@
   --color-surface-container: #1f2335;
   --color-surface-container-high: #24283b;
   --color-surface-container-highest: #292e42;
-  --color-on-surface: #a9b1d6;
-  --color-on-surface-variant: #565f89;
+  --color-on-surface: #c0caf5;
+  --color-on-surface-variant: #a9b1d6;
   --color-inverse-surface: #a9b1d6;
   --color-inverse-on-surface: #1a1b26;
-  --color-outline: #3b4261;
-  --color-outline-variant: #292e42;
+  --color-outline: #44557a;
+  --color-outline-variant: #3b4261;
   --color-background: #1a1b26;
-  --color-on-background: #a9b1d6;
+  --color-on-background: #c0caf5;
 }
 
 /* Tokyo Night Light */
@@ -387,14 +387,14 @@
   --color-surface-container: #181825;
   --color-surface-container-high: #1e1e30;
   --color-surface-container-highest: #313244;
-  --color-on-surface: #cdd6f4;
-  --color-on-surface-variant: #6c7086;
+  --color-on-surface: #d9e0ee;
+  --color-on-surface-variant: #bac1d6;
   --color-inverse-surface: #cdd6f4;
   --color-inverse-on-surface: #1e1e2e;
-  --color-outline: #45475a;
-  --color-outline-variant: #313244;
+  --color-outline: #585b70;
+  --color-outline-variant: #45475a;
   --color-background: #1e1e2e;
-  --color-on-background: #cdd6f4;
+  --color-on-background: #d9e0ee;
 }
 
 /* Nord */
@@ -441,14 +441,14 @@
   --color-surface-container: #3b4252;
   --color-surface-container-high: #434c5e;
   --color-surface-container-highest: #4c566a;
-  --color-on-surface: #d8dee9;
-  --color-on-surface-variant: #7b88a1;
+  --color-on-surface: #e5ecf0;
+  --color-on-surface-variant: #b5c0d0;
   --color-inverse-surface: #d8dee9;
   --color-inverse-on-surface: #2e3440;
-  --color-outline: #4c566a;
-  --color-outline-variant: #434c5e;
+  --color-outline: #6272a5;
+  --color-outline-variant: #4c566a;
   --color-background: #2e3440;
-  --color-on-background: #d8dee9;
+  --color-on-background: #e5ecf0;
 }
 
 /* Ember (warm orange/red) */

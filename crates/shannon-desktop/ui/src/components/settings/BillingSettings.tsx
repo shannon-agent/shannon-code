@@ -95,7 +95,7 @@ export default function BillingSettings() {
               </div>
             </div>
             <div className="flex gap-3 mt-auto">
-              <Button className="flex-1 py-3 px-4 bg-primary text-white rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer" onClick={() => setShowChangePlan(true)}>Change Plan</Button>
+              <Button className="flex-1 py-3 px-4 bg-primary text-on-primary rounded-xl font-bold text-center hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer" onClick={() => setShowChangePlan(true)}>Change Plan</Button>
               <Button className="px-4 py-3 border border-outline-variant text-on-surface-variant rounded-xl hover:bg-surface-container-low active:scale-[0.98] transition-all cursor-pointer font-bold" onClick={() => setShowCancelConfirm(true)}>Cancel</Button>
             </div>
           </section>
@@ -266,7 +266,7 @@ export default function BillingSettings() {
             <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to cancel? This will downgrade you to the free tier at the end of your billing period.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowCancelConfirm(false)}>Keep Plan</Button>
-              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={handleCancelSubscription} disabled={cancelling}>{cancelling ? 'Cancelling...' : 'Cancel Plan'}</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-on-error hover:bg-error/90" onClick={handleCancelSubscription} disabled={cancelling}>{cancelling ? 'Cancelling...' : 'Cancel Plan'}</Button>
             </div>
           </div>
         </div>

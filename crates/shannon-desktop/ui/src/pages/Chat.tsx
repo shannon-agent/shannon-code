@@ -109,7 +109,7 @@ export default function Chat() {
       <aside className="hidden md:flex w-[240px] border-r border-outline-variant/10 flex-col glass-panel shrink-0 bg-surface-container-lowest/40">
         <div className="p-md border-b border-outline-variant/10">
           <Button
-            className="w-full py-2 bg-primary text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:shadow-md active:scale-95 transition-all"
+            className="w-full py-2 bg-primary text-on-primary rounded-lg font-bold flex items-center justify-center gap-2 hover:shadow-md active:scale-95 transition-all"
             onClick={createSession}
           >
             <span className="material-symbols-outlined text-[18px]">add</span>
@@ -318,7 +318,7 @@ export default function Chat() {
               />
               <div className="flex items-center gap-2 px-sm">
                 {isQuerying ? (
-                  <Button aria-label="Stop generation" className="bg-error/80 text-white p-3 rounded-xl active:scale-95 transition-all" onClick={cancelQuery}>
+                  <Button aria-label="Stop generation" className="bg-error/80 text-on-error p-3 rounded-xl active:scale-95 transition-all" onClick={cancelQuery}>
                     <span className="material-symbols-outlined text-[20px]" aria-hidden="true">stop</span>
                   </Button>
                 ) : (
@@ -348,7 +348,7 @@ export default function Chat() {
             <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to delete this session? This cannot be undone.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => { deleteSession(deleteTarget); setDeleteTarget(null) }}>Delete</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-on-error hover:bg-error/90" onClick={() => { deleteSession(deleteTarget); setDeleteTarget(null) }}>Delete</Button>
             </div>
           </div>
         </div>

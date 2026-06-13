@@ -58,7 +58,7 @@ export default function DataSources() {
           <p className="text-body-md text-on-surface-variant max-w-2xl">Manage MCP servers that provide tools and data to your agents.</p>
         </div>
         <Button
-          className="px-lg py-sm bg-primary text-white rounded-xl font-bold flex items-center gap-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
+          className="px-lg py-sm bg-primary text-on-primary rounded-xl font-bold flex items-center gap-sm hover:shadow-md active:scale-95 transition-all cursor-pointer"
           onClick={() => setAdding(true)}
         >
           <span className="material-symbols-outlined text-[20px]">add</span>
@@ -82,7 +82,7 @@ export default function DataSources() {
             <Input className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm font-body-sm" placeholder="Args (space-separated, optional)" value={newArgs} onChange={e => setNewArgs(e.target.value)} />
           </div>
           <div className="flex gap-sm">
-            <Button className="px-lg py-sm bg-primary text-white rounded-lg font-label-md cursor-pointer" onClick={handleAdd}>Add Server</Button>
+            <Button className="px-lg py-sm bg-primary text-on-primary rounded-lg font-label-md cursor-pointer" onClick={handleAdd}>Add Server</Button>
             <Button className="px-lg py-sm border border-outline-variant rounded-lg font-label-md text-on-surface cursor-pointer" onClick={() => { setAdding(false); setValidationErrors({}) }}>Cancel</Button>
           </div>
         </div>
@@ -131,7 +131,7 @@ export default function DataSources() {
             <p className="text-body-md text-on-surface-variant mb-lg">Are you sure you want to remove <strong className="text-on-surface">{removeTarget}</strong>? Any agents using its tools will lose access.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setRemoveTarget(null)}>Cancel</Button>
-              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={() => handleRemove(removeTarget)}>Remove</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-on-error hover:bg-error/90" onClick={() => handleRemove(removeTarget)}>Remove</Button>
             </div>
           </div>
         </div>

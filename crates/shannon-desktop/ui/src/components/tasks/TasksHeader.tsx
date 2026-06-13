@@ -45,7 +45,7 @@ export default function TasksHeader({
         </Button>
         <Button
           aria-label="Create new task"
-          className="px-md py-sm bg-primary text-white rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all"
+          className="px-md py-sm bg-primary text-on-primary rounded-xl flex items-center gap-sm font-label-md cursor-pointer hover:shadow-md active:scale-95 transition-all"
           onClick={onToggleNewTask}
         >
           <span className="material-symbols-outlined text-[20px]">add</span>

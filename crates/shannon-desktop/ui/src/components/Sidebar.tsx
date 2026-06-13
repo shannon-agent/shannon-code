@@ -91,7 +91,7 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
         onMouseDown={handleMouseDown}
       />
       <div className="flex items-center gap-3 mb-xl px-2">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary shadow-lg shadow-primary/30">
           <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>hub</span>
         </div>
         <div>
@@ -102,7 +102,7 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
 
       <Button
         aria-label="New chat"
-        className="mb-lg w-full py-3 px-4 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all"
+        className="mb-lg w-full py-3 px-4 bg-primary text-on-primary rounded-xl font-bold flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary/30 active:scale-95 transition-all"
         onClick={createSession}
       >
         <span className="material-symbols-outlined text-[20px]">add</span>
@@ -181,7 +181,7 @@ export const Sidebar = memo(function Sidebar({ mobile }: { mobile?: boolean }) {
           >
             <div className="flex items-center gap-3">
               <span>OPC</span>
-              <span className="text-[9px] bg-primary text-white px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Experiment</span>
+              <span className="text-[9px] bg-primary text-on-primary px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Experiment</span>
             </div>
             <span className="material-symbols-outlined text-[20px] transition-transform duration-200" style={{ transform: opcOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} aria-hidden="true">expand_more</span>
           </Button>

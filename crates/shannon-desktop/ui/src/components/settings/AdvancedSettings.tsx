@@ -146,7 +146,7 @@ export default function AdvancedSettings() {
               </div>
             </div>
             <Button
-              className="px-xl py-md bg-error text-white rounded-xl font-label-md text-[14px] font-bold hover:bg-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer"
+              className="px-xl py-md bg-error text-on-error rounded-xl font-label-md text-[14px] font-bold hover:bg-error/90 shadow-md active:scale-[0.98] transition-all whitespace-nowrap cursor-pointer"
               onClick={() => setShowResetConfirm(true)}
               disabled={resetting}
             >
@@ -204,7 +204,7 @@ export default function AdvancedSettings() {
             <p className="text-body-md text-on-surface-variant mb-lg">This will clear all cached session data. Active sessions will not be affected.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowClearConfirm(false)}>Cancel</Button>
-              <Button className="px-lg py-sm rounded-xl bg-secondary text-white hover:bg-secondary/90" onClick={handleClearCache} disabled={clearing}>{clearing ? 'Clearing...' : 'Clear Cache'}</Button>
+              <Button className="px-lg py-sm rounded-xl bg-secondary text-on-secondary hover:bg-secondary/90" onClick={handleClearCache} disabled={clearing}>{clearing ? 'Clearing...' : 'Clear Cache'}</Button>
             </div>
           </div>
         </div>
@@ -221,7 +221,7 @@ export default function AdvancedSettings() {
             <p className="text-body-md text-on-surface-variant mb-lg">This will permanently delete all local agents, conversation history, and configuration. This cannot be undone.</p>
             <div className="flex justify-end gap-sm">
               <Button className="px-lg py-sm rounded-xl text-on-surface-variant hover:bg-surface-container" onClick={() => setShowResetConfirm(false)}>Cancel</Button>
-              <Button className="px-lg py-sm rounded-xl bg-error text-white hover:bg-error/90" onClick={handleFactoryReset} disabled={resetting}>{resetting ? 'Resetting...' : 'Reset'}</Button>
+              <Button className="px-lg py-sm rounded-xl bg-error text-on-error hover:bg-error/90" onClick={handleFactoryReset} disabled={resetting}>{resetting ? 'Resetting...' : 'Reset'}</Button>
             </div>
           </div>
         </div>

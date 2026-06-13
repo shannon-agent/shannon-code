@@ -46,7 +46,7 @@ export default function OPCTask() {
                             isActive ? 'bg-primary/10' : 'border border-outline-variant bg-surface-container-lowest'
                           }`}>
                             {isActive ? (
-                              <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-md">
+                              <div className="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-md">
                                 <span className="material-symbols-outlined text-[20px]">smart_toy</span>
                               </div>
                             ) : (
@@ -109,7 +109,7 @@ export default function OPCTask() {
                   {agents.map((agent, i) => (
                     <div key={agent.id} className="relative flex items-start gap-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 relative z-10 md:ml-2 ${
-                        i === 0 ? 'bg-primary text-white shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant'
+                        i === 0 ? 'bg-primary text-on-primary shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant'
                       }`}>
                         <span className="material-symbols-outlined text-[16px]">smart_toy</span>
                       </div>

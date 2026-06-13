@@ -105,7 +105,7 @@ export default function OPC() {
           <div className="w-full lg:w-[320px] shrink-0 space-y-4">
             <div className="flex items-center gap-3">
               <h3 className="font-label-md text-[14px] font-bold text-on-surface-variant">Agent Swarm</h3>
-              <span className="bg-secondary text-white text-[11px] font-bold px-2 py-0.5 rounded-full">{agents.length} Active</span>
+              <span className="bg-secondary text-on-secondary text-[11px] font-bold px-2 py-0.5 rounded-full">{agents.length} Active</span>
             </div>
 
             {agents.length === 0 ? (
@@ -161,7 +161,7 @@ export default function OPC() {
                     onChange={e => setQuickTask(e.target.value)}
                     className="bg-surface-container-low border-none rounded-lg py-1.5 pl-3 pr-8 w-[200px] text-[13px] font-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                   />
-                  <Button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-white rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors" onClick={handleQuickTask}>
+                  <Button className="absolute right-1 top-1/2 -translate-y-1/2 w-6 h-6 bg-primary text-on-primary rounded-[4px] flex items-center justify-center hover:bg-primary/90 transition-colors" onClick={handleQuickTask}>
                     <span className="material-symbols-outlined text-[16px]">add</span>
                   </Button>
                 </div>
