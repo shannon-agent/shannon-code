@@ -69,17 +69,12 @@ export default function TaskCalendarView({
           {Array.from({ length: daysInMonth }, (_, i) => {
             const day = i + 1
             const isToday = viewMonth === today.getMonth() && viewYear === today.getFullYear() && day === today.getDate()
-            const dayTasks = filteredTasks.filter(t => {
-              if (t.status === 'running' || t.status === 'in_progress') return true
-              if (t.status === 'completed') return true
-              return t.status === 'pending'
-            })
             const dayFires = firesByDay.get(day) ?? []
             const isSelected = selectedDay === day
             return (
               <div
                 key={day}
-                title={dayTasks.length > 0 || dayFires.length > 0 ? `${dayTasks.length + dayFires.length} item(s)` : undefined}
+                title={dayFires.length > 0 ? `${dayFires.length} scheduled run(s)` : undefined}
                 className={`min-h-[80px] p-xs rounded-lg border cursor-pointer transition-all ${
                   isSelected ? 'border-primary bg-primary/5 ring-1 ring-primary/20' :
                   isToday ? 'border-primary/30 bg-primary/5' :
@@ -91,18 +86,11 @@ export default function TaskCalendarView({
                   {day}
                 </div>
                 <div className="space-y-0.5">
-                  {dayTasks.slice(0, 3).map((t, ti) => (
-                    <div key={ti} className={`h-1 rounded-full ${
-                      t.status === 'running' || t.status === 'in_progress' ? 'bg-primary' :
-                      t.status === 'completed' ? 'bg-tertiary' :
-                      'bg-outline-variant'
-                    }`} />
-                  ))}
-                  {dayFires.slice(0, Math.max(0, 3 - dayTasks.length)).map((r, ri) => (
+                  {dayFires.slice(0, 3).map((r, ri) => (
                     <div key={`fire-${ri}`} className="h-1 rounded-full bg-secondary" title={r.name} />
                   ))}
-                  {(dayTasks.length + dayFires.length) > 3 && (
-                    <span className="text-[9px] text-on-surface-variant">+{(dayTasks.length + dayFires.length) - 3}</span>
+                  {dayFires.length > 3 && (
+                    <span className="text-[9px] text-on-surface-variant">+{dayFires.length - 3}</span>
                   )}
                 </div>
               </div>

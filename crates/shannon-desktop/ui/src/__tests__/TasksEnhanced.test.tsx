@@ -88,10 +88,10 @@ describe('Tasks Enhanced', () => {
     expect(screen.getByText('Mo')).toBeInTheDocument()
   })
 
-  it('renders AI Efficiency card', () => {
+  it('renders Task Completion card', () => {
     setContext({ tasks: [], backgroundTasks: [], agents: [] })
     renderTasks()
-    expect(screen.getByText('AI Efficiency')).toBeInTheDocument()
+    expect(screen.getByText('Task Completion')).toBeInTheDocument()
   })
 
   it('shows 0% efficiency when no tasks', () => {

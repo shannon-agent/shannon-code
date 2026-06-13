@@ -35,8 +35,8 @@ describe('Tasks page', () => {
     await waitFor(() => expect(screen.getByText('Schedule')).toBeInTheDocument())
   })
 
-  it('renders AI efficiency section', async () => {
+  it('renders task completion section', async () => {
     render(wrap(<Tasks />))
-    await waitFor(() => expect(screen.getByText(/Efficiency/i)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/Task Completion/i)).toBeInTheDocument())
   })
 })

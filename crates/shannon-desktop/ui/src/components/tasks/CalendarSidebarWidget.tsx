@@ -80,12 +80,11 @@ export default function CalendarSidebarWidget({
         {Array.from({ length: daysInMonth }, (_, i) => {
           const day = i + 1
           const isToday = viewMonth === today.getMonth() && viewYear === today.getFullYear() && day === today.getDate()
-          const hasTask = tasks.some(t => t.status === 'running' || t.status === 'in_progress')
           const hasFire = fireDays.has(day)
           return (
             <span
               key={day}
-              className={`py-2 rounded-lg cursor-pointer relative ${isToday ? 'bg-primary text-on-primary font-bold' : hasFire ? 'bg-primary-container/20 text-primary font-bold' : hasTask && day <= today.getDate() ? 'bg-primary-container/20 text-primary font-bold' : 'hover:bg-surface-container'}`}
+              className={`py-2 rounded-lg cursor-pointer relative ${isToday ? 'bg-primary text-on-primary font-bold' : hasFire ? 'bg-primary-container/20 text-primary font-bold' : 'hover:bg-surface-container'}`}
             >
               {day}
             </span>
