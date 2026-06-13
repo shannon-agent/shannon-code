@@ -5,6 +5,7 @@ use crate::{
     custom_agent::{CustomAgentDef, CustomAgentError, CustomAgentLoader},
     error::{AgentError, CoordinationError},
     message::{AgentMessage, MessageContent, MessageType, ProtocolMessage},
+    message_history::ContentKind,
     persistence::{FilePersistence, InboxMessage, TeamConfigFile},
     process_manager::{AgentEvent, AgentProcessConfig, AgentProcessManager},
     task::{AgentTask, TaskPriority, TaskStatus},
@@ -188,6 +189,8 @@ pub struct AgentCoordinator {
     _heartbeat_handle: Arc<tokio::task::JoinHandle<()>>,
     /// Optional file-based persistence layer
     persistence: Option<FilePersistence>,
+    /// Optional append-only message history log (per-team JSONL).
+    message_history: Option<crate::message_history::MessageHistoryStore>,
     /// Active background tasks keyed by task ID for cancellation
     background_tasks: Arc<RwLock<HashMap<String, tokio::task::AbortHandle>>>,
     /// Runtime delegate mode flag (toggled after construction)
@@ -314,6 +317,7 @@ impl AgentCoordinator {
             _message_receiver: Arc::new(message_handle),
             _heartbeat_handle: Arc::new(heartbeat_handle),
             persistence: None,
+            message_history: None,
             background_tasks: Arc::new(RwLock::new(HashMap::new())),
             delegate_mode_flag: std::sync::atomic::AtomicBool::new(delegate_mode),
             _delivery_handle: None,
@@ -752,6 +756,17 @@ impl AgentCoordinator {
             }
         }
 
+        // Append to long-lived message history (best-effort).
+        self.record_to_history(
+            team_name,
+            from,
+            to,
+            &message.content,
+            crate::message::MessagePriority::Normal,
+            message.timestamp,
+            message.id,
+        );
+
         if let Err(e) = self
             .event_sender
             .send(CoordinatorEvent::MessageSent(message.clone()))
@@ -809,6 +824,17 @@ impl AgentCoordinator {
                             tracing::warn!(agent = %agent_name, error = %e, "Failed to persist inbox message");
                         }
                     }
+
+                    // Append to long-lived message history (best-effort).
+                    self.record_to_history(
+                        team_name,
+                        from,
+                        agent_name,
+                        &MessageContent::Text(content.clone()),
+                        crate::message::MessagePriority::Normal,
+                        message.timestamp,
+                        message.id,
+                    );
 
                     if let Err(e) = self
                         .event_sender
@@ -1876,6 +1902,55 @@ impl AgentCoordinator {
     /// Get a reference to the persistence layer (if configured).
     pub fn persistence(&self) -> Option<&FilePersistence> {
         self.persistence.as_ref()
+    }
+
+    /// Set the message history store for durable inter-agent message logging.
+    pub fn set_message_history(&mut self, history: crate::message_history::MessageHistoryStore) {
+        self.message_history = Some(history);
+    }
+
+    /// Get a reference to the message history store (if configured).
+    pub fn message_history(&self) -> Option<&crate::message_history::MessageHistoryStore> {
+        self.message_history.as_ref()
+    }
+
+    /// Record an outgoing message to history (if configured). Best-effort:
+    /// failures are logged as warnings, not propagated.
+    fn record_to_history(
+        &self,
+        team_name: &str,
+        from: &str,
+        to: &str,
+        content: &MessageContent,
+        priority: crate::message::MessagePriority,
+        timestamp: chrono::DateTime<chrono::Utc>,
+        message_id: uuid::Uuid,
+    ) {
+        let Some(ref store) = self.message_history else {
+            return;
+        };
+        let (kind, preview) = match content {
+            MessageContent::Text(t) => (ContentKind::Text, t.clone()),
+            MessageContent::Structured(v) => (
+                ContentKind::Structured,
+                serde_json::to_string(v).unwrap_or_default(),
+            ),
+            MessageContent::Protocol(p) => (ContentKind::Protocol, format!("{p:?}")),
+        };
+        let rec = crate::message_history::MessageRecord {
+            message_id: message_id.to_string(),
+            team: team_name.to_string(),
+            from: from.to_string(),
+            to: to.to_string(),
+            content_preview: crate::message_history::MessageRecord::truncate_preview(&preview),
+            content_kind: kind,
+            priority: format!("{:?}", priority).to_lowercase(),
+            timestamp,
+            revision: 0,
+        };
+        if let Err(e) = store.record(&rec) {
+            tracing::warn!(team = %team_name, error = %e, "Failed to record message history");
+        }
     }
 
     /// Load persisted teams and tasks from disk into memory.
@@ -3183,5 +3258,88 @@ mod tests {
             priority: "Medium".to_string(),
         });
         tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+    }
+
+    #[tokio::test]
+    async fn coordinator_record_to_history_persists_message() {
+        // Wire a MessageHistoryStore into the coordinator and verify
+        // record_to_history appends to the per-team log.
+        let tmp = tempfile::tempdir().unwrap();
+        let store =
+            crate::message_history::MessageHistoryStore::with_base(tmp.path().to_path_buf());
+
+        let config = CoordinatorConfig::default();
+        let mut coordinator = AgentCoordinator::new(config).await.unwrap();
+        coordinator.set_message_history(store);
+
+        let id = Uuid::new_v4();
+        coordinator.record_to_history(
+            "alpha",
+            "alice",
+            "bob",
+            &MessageContent::Text("hello world".into()),
+            crate::message::MessagePriority::Normal,
+            chrono::Utc::now(),
+            id,
+        );
+
+        let history = coordinator.message_history().unwrap();
+        let list = history.list_by_team("alpha", 10).unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].from, "alice");
+        assert_eq!(list[0].to, "bob");
+        assert_eq!(list[0].content_preview, "hello world");
+        assert_eq!(
+            list[0].content_kind,
+            crate::message_history::ContentKind::Text
+        );
+    }
+
+    #[tokio::test]
+    async fn coordinator_record_to_history_noop_without_store() {
+        // No history configured — record_to_history should silently no-op.
+        let config = CoordinatorConfig::default();
+        let coordinator = AgentCoordinator::new(config).await.unwrap();
+        coordinator.record_to_history(
+            "alpha",
+            "alice",
+            "bob",
+            &MessageContent::Text("hello".into()),
+            crate::message::MessagePriority::Normal,
+            chrono::Utc::now(),
+            Uuid::new_v4(),
+        );
+        assert!(coordinator.message_history().is_none());
+    }
+
+    #[tokio::test]
+    async fn coordinator_record_to_history_structured_content() {
+        let tmp = tempfile::tempdir().unwrap();
+        let store =
+            crate::message_history::MessageHistoryStore::with_base(tmp.path().to_path_buf());
+
+        let config = CoordinatorConfig::default();
+        let mut coordinator = AgentCoordinator::new(config).await.unwrap();
+        coordinator.set_message_history(store);
+
+        coordinator.record_to_history(
+            "beta",
+            "carol",
+            "dave",
+            &MessageContent::Structured(serde_json::json!({"key": "value"})),
+            crate::message::MessagePriority::High,
+            chrono::Utc::now(),
+            Uuid::new_v4(),
+        );
+
+        let history = coordinator.message_history().unwrap();
+        let list = history.list_by_team("beta", 10).unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(
+            list[0].content_kind,
+            crate::message_history::ContentKind::Structured
+        );
+        assert_eq!(list[0].priority, "high");
+        assert!(list[0].content_preview.contains("key"));
     }
 }
