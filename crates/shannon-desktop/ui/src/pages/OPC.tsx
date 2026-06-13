@@ -211,11 +211,15 @@ export default function OPC() {
                     {task.assignee ? (
                       <div className="ml-1 mb-2">
                         <div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden mb-1">
-                          <div className="h-full bg-primary rounded-full w-[65%]" />
+                          {task.progress != null ? (
+                            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${Math.min(100, Math.max(0, task.progress))}%` }} />
+                          ) : (
+                            <div className="h-full w-1/3 bg-primary/60 rounded-full animate-pulse" />
+                          )}
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="font-label-sm text-[10px] text-on-surface-variant">{task.assignee}</span>
-                          <span className="font-label-sm text-[10px] font-bold text-on-surface-variant">65%</span>
+                          <span className="font-label-sm text-[10px] font-bold text-on-surface-variant">{task.progress != null ? `${Math.min(100, Math.max(0, Math.round(task.progress)))}%` : 'In Progress'}</span>
                         </div>
                       </div>
                     ) : null}

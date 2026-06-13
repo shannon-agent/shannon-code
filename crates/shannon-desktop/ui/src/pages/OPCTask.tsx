@@ -38,8 +38,8 @@ export default function OPCTask() {
                 <>
                   <div className="relative flex items-center justify-between mb-10 px-4 md:px-10 overflow-x-auto">
                     <div className="absolute left-10 md:left-16 right-10 md:right-16 top-6 h-0.5 bg-outline-variant/20 z-0" />
-                    {agents.map((agent, i) => {
-                      const isActive = i === 0
+                    {agents.map((agent) => {
+                      const isActive = agent.status === 'active' || agent.status === 'running'
                       return (
                         <div key={agent.id} className="relative z-10 flex flex-col items-center gap-2 shrink-0">
                           <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
@@ -106,22 +106,25 @@ export default function OPCTask() {
               ) : (
                 <div className="relative pl-0 md:pl-2 space-y-10">
                   <div className="absolute left-[15px] md:left-[23px] top-4 bottom-8 w-px bg-outline-variant/30" />
-                  {agents.map((agent, i) => (
+                  {agents.map((agent) => {
+                    const isActive = agent.status === 'active' || agent.status === 'running'
+                    return (
                     <div key={agent.id} className="relative flex items-start gap-4">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 relative z-10 md:ml-2 ${
-                        i === 0 ? 'bg-primary text-on-primary shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant'
+                        isActive ? 'bg-primary text-on-primary shadow-sm ring-4 ring-primary/10' : 'border-2 border-outline-variant/40 bg-surface-container-lowest text-on-surface-variant'
                       }`}>
                         <span className="material-symbols-outlined text-[16px]">smart_toy</span>
                       </div>
                       <div className="flex-1 -mt-1">
                         <div className="flex justify-between items-start mb-1">
-                          <h4 className={`font-label-md text-[14px] ${i === 0 ? 'text-primary font-bold' : 'text-on-surface'}`}>{agent.name}</h4>
-                          <span className={`font-label-sm text-[10px] uppercase tracking-wider ${i === 0 ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{agent.status}</span>
+                          <h4 className={`font-label-md text-[14px] ${isActive ? 'text-primary font-bold' : 'text-on-surface'}`}>{agent.name}</h4>
+                          <span className={`font-label-sm text-[10px] uppercase tracking-wider ${isActive ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{agent.status}</span>
                         </div>
                         {agent.task ? <p className="text-body-sm text-[14px] mt-1 text-on-surface-variant">{agent.task}</p> : null}
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -198,11 +201,11 @@ export default function OPCTask() {
                 <h3 className="font-headline-md text-[18px] font-bold text-on-surface">Efficiency Metrics</h3>
               </div>
 
-              {/* Agent Harmony Score */}
+              {/* Task Completion Rate */}
               {agents.length > 0 && (
                 <div className="bg-primary/5 rounded-xl p-md border border-primary/10">
                   <div className="flex items-center justify-between mb-sm">
-                    <span className="font-label-sm text-on-surface-variant uppercase tracking-wider">Agent Harmony</span>
+                    <span className="font-label-sm text-on-surface-variant uppercase tracking-wider">Task Completion</span>
                     <span className="font-headline-md text-primary font-bold">{tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%</span>
                   </div>
                   <div className="w-full h-2 bg-primary/10 rounded-full overflow-hidden">
