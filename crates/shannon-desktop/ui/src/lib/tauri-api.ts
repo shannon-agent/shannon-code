@@ -172,6 +172,51 @@ export async function getSkillDetail(name: string): Promise<SkillDetail> {
   return invoke('get_skill_detail', { name })
 }
 
+// --- Plugins (A.3 ecosystem compatibility) ---
+
+export interface PluginInfo {
+  name: string
+  version: string
+  description: string
+  author: string | null
+  plugin_type: string
+  enabled: boolean
+  path: string
+  source_format: 'shannon-toml' | 'claude-json' | 'unknown'
+}
+
+export async function listPlugins(): Promise<PluginInfo[]> {
+  return invoke('list_plugins')
+}
+
+export async function installPlugin(sourcePath: string): Promise<string> {
+  return invoke('install_plugin', { sourcePath })
+}
+
+export async function installPluginFromGit(repoUrl: string): Promise<string> {
+  return invoke('install_plugin_from_git', { repoUrl })
+}
+
+export async function uninstallPlugin(name: string): Promise<void> {
+  await invoke('uninstall_plugin', { name })
+}
+
+export async function enablePlugin(name: string): Promise<void> {
+  await invoke('enable_plugin', { name })
+}
+
+export async function disablePlugin(name: string): Promise<void> {
+  await invoke('disable_plugin', { name })
+}
+
+export async function updatePlugin(name: string): Promise<void> {
+  await invoke('update_plugin', { name })
+}
+
+export async function listPluginMarketplace(): Promise<unknown[]> {
+  return invoke('list_plugin_marketplace')
+}
+
 // --- Background Tasks ---
 
 export async function startBackgroundTask(prompt: string): Promise<string> {

@@ -40,6 +40,16 @@ fn parse_approval_mode(mode_str: &str) -> ApprovalMode {
     }
 }
 
+/// Resolve the plugins directory (`~/.shannon/plugins/`).
+///
+/// Falls back to `<config_dir>/shannon/plugins` if `$HOME` is unset. The
+/// directory is *not* created here; callers should rely on PluginRegistry's
+/// `ensure_dir` for that.
+fn plugin_registry_dir() -> std::path::PathBuf {
+    let base = dirs::config_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+    base.join("shannon").join("plugins")
+}
+
 /// Shared application state accessible to all Tauri commands.
 pub struct AppState {
     /// Current conversation messages for the active session.
@@ -87,6 +97,10 @@ pub struct AppState {
     /// Triggered-routine registry (reloaded on demand).
     pub(crate) triggered_registry:
         Arc<tokio::sync::RwLock<shannon_core::triggered_routines::TriggeredRoutineRegistry>>,
+    /// Plugin registry (`~/.shannon/plugins/`). Accepts both Shannon
+    /// `plugin.toml` and Claude Code `.claude-plugin/plugin.json` formats,
+    /// plus packaged `.dxt` / `.mcpb` archives.
+    pub(crate) plugin_registry: Arc<tokio::sync::RwLock<shannon_core::plugin::PluginRegistry>>,
 }
 
 /// Session metadata for session list.
@@ -324,6 +338,9 @@ impl AppState {
             routine_overrides: Arc::new(crate::scheduled_commands::RoutineOverrideStore::new()),
             triggered_registry: Arc::new(tokio::sync::RwLock::new(
                 shannon_core::triggered_routines::TriggeredRoutineRegistry::load_from_dirs(),
+            )),
+            plugin_registry: Arc::new(tokio::sync::RwLock::new(
+                shannon_core::plugin::PluginRegistry::new(plugin_registry_dir()),
             )),
         }
     }
@@ -1898,6 +1915,158 @@ pub struct SkillDetail {
     pub parameters: Vec<String>,
     pub source: String,
     pub category: Option<String>,
+}
+
+// ======================= Plugin management (A.3) =======================
+
+/// Serializable view of an installed plugin, exposed to the UI.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct PluginInfo {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub author: Option<String>,
+    pub plugin_type: String,
+    pub enabled: bool,
+    pub path: String,
+    pub source_format: &'static str,
+}
+
+/// List all installed plugins. Triggers an on-disk rescan first so newly
+/// dropped plugin directories show up without a restart.
+#[tauri::command]
+pub async fn list_plugins(state: tauri::State<'_, AppState>) -> Result<Vec<PluginInfo>, String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry.load_all().await.map_err(|e| e.to_string())?;
+    Ok(registry
+        .list()
+        .iter()
+        .map(|p| PluginInfo {
+            name: p.manifest.name.clone(),
+            version: p.manifest.version.clone(),
+            description: p.manifest.description.clone(),
+            author: p.manifest.author.clone(),
+            plugin_type: p.manifest.plugin_type.clone(),
+            enabled: p.enabled,
+            path: p.path.display().to_string(),
+            source_format: source_format_for_path(&p.path),
+        })
+        .collect())
+}
+
+/// Detect whether a plugin directory uses Shannon TOML or Claude JSON.
+fn source_format_for_path(path: &std::path::Path) -> &'static str {
+    if path.join("plugin.toml").exists() {
+        "shannon-toml"
+    } else if path.join(".claude-plugin").join("plugin.json").exists() {
+        "claude-json"
+    } else {
+        "unknown"
+    }
+}
+
+/// Install a plugin from a local directory or archive file.
+///
+/// Accepts: a plugin directory containing `plugin.toml` or
+/// `.claude-plugin/plugin.json`, or a `.dxt` / `.mcpb` ZIP archive.
+#[tauri::command]
+pub async fn install_plugin(
+    state: tauri::State<'_, AppState>,
+    source_path: String,
+) -> Result<String, String> {
+    let path = std::path::PathBuf::from(&source_path);
+    if !path.exists() {
+        return Err(format!("source path does not exist: {source_path}"));
+    }
+
+    let mut registry = state.plugin_registry.write().await;
+    registry.ensure_dir().await.map_err(|e| e.to_string())?;
+    let plugins_dir = registry.plugins_dir().to_path_buf();
+
+    // Archive? Delegate to the .dxt/.mcpb installer.
+    let is_archive = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| matches!(e.to_ascii_lowercase().as_str(), "dxt" | "mcpb" | "zip"))
+        .unwrap_or(false);
+    if is_archive {
+        let name = shannon_core::plugin::install_extension_file(&path, &plugins_dir)
+            .map_err(|e| e.to_string())?;
+        // Rescan so the registry picks up the freshly extracted plugin.
+        registry.load_all().await.map_err(|e| e.to_string())?;
+        return Ok(name);
+    }
+
+    // Otherwise treat as a plugin directory and copy in.
+    if path.is_dir() {
+        let name = registry
+            .install_from_path(&path)
+            .await
+            .map_err(|e| e.to_string())?;
+        return Ok(name);
+    }
+
+    Err(format!(
+        "source must be a directory or .dxt/.mcpb archive: {source_path}"
+    ))
+}
+
+/// Install a plugin from a git URL (clones with `git clone --depth 1`).
+#[tauri::command]
+pub async fn install_plugin_from_git(
+    state: tauri::State<'_, AppState>,
+    repo_url: String,
+) -> Result<String, String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry
+        .install_from_git(&repo_url)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+/// Uninstall a plugin by name. Removes the directory.
+#[tauri::command]
+pub async fn uninstall_plugin(
+    state: tauri::State<'_, AppState>,
+    name: String,
+) -> Result<(), String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry.uninstall(&name).await.map_err(|e| e.to_string())
+}
+
+/// Enable a previously installed plugin.
+#[tauri::command]
+pub async fn enable_plugin(state: tauri::State<'_, AppState>, name: String) -> Result<(), String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry.enable(&name).map_err(|e| e.to_string())
+}
+
+/// Disable a plugin (without removing it).
+#[tauri::command]
+pub async fn disable_plugin(state: tauri::State<'_, AppState>, name: String) -> Result<(), String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry.disable(&name).map_err(|e| e.to_string())
+}
+
+/// Pull updates for a git-installed plugin.
+#[tauri::command]
+pub async fn update_plugin(state: tauri::State<'_, AppState>, name: String) -> Result<(), String> {
+    let mut registry = state.plugin_registry.write().await;
+    registry.update(&name).await.map_err(|e| e.to_string())
+}
+
+/// List plugins available in the remote index (best-effort; network call).
+#[tauri::command]
+pub async fn list_plugin_marketplace(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let registry = state.plugin_registry.read().await;
+    let index = registry.create_index();
+    let entries = index.all_entries();
+    Ok(entries
+        .iter()
+        .map(|e| serde_json::to_value(e).unwrap_or(serde_json::Value::Null))
+        .collect())
 }
 
 /// List all available skills from shannon-skills registry.
