@@ -7,7 +7,7 @@ import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 
 export default function MyAgents() {
-  const { agents, backgroundTasks, models, sendMessage } = useApp()
+  const { agents, backgroundTasks, models } = useApp()
   const navigate = useNavigate()
   const [configuring, setConfiguring] = useState<string | null>(null)
   const [showAddAgent, setShowAddAgent] = useState(false)
@@ -141,8 +141,8 @@ export default function MyAgents() {
                       <span className="material-symbols-outlined">more_horiz</span>
                       {showMenu === agent.id && (
                         <div ref={menuRef} className="absolute right-0 top-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg shadow-lg py-xs z-10 min-w-[140px]">
-                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Show status of agent ${agent.name}`); setShowMenu(null) }}>View Status</button>
-                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { sendMessage(`Stop agent ${agent.name}`); setShowMenu(null) }}>Stop Agent</button>
+                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors" onClick={() => { setConfiguring(configuring === agent.id ? null : agent.id); setShowMenu(null) }}>View Status</button>
+                          <button className="w-full text-left px-md py-sm text-label-md hover:bg-surface-container-high transition-colors text-error" onClick={async () => { setShowMenu(null); try { await api.cancelBackgroundTask(agent.id); toast.success(`Stopped ${agent.name}`) } catch (e) { console.warn('Failed to stop agent:', e); toast.error('Failed to stop agent') } }}>Stop Agent</button>
                         </div>
                       )}
                     </Button>
