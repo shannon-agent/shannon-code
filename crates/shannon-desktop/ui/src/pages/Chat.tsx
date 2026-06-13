@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Pagination } from '@/components/ui/pagination'
 import WelcomeState from '@/components/WelcomeState'
+import DiffDialog from '@/components/diff/DiffDialog'
 import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 import type { ChatMessage, ToolCall, FileContext } from '@/types'
@@ -23,6 +24,7 @@ export default function Chat() {
   const [sessionSearch, setSessionSearch] = useState('')
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
+  const [diffPath, setDiffPath] = useState<string | null>(null)
   const [fileContext, setFileContext] = useState<FileContext[]>([])
   const [attachedFiles, setAttachedFiles] = useState<string[]>([])
   const [isDragging, setIsDragging] = useState(false)
@@ -217,7 +219,7 @@ export default function Chat() {
           )}
 
           {messages.map((msg, i) => (
-            <MessageBubble key={`${msg.timestamp}-${i}`} message={msg} />
+            <MessageBubble key={`${msg.timestamp}-${i}`} message={msg} onViewDiff={setDiffPath} />
           ))}
 
           {/* Streaming response */}
@@ -239,7 +241,7 @@ export default function Chat() {
                   </div>
                 )}
                 {activeToolCalls.map(tc => (
-                  <ToolCallDisplay key={tc.tool_use_id} toolCall={tc} />
+                  <ToolCallDisplay key={tc.tool_use_id} toolCall={tc} onViewDiff={setDiffPath} />
                 ))}
                 {streamingText && (
                   <div className="bg-surface-container-lowest px-lg py-md rounded-2xl rounded-tl-none border border-outline-variant/20 shadow-sm">
@@ -439,11 +441,12 @@ export default function Chat() {
           )}
         </div>
       </aside>
+      <DiffDialog open={diffPath !== null} filePath={diffPath} onClose={() => setDiffPath(null)} />
     </div>
   )
 }
 
-const MessageBubble = memo(function MessageBubble({ message, isBranch }: { message: ChatMessage; isBranch?: boolean }) {
+const MessageBubble = memo(function MessageBubble({ message, isBranch, onViewDiff }: { message: ChatMessage; isBranch?: boolean; onViewDiff: (path: string) => void }) {
   const isUser = message.role === 'user'
   const [liked, setLiked] = useState(false)
   const { sendMessage } = useApp()
@@ -487,7 +490,7 @@ const MessageBubble = memo(function MessageBubble({ message, isBranch }: { messa
           {message.tool_calls && message.tool_calls.length > 0 && (
             <div className="mt-md space-y-sm">
               {message.tool_calls.map(tc => (
-                <ToolCallDisplay key={tc.tool_use_id} toolCall={tc} />
+                <ToolCallDisplay key={tc.tool_use_id} toolCall={tc} onViewDiff={onViewDiff} />
               ))}
             </div>
           )}
@@ -521,16 +524,42 @@ const HighlightText = memo(function HighlightText({ text, query }: { text: strin
   )
 });
 
-const ToolCallDisplay = memo(function ToolCallDisplay({ toolCall }: { toolCall: ToolCall }) {
+const FILE_MUTATING_TOOLS = new Set(['write_file', 'edit_file', 'apply_patch', 'str_replace_editor', 'replace'])
+
+function extractFilePath(toolName: string, input: unknown): string | null {
+  if (!input || typeof input !== 'object') return null
+  const obj = input as Record<string, unknown>
+  const raw = typeof obj.path === 'string' ? obj.path
+    : typeof obj.file_path === 'string' ? obj.file_path
+    : typeof obj.filePath === 'string' ? obj.filePath
+    : null
+  if (!raw) return null
+  return FILE_MUTATING_TOOLS.has(toolName) ? raw : null
+}
+
+const ToolCallDisplay = memo(function ToolCallDisplay({ toolCall, onViewDiff }: { toolCall: ToolCall; onViewDiff: (path: string) => void }) {
   const [expanded, setExpanded] = useState(false)
   const statusIcon = toolCall.status === 'running' ? 'hourglass_empty' : toolCall.status === 'error' ? 'error' : 'check_circle'
   const statusColor = toolCall.status === 'running' ? 'text-secondary' : toolCall.status === 'error' ? 'text-error' : 'text-tertiary'
+  const filePath = extractFilePath(toolCall.tool_name, toolCall.tool_input)
+  const canDiff = filePath != null && toolCall.status === 'completed' && !toolCall.is_error
 
   return (
     <div className="p-sm bg-surface-container-low rounded-xl border border-outline-variant/10">
       <div className="flex items-center gap-sm cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <span className={`material-symbols-outlined text-[16px] ${statusColor} ${toolCall.status === 'running' ? 'animate-spin' : ''}`}>{statusIcon}</span>
         <span className="font-label-md text-on-surface flex-1 truncate">{toolCall.tool_name}</span>
+        {canDiff && (
+          <button
+            type="button"
+            aria-label={`View diff for ${filePath}`}
+            className="flex items-center gap-xs px-xs py-[2px] rounded-md text-tertiary hover:bg-tertiary-container/40 text-[11px] cursor-pointer"
+            onClick={(e) => { e.stopPropagation(); onViewDiff(filePath!) }}
+          >
+            <span className="material-symbols-outlined text-[14px]">difference</span>
+            Diff
+          </button>
+        )}
         <span className="material-symbols-outlined text-[16px] text-on-surface-variant">{expanded ? 'expand_less' : 'expand_more'}</span>
       </div>
       {expanded && (
