@@ -137,6 +137,15 @@ export interface DesktopConfig {
   mcp_servers?: McpServerConfig[]
   approval_mode?: string
   version?: string
+  strategic_focus?: string
+  performance_strategy?: string
+  memory_enabled?: boolean
+  telemetry_enabled?: boolean
+  encryption_enabled?: boolean
+  debug_console?: boolean
+  temperature?: number
+  max_tokens?: number
+  plan?: string
 }
 
 export interface SendMessageResponse {

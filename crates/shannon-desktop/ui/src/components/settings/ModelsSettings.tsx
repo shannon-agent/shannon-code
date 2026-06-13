@@ -8,7 +8,9 @@ import * as api from '@/lib/tauri-api'
 export default function ModelsSettings() {
   const { models, status, config, refreshModels, refreshStatus } = useApp()
   const [switching, setSwitching] = useState<string | null>(null)
-  const [strategy, setStrategyState] = useState<'speed' | 'balanced' | 'high-quality'>('high-quality')
+  const [strategy, setStrategyState] = useState<'speed' | 'balanced' | 'high-quality'>(
+    (config?.performance_strategy as 'speed' | 'balanced' | 'high-quality') ?? 'high-quality'
+  )
 
   const setStrategy = (s: 'speed' | 'balanced' | 'high-quality') => {
     setStrategyState(s)

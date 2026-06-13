@@ -978,6 +978,179 @@ pub async fn configure(
 
             Ok(())
         }
+        "strategic_focus" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.strategic_focus = Some(update.value.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "strategic_focus".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "performance_strategy" => {
+            let strategy = update.value.clone();
+            if !matches!(strategy.as_str(), "speed" | "balanced" | "high-quality") {
+                return Err(format!("Invalid performance_strategy: {strategy}"));
+            }
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.performance_strategy = Some(strategy.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "performance_strategy".into(),
+                    value: strategy,
+                },
+            );
+
+            Ok(())
+        }
+        "memory_enabled" | "telemetry" | "encryption" | "debug_console" => {
+            let enabled = match update.value.to_ascii_lowercase().as_str() {
+                "true" => true,
+                "false" => false,
+                _ => {
+                    return Err(format!(
+                        "Invalid boolean for {}: {}",
+                        update.key, update.value
+                    ));
+                }
+            };
+            let mut desktop_cfg = state.desktop_config.write().await;
+            match update.key.as_str() {
+                "memory_enabled" => desktop_cfg.memory_enabled = Some(enabled),
+                "telemetry" => desktop_cfg.telemetry_enabled = Some(enabled),
+                "encryption" => desktop_cfg.encryption_enabled = Some(enabled),
+                "debug_console" => desktop_cfg.debug_console = Some(enabled),
+                _ => unreachable!(),
+            }
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: update.key.clone(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "temperature" => {
+            let parsed: f32 = update
+                .value
+                .parse()
+                .map_err(|e| format!("Invalid temperature: {e}"))?;
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.temperature = Some(parsed);
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "temperature".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "max_tokens" => {
+            let parsed: u32 = update
+                .value
+                .parse()
+                .map_err(|e| format!("Invalid max_tokens: {e}"))?;
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.max_tokens = Some(parsed);
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "max_tokens".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "plan" => {
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.plan = Some(update.value.clone());
+
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "plan".into(),
+                    value: update.value,
+                },
+            );
+
+            Ok(())
+        }
+        "clear_cache" => {
+            // Clear in-memory conversation state. Session history on disk is
+            // preserved; this drops the active conversation buffer.
+            let mut messages = state.messages.lock().await;
+            messages.clear();
+            Ok(())
+        }
+        "factory_reset" => {
+            // Reset desktop config to defaults. Does not touch session files
+            // — the user is warned in the UI before invoking.
+            let default_cfg = DesktopConfig::default();
+            let mut desktop_cfg = state.desktop_config.write().await;
+            *desktop_cfg = default_cfg.clone();
+            drop(desktop_cfg);
+            config::save_config(&default_cfg)?;
+
+            let _ = app_handle.emit(
+                event_names::CONFIG_UPDATED,
+                events::ConfigUpdatedPayload {
+                    key: "factory_reset".into(),
+                    value: "true".into(),
+                },
+            );
+
+            Ok(())
+        }
+        "cancel_subscription" => {
+            // Local OSS app: no subscription system. Acknowledge the request
+            // and clear any persisted plan so the UI reflects the downgrade.
+            let mut desktop_cfg = state.desktop_config.write().await;
+            desktop_cfg.plan = None;
+            drop(desktop_cfg);
+            let desktop_cfg = state.desktop_config.read().await;
+            config::save_config(&desktop_cfg)?;
+
+            Ok(())
+        }
         _ => Err(format!("Unknown config key: {}", update.key)),
     }
 }
@@ -1002,6 +1175,15 @@ pub async fn switch_provider(
         theme: existing.theme.clone(),
         mcp_servers: existing.mcp_servers.clone(),
         approval_mode: existing.approval_mode.clone(),
+        strategic_focus: existing.strategic_focus.clone(),
+        performance_strategy: existing.performance_strategy.clone(),
+        memory_enabled: existing.memory_enabled,
+        telemetry_enabled: existing.telemetry_enabled,
+        encryption_enabled: existing.encryption_enabled,
+        debug_console: existing.debug_console,
+        temperature: existing.temperature,
+        max_tokens: existing.max_tokens,
+        plan: existing.plan.clone(),
     };
     drop(existing);
 

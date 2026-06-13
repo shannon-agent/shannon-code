@@ -6,11 +6,11 @@ import { useApp } from '@/context/AppContext'
 import * as api from '@/lib/tauri-api'
 
 export default function AdvancedSettings() {
-  const { refreshConfig } = useApp()
-  const [memoryEnabled, setMemoryEnabled] = useState(true)
-  const [telemetryEnabled, setTelemetryEnabled] = useState(false)
-  const [encryptionEnabled, setEncryptionEnabled] = useState(true)
-  const [debugConsole, setDebugConsole] = useState(false)
+  const { refreshConfig, config } = useApp()
+  const [memoryEnabled, setMemoryEnabled] = useState(config?.memory_enabled ?? true)
+  const [telemetryEnabled, setTelemetryEnabled] = useState(config?.telemetry_enabled ?? false)
+  const [encryptionEnabled, setEncryptionEnabled] = useState(config?.encryption_enabled ?? true)
+  const [debugConsole, setDebugConsole] = useState(config?.debug_console ?? false)
   const [clearing, setClearing] = useState(false)
   const [resetting, setResetting] = useState(false)
   const [showLogs, setShowLogs] = useState(false)

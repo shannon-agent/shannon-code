@@ -34,9 +34,10 @@ export default function OPC() {
   const [editingFocus, setEditingFocus] = useState(false)
   const [focusText, setFocusText] = useState('')
 
-  const currentFocus = config?.provider
-    ? `${config.provider.charAt(0).toUpperCase() + config.provider.slice(1)} Agent Orchestration — autonomous task execution with multi-agent coordination.`
-    : 'Autonomous task execution through multi-agent orchestration and intelligent coordination.'
+  const currentFocus = config?.strategic_focus
+    || (config?.provider
+      ? `${config.provider.charAt(0).toUpperCase() + config.provider.slice(1)} Agent Orchestration — autonomous task execution with multi-agent coordination.`
+      : 'Autonomous task execution through multi-agent orchestration and intelligent coordination.')
 
   useEffect(() => { setFocusText(currentFocus) }, [currentFocus])
 

@@ -17,6 +17,24 @@ pub struct DesktopConfig {
     pub theme: Option<String>,
     pub mcp_servers: Vec<McpServerConfig>,
     pub approval_mode: Option<String>,
+    /// OPC strategic focus statement.
+    pub strategic_focus: Option<String>,
+    /// Model selection strategy: `speed` | `balanced` | `high-quality`.
+    pub performance_strategy: Option<String>,
+    /// Long-term memory toggle.
+    pub memory_enabled: Option<bool>,
+    /// Anonymous usage telemetry toggle.
+    pub telemetry_enabled: Option<bool>,
+    /// Local data encryption toggle.
+    pub encryption_enabled: Option<bool>,
+    /// Debug console toggle.
+    pub debug_console: Option<bool>,
+    /// Default sampling temperature.
+    pub temperature: Option<f32>,
+    /// Default max tokens for generation.
+    pub max_tokens: Option<u32>,
+    /// Billing plan name (local-app echo of provider plan).
+    pub plan: Option<String>,
 }
 
 /// MCP server configuration.
@@ -40,6 +58,15 @@ impl Default for DesktopConfig {
             theme: None,
             mcp_servers: Vec::new(),
             approval_mode: Some("confirm".into()),
+            strategic_focus: None,
+            performance_strategy: None,
+            memory_enabled: None,
+            telemetry_enabled: None,
+            encryption_enabled: None,
+            debug_console: None,
+            temperature: None,
+            max_tokens: None,
+            plan: None,
         }
     }
 }
@@ -129,6 +156,15 @@ mod tests {
             theme: None,
             mcp_servers: vec![],
             approval_mode: None,
+            strategic_focus: None,
+            performance_strategy: None,
+            memory_enabled: None,
+            telemetry_enabled: None,
+            encryption_enabled: None,
+            debug_console: None,
+            temperature: None,
+            max_tokens: None,
+            plan: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
@@ -156,6 +192,15 @@ mod tests {
             theme: None,
             mcp_servers: vec![],
             approval_mode: Some("auto".into()),
+            strategic_focus: None,
+            performance_strategy: None,
+            memory_enabled: None,
+            telemetry_enabled: None,
+            encryption_enabled: None,
+            debug_console: None,
+            temperature: None,
+            max_tokens: None,
+            plan: None,
         };
         let json = serde_json::to_string(&config).unwrap();
         let parsed: DesktopConfig = serde_json::from_str(&json).unwrap();
@@ -173,6 +218,15 @@ mod tests {
             theme: None,
             mcp_servers: vec![],
             approval_mode: Some("full_auto".into()),
+            strategic_focus: None,
+            performance_strategy: None,
+            memory_enabled: None,
+            telemetry_enabled: None,
+            encryption_enabled: None,
+            debug_console: None,
+            temperature: None,
+            max_tokens: None,
+            plan: None,
         };
 
         // Test serialization preserves approval_mode
