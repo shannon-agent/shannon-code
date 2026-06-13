@@ -13,7 +13,6 @@ members = [
     "crates/shannon-skills",
     "crates/shannon-tool-interface",
     "crates/shannon-codegen",
-    "crates/shannon-desktop",
 ]
 
 [workspace.package]
