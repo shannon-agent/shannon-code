@@ -841,9 +841,13 @@ fn substitute_single_pass(template: &str, pairs: &[(&str, &str)]) -> String {
             }
         }
         if !matched {
-            let ch = rest.chars().next().unwrap();
-            out.push(ch);
-            rest = &rest[ch.len_utf8()..];
+            match rest.chars().next() {
+                Some(ch) => {
+                    out.push(ch);
+                    rest = &rest[ch.len_utf8()..];
+                }
+                None => break,
+            }
         }
     }
     out
