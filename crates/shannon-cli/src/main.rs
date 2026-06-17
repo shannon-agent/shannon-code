@@ -1658,10 +1658,7 @@ fn load_headless_webhook_config() -> Option<shannon_core::notifier::WebhookConfi
     use shannon_core::unified_config::ShannonConfig;
     let read_cfg = |path: &std::path::Path| -> Option<ShannonConfig> {
         let content = std::fs::read_to_string(path).ok()?;
-        match toml::from_str::<ShannonConfig>(&content) {
-            Ok(c) => Some(c),
-            Err(_) => None,
-        }
+        toml::from_str::<ShannonConfig>(&content).ok()
     };
     let local = std::path::Path::new(".shannon.toml");
     let cfg = read_cfg(local).or_else(|| {
