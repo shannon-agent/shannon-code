@@ -107,6 +107,13 @@ impl ShellNotifier {
     }
 
     /// Create a `ShellNotifier` with a custom command spec.
+    ///
+    /// **Security:** `spec.binary` is spawned directly via `Command::new` — the
+    /// caller is responsible for ensuring the binary path is trusted (e.g. a
+    /// hardcoded platform constant). Never pass user-controlled input as the
+    /// binary. The platform default (`CommandSpec::platform_default()`) is the
+    /// only path used by `ShellNotifier::new()`; `with_spec` exists for
+    /// developer/test overrides.
     pub fn with_spec(spec: CommandSpec) -> Self {
         Self {
             spec,
@@ -115,6 +122,11 @@ impl ShellNotifier {
     }
 
     /// Render the args template against a notification payload.
+    ///
+    /// Performs three security passes:
+    /// 1. `sanitize()` — strip control chars, replace newlines, truncate
+    /// 2. Per-binary context escaping — AppleScript/PowerShell string literals
+    /// 3. Single-pass placeholder substitution — prevents template injection
     pub fn render_args(&self, n: &Notification) -> Vec<String> {
         let title = sanitize(&n.title);
         let body = sanitize(&n.body);
@@ -125,19 +137,34 @@ impl ShellNotifier {
             NotificationLevel::Error => "error",
         };
         let urgency = level_to_urgency(n.level);
-        let source = n.source.as_deref().unwrap_or("");
+        let source = sanitize(n.source.as_deref().unwrap_or(""));
+
+        let (title_e, body_e, source_e) = match self.spec.binary.as_str() {
+            "osascript" | "/usr/bin/osascript" => (
+                escape_applescript(&title),
+                escape_applescript(&body),
+                escape_applescript(&source),
+            ),
+            "powershell" | "powershell.exe" => (
+                escape_powershell(&title),
+                escape_powershell(&body),
+                escape_powershell(&source),
+            ),
+            _ => (title, body, source),
+        };
+
+        let vars: [(&str, &str); 5] = [
+            ("title", &title_e),
+            ("body", &body_e),
+            ("level", level),
+            ("urgency", urgency),
+            ("source", &source_e),
+        ];
 
         self.spec
             .args
             .iter()
-            .map(|template| {
-                template
-                    .replace("{title}", &title)
-                    .replace("{body}", &body)
-                    .replace("{level}", level)
-                    .replace("{urgency}", urgency)
-                    .replace("{source}", &sanitize(source))
-            })
+            .map(|template| substitute(template, &vars))
             .collect()
     }
 }
@@ -169,6 +196,65 @@ impl NotificationHandler for ShellNotifier {
     fn name(&self) -> &str {
         &self.name
     }
+}
+
+/// Escape for AppleScript double-quoted string literals.
+///
+/// Backslashes first, then double quotes — both must be escaped inside
+/// `"..."` strings to prevent breaking out of the literal and injecting
+/// arbitrary AppleScript (which can execute shell commands via `do shell script`).
+fn escape_applescript(input: &str) -> String {
+    input.replace('\\', "\\\\").replace('"', "\\\"")
+}
+
+/// Escape for PowerShell single-quoted string literals.
+///
+/// Single quotes are doubled (`'` → `''`). Single-quoted strings in PowerShell
+/// are literal — no variable expansion — so this is sufficient to prevent
+/// breakout from `New-BurntToastNotification -Title '...'` contexts.
+fn escape_powershell(input: &str) -> String {
+    input.replace('\'', "''")
+}
+
+/// Single-pass placeholder substitution.
+///
+/// Scans the template for `{key}` placeholders and substitutes known keys.
+/// Unlike chained `str::replace` calls, substituted values are NOT re-scanned
+/// for placeholders — so a malicious title containing literal `{body}` cannot
+/// inject body content into the output. Unknown `{...}` sequences are preserved
+/// verbatim.
+fn substitute(template: &str, vars: &[(&str, &str)]) -> String {
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while !rest.is_empty() {
+        match rest.find('{') {
+            Some(brace_start) => {
+                out.push_str(&rest[..brace_start]);
+                let after = &rest[brace_start + 1..];
+                match after.find('}') {
+                    Some(close_offset) => {
+                        let key = &after[..close_offset];
+                        if let Some((_, value)) = vars.iter().find(|(k, _)| *k == key) {
+                            out.push_str(value);
+                            rest = &after[close_offset + 1..];
+                            continue;
+                        }
+                        out.push('{');
+                        rest = after;
+                    }
+                    None => {
+                        out.push('{');
+                        rest = after;
+                    }
+                }
+            }
+            None => {
+                out.push_str(rest);
+                break;
+            }
+        }
+    }
+    out
 }
 
 /// Strip characters that could be misinterpreted by downstream notifiers.
@@ -295,6 +381,162 @@ mod tests {
             }
             other => panic!("expected HandlerFailed, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_escape_applescript_backslash_then_quote() {
+        let s = escape_applescript(r#"hello "world" \end"#);
+        assert_eq!(s, r#"hello \"world\" \\end"#);
+    }
+
+    #[test]
+    fn test_escape_applescript_quote_only() {
+        assert_eq!(escape_applescript(r#"just "quotes""#), r#"just \"quotes\""#);
+    }
+
+    #[test]
+    fn test_escape_applescript_no_special_chars() {
+        assert_eq!(escape_applescript("plain text"), "plain text");
+    }
+
+    #[test]
+    fn test_escape_powershell_doubles_single_quotes() {
+        assert_eq!(
+            escape_powershell("can't break 'out'"),
+            "can''t break ''out''"
+        );
+    }
+
+    #[test]
+    fn test_escape_powershell_no_single_quotes() {
+        assert_eq!(escape_powershell(r#""double" ok"#), r#""double" ok"#);
+    }
+
+    /// Walk the script as AppleScript would, counting unescaped `"` (those
+    /// NOT preceded by `\`). This is the number of string-literal delimiters.
+    fn count_unescaped_applescript_quotes(s: &str) -> usize {
+        let mut count = 0;
+        let mut chars = s.chars();
+        while let Some(c) = chars.next() {
+            if c == '\\' {
+                chars.next();
+            } else if c == '"' {
+                count += 1;
+            }
+        }
+        count
+    }
+
+    /// Walk as PowerShell would, counting `'` that is NOT part of a `''` escape.
+    fn count_unescaped_powershell_quotes(s: &str) -> usize {
+        let mut count = 0;
+        let mut chars = s.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '\'' {
+                if chars.peek() == Some(&'\'') {
+                    chars.next();
+                } else {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
+
+    #[test]
+    fn test_render_args_escapes_applescript_double_quotes() {
+        let notifier = ShellNotifier::with_spec(CommandSpec {
+            binary: "osascript".into(),
+            args: vec![
+                "-e".into(),
+                "display notification \"{body}\" with title \"{title}\"".into(),
+            ],
+        });
+        let n = make_notification(
+            "Evil \") & (do shell script \"rm -rf ~\")",
+            "Body with \" and \\ backslash",
+            NotificationLevel::Info,
+        );
+        let args = notifier.render_args(&n);
+        let script = &args[1];
+        assert!(
+            script.contains("\\\""),
+            "double quotes must be escaped: {script}"
+        );
+        assert!(
+            script.contains("\\\\"),
+            "backslashes must be escaped: {script}"
+        );
+        // Structural integrity: walk the script as AppleScript would, counting
+        // unescaped `"` (i.e. NOT preceded by `\`). Two literal pairs
+        // (`title "..."`, `body "..."`) → exactly 4. A breakout attempt that
+        // injected extra unescaped quotes would push this above 4.
+        let unescaped = count_unescaped_applescript_quotes(script);
+        assert_eq!(
+            unescaped, 4,
+            "expected exactly 4 unescaped quotes (2 literal pairs), got {unescaped}: {script}"
+        );
+    }
+
+    #[test]
+    fn test_render_args_escapes_powershell_single_quotes() {
+        let notifier = ShellNotifier::with_spec(CommandSpec {
+            binary: "powershell".into(),
+            args: vec![
+                "-NoProfile".into(),
+                "-Command".into(),
+                "New-BurntToastNotification -Title '{title}' -Message '{body}'".into(),
+            ],
+        });
+        let n = make_notification(
+            "Evil '; Get-Process | Stop-Process; $x='",
+            "Body 'attempt'",
+            NotificationLevel::Info,
+        );
+        let args = notifier.render_args(&n);
+        let cmd = &args[2];
+        assert!(cmd.contains("''"), "single quotes must be doubled: {cmd}");
+        // Structural integrity: walk as PowerShell would, counting `'` that is
+        // NOT part of a `''` escape. Two literal pairs → exactly 4.
+        let unescaped = count_unescaped_powershell_quotes(cmd);
+        assert_eq!(
+            unescaped, 4,
+            "expected exactly 4 unescaped single quotes (2 literal pairs), got {unescaped}: {cmd}"
+        );
+    }
+
+    #[test]
+    fn test_render_args_prevents_template_injection() {
+        let notifier = ShellNotifier::with_spec(CommandSpec {
+            binary: "echo".into(),
+            args: vec!["{title}".into(), "{body}".into()],
+        });
+        let n = make_notification("hello {body} world", "actual-body", NotificationLevel::Info);
+        let args = notifier.render_args(&n);
+        assert_eq!(args[0], "hello {body} world");
+        assert_eq!(args[1], "actual-body");
+    }
+
+    #[test]
+    fn test_substitute_preserves_unknown_placeholders() {
+        let vars = [("name", "Alice")];
+        assert_eq!(
+            substitute("Hi {name}, city is {city}", &vars),
+            "Hi Alice, city is {city}"
+        );
+    }
+
+    #[test]
+    fn test_substitute_handles_value_containing_placeholder_syntax() {
+        let vars = [("a", "x{b}y"), ("b", "INJECTED")];
+        let result = substitute("v={a}", &vars);
+        assert_eq!(result, "v=x{b}y");
+    }
+
+    #[test]
+    fn test_substitute_handles_unclosed_brace() {
+        let vars = [("a", "A")];
+        assert_eq!(substitute("v={a} {unclosed", &vars), "v=A {unclosed");
     }
 
     /// Cross-platform happy-path: `echo` exists on Linux/macOS and PowerShell
