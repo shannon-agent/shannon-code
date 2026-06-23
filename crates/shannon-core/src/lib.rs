@@ -94,6 +94,7 @@ pub mod api_server;
 pub mod auto_dream_consolidation;
 pub mod billing;
 pub mod credential_manager;
+pub mod custom_profiles;
 pub mod doctor;
 pub mod enhanced_suggestions;
 pub mod feature_flags;
@@ -108,70 +109,21 @@ pub mod preference_memory;
 pub mod recording;
 pub mod sandbox;
 pub mod scheduled_routines;
+pub mod scheduled_runs;
+pub mod scheduled_task_store;
+pub mod scheduled_worktree;
 pub mod session_persist;
 pub mod session_recovery;
 pub mod session_transcript;
 pub mod skill_loop;
 pub mod team_memory_sync;
-pub mod telemetry;
 pub mod ui_adapter;
 pub mod webhook;
 
 pub mod testing;
 
 pub mod i18n;
-
-// ============================================================================
-// Phase 1: Internal Domain Reorganization
-// These pub mod blocks organize modules by domain for future extraction.
-// All existing pub use paths remain unchanged for backward compatibility.
-// ============================================================================
-
-// Domain 1: Hooks - Hook event system, permission classification, profiles, policy limits
-pub mod hooks_domain {
-    pub use super::hooks::*;
-    pub use super::permission_classifier::*;
-    pub use super::permission_profile::*;
-    pub use super::policy_limits::*;
-}
-
-// Domain 2: Billing - Billing, AI limits, rate limiting, telemetry, analytics
-pub mod billing_domain {
-    pub use super::ai_limits::*;
-    pub use super::analytics::*;
-    pub use super::billing::*;
-    pub use super::rate_limit::*;
-    pub use super::rate_limit_messages::*;
-    pub use super::telemetry::*;
-}
-
-// Domain 3: Scheduled - Scheduled routines and task management
-pub mod scheduled_domain {
-    pub use super::scheduled_routines::*;
-}
-
-// Domain 4: Media - Voice mode, sleep prevention, VCR, webhook, recording
-pub mod media_domain {
-    pub use super::prevent_sleep::*;
-    pub use super::recording::*;
-    pub use super::vcr::*;
-    pub use super::voice_mode::*;
-    pub use super::webhook::*;
-}
-
-// Domain 5: LSP - Language Server Protocol client
-pub mod lsp_domain {
-    pub use super::lsp::*;
-}
-
-// Domain 6: Memory - Memory storage, extraction, preferences, projects, team sync
-pub mod memory_domain {
-    pub use super::extract_memories::*;
-    pub use super::memory::*;
-    pub use super::preference_memory::*;
-    pub use super::project_memory::*;
-    pub use super::team_memory_sync::*;
-}
+pub mod triggered_routines;
 
 // Re-export key types for convenience
 pub use ai_limits::{AiLimitType, AiLimitsTracker, AiUsageRecord, LimitStatus};
@@ -255,7 +207,9 @@ pub use oauth::{OAuthClient, OAuthError, OAuthService, OAuthToken, TokenEncrypti
 pub use output_format::{OutputEvent, StructuredOutputConfig, StructuredOutputError};
 pub use permissions::{ApprovalMode, Permission, PermissionLevel, PermissionManager};
 pub use policy_limits::{PolicyCheckResult, PolicyError, PolicyLimits, PolicyLimitsManager};
-pub use query_engine::{QueryContext, QueryEngine, QueryEvent};
+pub use query_engine::{
+    QueryContext, QueryEngine, QueryEvent, browser_control_prompt, teammate_instructions,
+};
 pub use rate_limit::{
     ExponentialBackoff, RateLimitConfig, RateLimitResult, RateLimiter, TokenBucket,
 };
@@ -307,6 +261,7 @@ pub use credential_manager::{
     Credential, CredentialError, CredentialFileDescriptor, CredentialFileFormat, CredentialManager,
     CredentialSummary, ImportResult, PortableCredential, PortableCredentialBundle,
 };
+pub use custom_profiles::{CustomProfileDef, CustomProfileError, CustomProfileRegistry};
 pub use housekeeping::{
     CacheRefreshTask, Housekeeper, HousekeepingConfig, HousekeepingError, HousekeepingTask,
     LogRotationTask, OldSessionPruneTask, TaskResult, TempFileCleanupTask,
@@ -333,6 +288,9 @@ pub use session_transcript::{
 pub use team_memory_sync::{
     SecretMatch, SecretRule, SecretScanner, SyncResult, TeamMemoryConfig, TeamMemoryGuard,
     TeamMemorySync, TeamMemorySyncError,
+};
+pub use triggered_routines::{
+    RoutineExecResult, TriggeredRoutineDef, TriggeredRoutineError, TriggeredRoutineRegistry,
 };
 
 pub use enhanced_suggestions::{
