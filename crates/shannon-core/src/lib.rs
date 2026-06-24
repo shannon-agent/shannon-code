@@ -128,8 +128,20 @@ pub mod session_history;
 pub mod settings;
 pub mod settings_sync;
 pub mod smart_context;
-pub mod state;
-pub mod streaming_tool_executor;
+#[deprecated(
+    since = "0.5.6",
+    note = "moved to shannon-engine; use `shannon_engine::state` directly"
+)]
+pub mod state {
+    pub use ::shannon_engine::state::*;
+}
+#[deprecated(
+    since = "0.5.6",
+    note = "moved to shannon-engine; use `shannon_engine::streaming_tool_executor` directly"
+)]
+pub mod streaming_tool_executor {
+    pub use ::shannon_engine::streaming_tool_executor::*;
+}
 pub mod suggestions;
 pub mod tips;
 pub mod token_estimation;
