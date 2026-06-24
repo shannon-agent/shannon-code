@@ -21,6 +21,7 @@ tokio-stream = "0.1"
 # Serialization
 serde = { workspace = true }
 serde_json = { workspace = true }
+toml = "0.8"
 
 # Error handling
 thiserror = { workspace = true }
@@ -38,6 +39,12 @@ regex = "1.11"
 
 # Platform directories (hooks config paths)
 dirs = { workspace = true }
+
+# Glob pattern matching (permissions rule checker)
+globset = "0.4"
+
+# UUID generation (permissions session IDs)
+uuid = { workspace = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
