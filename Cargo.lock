@@ -3989,6 +3989,7 @@ dependencies = [
  "base64",
  "dirs 5.0.1",
  "futures",
+ "globset",
  "hmac",
  "mockito",
  "proptest",
@@ -4004,7 +4005,9 @@ dependencies = [
  "tokio-stream",
  "tokio-test",
  "tokio-util",
+ "toml",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
