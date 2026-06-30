@@ -395,6 +395,33 @@ fn resolve_session_id(hint: Option<&str>, fallback: Uuid) -> Uuid {
         .unwrap_or(fallback)
 }
 
+/// Attribute `engine` to the caller's session and restore any prior history.
+///
+/// The engine auto-saves the conversation to disk after each query under
+/// `engine.session_id`. Aligning that id with the caller's `session_id`
+/// means the save lands under a key the caller can reference on a later
+/// stateless request. `restore_session` loads any prior history for that id
+/// (and sets the id itself on hit); on first contact — no prior file — we
+/// set the id directly so the auto-save still keys correctly instead of
+/// writing under the constructor's random UUID. A disk read error is logged
+/// and downgraded to a fresh start: history is a convenience, not a
+/// correctness gate, so an unreadable file must never block a query.
+fn attach_session(engine: &mut QueryEngine, session_id: Uuid) {
+    let loaded = match engine.restore_session(session_id) {
+        Ok(found) => found,
+        Err(e) => {
+            tracing::warn!(
+                session = %session_id,
+                "session history load failed: {e}; starting fresh"
+            );
+            false
+        }
+    };
+    if !loaded {
+        engine.session_id = session_id;
+    }
+}
+
 async fn query_handler(
     State(state): State<AppState>,
     Json(req): Json<QueryRequest>,
@@ -421,9 +448,10 @@ async fn query_handler(
     let tools = ToolRegistry::new();
     let permissions = PermissionManager::new();
     let state_mgr = StateManager::new();
-    let engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
+    let mut engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
 
     let session_id = resolve_session_id(req.session_id.as_deref(), Uuid::new_v4());
+    attach_session(&mut engine, session_id);
 
     let context = QueryContext {
         query_id: Uuid::new_v4(),
@@ -510,10 +538,11 @@ async fn query_stream_handler(
     let tools = ToolRegistry::new();
     let permissions = PermissionManager::new();
     let state_mgr = StateManager::new();
-    let engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
+    let mut engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
 
     let session_id =
         resolve_session_id(params.get("session_id").map(String::as_str), Uuid::new_v4());
+    attach_session(&mut engine, session_id);
 
     let context = QueryContext {
         query_id: Uuid::new_v4(),
@@ -1293,6 +1322,87 @@ mod tests {
             }
             other => panic!("expected Query, got {other:?}"),
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    // session history persistence (P0-e)
+    // ══════════════════════════════════════════════════════════════════════
+
+    fn p0e_temp_sessions_dir() -> std::path::PathBuf {
+        let dir = std::env::temp_dir()
+            .join("shannon-api-server-p0e")
+            .join(Uuid::new_v4().to_string());
+        let _ = std::fs::create_dir_all(&dir);
+        dir
+    }
+
+    #[test]
+    fn test_attach_session_loads_prior_history_and_aligns_id() {
+        use shannon_engine::api::{Message, MessageContent};
+        use shannon_engine::state::SessionPersistMetadata;
+
+        let dir = p0e_temp_sessions_dir();
+        let state = StateManager::with_sessions_dir(dir).unwrap();
+
+        // Persist a prior turn under session_id.
+        let session_id = Uuid::new_v4();
+        let prior = vec![Message {
+            role: "user".to_string(),
+            content: MessageContent::Text("hello from the past".to_string()),
+        }];
+        state
+            .save_session(
+                &session_id,
+                &prior,
+                &SessionPersistMetadata {
+                    model: "m".to_string(),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+
+        // Fresh engine sharing the same disk-backed state.
+        let mut engine = QueryEngine::with_defaults(
+            LlmClient::new(test_config()),
+            ToolRegistry::new(),
+            PermissionManager::new(),
+            state,
+        );
+
+        // Before: the engine has its own random id and no history.
+        assert_ne!(engine.session_id, session_id);
+        assert!(engine.conversation.messages.is_empty());
+
+        attach_session(&mut engine, session_id);
+
+        // After: history restored, save key aligned to the caller's session.
+        assert_eq!(engine.session_id, session_id);
+        assert_eq!(engine.conversation.messages.len(), 1);
+    }
+
+    #[test]
+    fn test_attach_session_first_contact_aligns_id_without_history() {
+        // No prior file → restore_session returns false. The engine's
+        // session_id must still be aligned so the post-query auto-save lands
+        // under the caller's key (not the constructor's random UUID), which
+        // is what makes a later request able to load this conversation.
+        let dir = p0e_temp_sessions_dir();
+        let state = StateManager::with_sessions_dir(dir).unwrap();
+
+        let mut engine = QueryEngine::with_defaults(
+            LlmClient::new(test_config()),
+            ToolRegistry::new(),
+            PermissionManager::new(),
+            state,
+        );
+
+        let session_id = Uuid::new_v4();
+        assert_ne!(engine.session_id, session_id);
+
+        attach_session(&mut engine, session_id);
+
+        assert_eq!(engine.session_id, session_id);
+        assert!(engine.conversation.messages.is_empty());
     }
 
     // ══════════════════════════════════════════════════════════════════════
