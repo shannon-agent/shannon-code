@@ -38,6 +38,12 @@ pub struct QueryRequest {
     /// Optional model override (e.g. `"claude-sonnet-4"`, `"gpt-4o"`).
     #[serde(default)]
     pub model: Option<String>,
+    /// Optional client-supplied session identity (a UUID string). When omitted
+    /// or unparseable the server mints a fresh UUID. Lets a caller attribute
+    /// successive requests to the same conversation session; cross-request
+    /// history persistence is wired up in P0-e (the contract lands here).
+    #[serde(default)]
+    pub session_id: Option<String>,
 }
 
 /// Aggregated JSON response returned by `POST /api/query`.
@@ -52,6 +58,12 @@ pub struct QueryResponse {
     /// Any error that occurred (non-fatal accumulation).
     #[serde(default)]
     pub errors: Vec<String>,
+    /// The session id attributed to this query — echoes the client-supplied
+    /// `session_id` when one was provided, otherwise the freshly-minted UUID
+    /// the server used. Lets callers record which session a stateless request
+    /// was attributed to (`#[serde(default)]` keeps old payloads parseable).
+    #[serde(default)]
+    pub session_id: Uuid,
 }
 
 /// Token usage information included in the query response.
@@ -182,6 +194,11 @@ pub enum WsClientMessage {
     Query {
         prompt: String,
         model: Option<String>,
+        /// Optional session id override (UUID string). When omitted the
+        /// connection's own session id is used. Lets a caller multiplex
+        /// several conversations over a single socket.
+        #[serde(default)]
+        session_id: Option<String>,
     },
     /// Clear conversation history for this session.
     #[serde(rename = "clear")]
@@ -366,6 +383,18 @@ async fn models_handler(State(state): State<AppState>) -> Json<ModelsResponse> {
     Json(ModelsResponse { models })
 }
 
+/// Resolve the effective session id for an incoming query.
+///
+/// Prefer a client-supplied hint when it parses as a UUID; otherwise fall
+/// back to `fallback` (a freshly-minted UUID for the HTTP endpoints, or the
+/// connection's own session id for WebSocket). A malformed hint is silently
+/// ignored rather than rejected — the session id is attribution metadata,
+/// not an auth credential, so a bad hint must never block a query.
+fn resolve_session_id(hint: Option<&str>, fallback: Uuid) -> Uuid {
+    hint.and_then(|s| Uuid::parse_str(s).ok())
+        .unwrap_or(fallback)
+}
+
 async fn query_handler(
     State(state): State<AppState>,
     Json(req): Json<QueryRequest>,
@@ -394,9 +423,11 @@ async fn query_handler(
     let state_mgr = StateManager::new();
     let engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
 
+    let session_id = resolve_session_id(req.session_id.as_deref(), Uuid::new_v4());
+
     let context = QueryContext {
         query_id: Uuid::new_v4(),
-        session_id: Uuid::new_v4(),
+        session_id,
         user_message: req.prompt,
         metadata: QueryMetadata {
             timestamp: chrono::Utc::now(),
@@ -446,6 +477,7 @@ async fn query_handler(
         model: config.model,
         usage,
         errors,
+        session_id,
     }))
 }
 
@@ -480,9 +512,12 @@ async fn query_stream_handler(
     let state_mgr = StateManager::new();
     let engine = QueryEngine::with_defaults(client, tools, permissions, state_mgr);
 
+    let session_id =
+        resolve_session_id(params.get("session_id").map(String::as_str), Uuid::new_v4());
+
     let context = QueryContext {
         query_id: Uuid::new_v4(),
-        session_id: Uuid::new_v4(),
+        session_id,
         user_message: prompt,
         metadata: QueryMetadata {
             timestamp: chrono::Utc::now(),
@@ -634,7 +669,11 @@ async fn handle_ws_socket(socket: WebSocket, state: AppState) {
         };
 
         match client_msg {
-            WsClientMessage::Query { prompt, model } => {
+            WsClientMessage::Query {
+                prompt,
+                model,
+                session_id: query_session_hint,
+            } => {
                 let mut config = state.client_config.clone();
                 if let Some(ref m) = model {
                     config.model = m.clone();
@@ -664,9 +703,14 @@ async fn handle_ws_socket(socket: WebSocket, state: AppState) {
                     engine.restore_messages(s.messages.clone());
                 }
 
+                let effective_session_id = resolve_session_id(
+                    query_session_hint.as_deref(),
+                    uuid::Uuid::parse_str(&session_id).unwrap_or_default(),
+                );
+
                 let context = QueryContext {
                     query_id: uuid::Uuid::new_v4(),
-                    session_id: uuid::Uuid::parse_str(&session_id).unwrap_or_default(),
+                    session_id: effective_session_id,
                     user_message: prompt,
                     metadata: QueryMetadata {
                         timestamp: chrono::Utc::now(),
@@ -1187,6 +1231,71 @@ mod tests {
     }
 
     // ══════════════════════════════════════════════════════════════════════
+    // session_id pass-through (P0-d)
+    // ══════════════════════════════════════════════════════════════════════
+
+    #[test]
+    fn test_resolve_session_id_uses_valid_client_hint() {
+        let id = Uuid::new_v4();
+        let fallback = Uuid::new_v4();
+        assert_eq!(resolve_session_id(Some(&id.to_string()), fallback), id);
+    }
+
+    #[test]
+    fn test_resolve_session_id_falls_back_when_hint_absent() {
+        let fallback = Uuid::new_v4();
+        assert_eq!(resolve_session_id(None, fallback), fallback);
+    }
+
+    #[test]
+    fn test_resolve_session_id_falls_back_when_hint_unparseable() {
+        let fallback = Uuid::new_v4();
+        assert_eq!(resolve_session_id(Some("not-a-uuid"), fallback), fallback);
+    }
+
+    #[test]
+    fn test_query_request_deserializes_session_id_field() {
+        let id = Uuid::new_v4();
+        let json = format!(r#"{{"prompt": "hi", "session_id": "{id}"}}"#);
+        let req: QueryRequest = serde_json::from_str(&json).unwrap();
+        assert_eq!(req.session_id, Some(id.to_string()));
+    }
+
+    #[test]
+    fn test_query_request_session_id_defaults_to_none() {
+        let req: QueryRequest = serde_json::from_str(r#"{"prompt": "hi"}"#).unwrap();
+        assert!(req.session_id.is_none());
+    }
+
+    #[test]
+    fn test_query_response_round_trips_session_id() {
+        let id = Uuid::new_v4();
+        let resp = QueryResponse {
+            text: "hello".to_string(),
+            model: "m".to_string(),
+            usage: None,
+            errors: Vec::new(),
+            session_id: id,
+        };
+        let json = serde_json::to_string(&resp).unwrap();
+        let parsed: QueryResponse = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.session_id, id);
+    }
+
+    #[test]
+    fn test_ws_query_message_round_trips_session_id() {
+        let id = Uuid::new_v4();
+        let json = format!(r#"{{"type": "query", "prompt": "hi", "session_id": "{id}"}}"#);
+        let msg: WsClientMessage = serde_json::from_str(&json).unwrap();
+        match msg {
+            WsClientMessage::Query { session_id, .. } => {
+                assert_eq!(session_id, Some(id.to_string()));
+            }
+            other => panic!("expected Query, got {other:?}"),
+        }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
     // SSE streaming endpoint tests
     // ══════════════════════════════════════════════════════════════════════
 
@@ -1356,6 +1465,7 @@ mod tests {
         let req = QueryRequest {
             prompt: "hello world".to_string(),
             model: Some("gpt-4o".to_string()),
+            session_id: None,
         };
         let json = serde_json::to_string(&req).unwrap();
         assert!(json.contains("hello world"));
@@ -1385,6 +1495,7 @@ mod tests {
                 cost_usd: 0.005,
             }),
             errors: vec![],
+            session_id: Uuid::new_v4(),
         };
         let json = serde_json::to_string(&resp).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1402,6 +1513,7 @@ mod tests {
             model: "test-model".to_string(),
             usage: None,
             errors: vec!["something went wrong".to_string()],
+            session_id: Uuid::new_v4(),
         };
         let json = serde_json::to_string(&resp).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1479,6 +1591,7 @@ mod tests {
         let msg = WsClientMessage::Query {
             prompt: "hello".to_string(),
             model: Some("gpt-4o".to_string()),
+            session_id: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1492,6 +1605,7 @@ mod tests {
         let msg = WsClientMessage::Query {
             prompt: "test".to_string(),
             model: None,
+            session_id: None,
         };
         let json = serde_json::to_string(&msg).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -1527,6 +1641,7 @@ mod tests {
             WsClientMessage::Query {
                 prompt: "test prompt".to_string(),
                 model: Some("llama3".to_string()),
+                session_id: None,
             },
             WsClientMessage::Clear,
             WsClientMessage::Info,
