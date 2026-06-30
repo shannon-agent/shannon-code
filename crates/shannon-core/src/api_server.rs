@@ -15,7 +15,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::response::sse::{Event, KeepAlive, Sse};
 use axum::routing::{get, post};
-use futures::StreamExt;
+use futures::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use shannon_engine::api::{LlmClient, LlmClientConfig, Message};
 use shannon_engine::permissions::{PermissionChoice, PermissionManager};
@@ -223,6 +223,11 @@ pub enum WsServerMessage {
     /// Query failed.
     #[serde(rename = "failed")]
     Failed { error: String },
+    /// Query was cancelled by the client via `WsClientMessage::Cancel`. Emitted
+    /// after the in-progress query's event stream has been dropped (which aborts
+    /// the engine's producer task).
+    #[serde(rename = "cancelled")]
+    Cancelled,
     /// Engine requests human approval for a tool call. The client responds via
     /// `POST /api/approval/respond` with the matching `request_id`.
     #[serde(rename = "approval_request")]
@@ -577,7 +582,7 @@ async fn ws_handler(ws: WebSocketUpgrade, State(state): State<AppState>) -> impl
     ws.on_upgrade(move |socket| handle_ws_socket(socket, state))
 }
 
-async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
+async fn handle_ws_socket(socket: WebSocket, state: AppState) {
     let session_id = uuid::Uuid::new_v4().to_string();
     let session = Arc::new(Mutex::new(WsSession {
         messages: Vec::new(),
@@ -590,38 +595,42 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
         sessions.insert(session_id.clone(), session.clone());
     }
 
-    // Send session greeting
-    let greeting = WsServerMessage::SessionInfo {
-        message_count: 0,
-        model: None,
-    };
-    if let Ok(json) = serde_json::to_string(&greeting) {
-        if let Err(e) = socket.send(WsMsg::Text(json)).await {
-            tracing::debug!("WebSocket send failed: {e}");
-        }
-    }
+    // Split the socket into independent send/receive halves so client messages
+    // (notably `Cancel`) can be received *concurrently* with the query event
+    // stream being drained and forwarded on the send half. The previous
+    // single-socket loop called `socket.recv()` inside the query arm, so a
+    // `Cancel` sent during a live query was never observed (the inner loop
+    // blocked the outer receive).
+    let (mut sender, mut receiver) = socket.split();
 
-    loop {
-        let msg = match socket.recv().await {
-            Some(Ok(WsMsg::Text(text))) => text,
+    // Send session greeting
+    let _ = send_msg(
+        &mut sender,
+        WsServerMessage::SessionInfo {
+            message_count: 0,
+            model: None,
+        },
+    )
+    .await;
+
+    'outer: loop {
+        let client_msg = match receiver.next().await {
+            Some(Ok(WsMsg::Text(text))) => match serde_json::from_str::<WsClientMessage>(&text) {
+                Ok(m) => m,
+                Err(e) => {
+                    let _ = send_msg(
+                        &mut sender,
+                        WsServerMessage::Error {
+                            message: format!("Invalid message: {e}"),
+                        },
+                    )
+                    .await;
+                    continue;
+                }
+            },
             Some(Ok(WsMsg::Close(_))) | None => break,
             Some(Ok(_)) => continue,
             Some(Err(_)) => break,
-        };
-
-        let client_msg: WsClientMessage = match serde_json::from_str(&msg) {
-            Ok(m) => m,
-            Err(e) => {
-                let err = WsServerMessage::Error {
-                    message: format!("Invalid message: {e}"),
-                };
-                if let Ok(json) = serde_json::to_string(&err) {
-                    if let Err(e) = socket.send(WsMsg::Text(json)).await {
-                        tracing::debug!("WebSocket send failed: {e}");
-                    }
-                }
-                continue;
-            }
         };
 
         match client_msg {
@@ -675,12 +684,16 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                 // task (300s timeout → Deny) forwards the choice back to the
                 // engine. See `claudedocs/social-connection-architecture.md` P0-b.
                 let (perm_tx, mut perm_rx) = mpsc::unbounded_channel::<PermissionRequest>();
+                // `process_query` returns a stream whose drop aborts the engine's
+                // producer task — so dropping `stream` (on cancel, or when the
+                // socket closes mid-query) actually interrupts the LLM/tool loop
+                // instead of leaving it running (P0-c).
                 let mut stream = engine.process_query(context, Some(perm_tx)).await;
 
+                let mut cancelled = false;
                 loop {
                     tokio::select! {
-                        biased;
-                        // QueryEvent stream (priority: drain visible events first).
+                        // QueryEvent stream — drain and forward to the client.
                         result_opt = stream.next() => {
                             let Some(result) = result_opt else { break };
                             let server_msg = match result {
@@ -723,10 +736,8 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                                 }),
                             };
                             if let Some(msg) = server_msg {
-                                if let Ok(json) = serde_json::to_string(&msg) {
-                                    if socket.send(WsMsg::Text(json)).await.is_err() {
-                                        break;
-                                    }
+                                if !send_msg(&mut sender, msg).await {
+                                    break 'outer;
                                 }
                             }
                         }
@@ -750,10 +761,8 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                                 is_destructive: prompt.is_destructive,
                                 diff_preview: prompt.diff_preview.clone(),
                             };
-                            if let Ok(json) = serde_json::to_string(&areq) {
-                                if socket.send(WsMsg::Text(json)).await.is_err() {
-                                    break;
-                                }
+                            if !send_msg(&mut sender, areq).await {
+                                break 'outer;
                             }
                             // Resolver: await the HTTP decision (300s), forward
                             // the choice to the engine, then clean up the entry.
@@ -773,7 +782,39 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                                 registry.lock().await.remove(&rid);
                             });
                         }
+                        // Concurrent client messages while a query is live.
+                        // `Cancel` interrupts the query (breaking the loop drops
+                        // `stream`, aborting the producer). Any other message is
+                        // rejected while busy; socket close tears down the
+                        // whole session.
+                        client = receiver.next() => match client {
+                            Some(Ok(WsMsg::Text(t))) => {
+                                match serde_json::from_str::<WsClientMessage>(&t) {
+                                    Ok(WsClientMessage::Cancel) => {
+                                        cancelled = true;
+                                        break;
+                                    }
+                                    Ok(_) => {
+                                        let _ = send_msg(
+                                            &mut sender,
+                                            WsServerMessage::Error {
+                                                message: "query in progress; send {\"type\":\"cancel\"} to interrupt".to_string(),
+                                            },
+                                        )
+                                        .await;
+                                    }
+                                    Err(_) => { /* ignore malformed mid-query */ }
+                                }
+                            }
+                            Some(Ok(WsMsg::Close(_))) | None | Some(Err(_)) => break 'outer,
+                            Some(Ok(_)) => { /* ping/binary — ignore */ }
+                        }
                     }
+                }
+
+                // `stream` drops here → engine aborts the producer task.
+                if cancelled {
+                    let _ = send_msg(&mut sender, WsServerMessage::Cancelled).await;
                 }
 
                 // Persist conversation
@@ -789,11 +830,7 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                     message_count: 0,
                     model: s.model.clone(),
                 };
-                if let Ok(json) = serde_json::to_string(&info) {
-                    if let Err(e) = socket.send(WsMsg::Text(json)).await {
-                        tracing::debug!("WebSocket send failed: {e}");
-                    }
-                }
+                let _ = send_msg(&mut sender, info).await;
             }
             WsClientMessage::Info => {
                 let s = session.lock().await;
@@ -801,22 +838,17 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
                     message_count: s.messages.len(),
                     model: s.model.clone(),
                 };
-                if let Ok(json) = serde_json::to_string(&info) {
-                    if let Err(e) = socket.send(WsMsg::Text(json)).await {
-                        tracing::debug!("WebSocket send failed: {e}");
-                    }
-                }
+                let _ = send_msg(&mut sender, info).await;
             }
             WsClientMessage::Cancel => {
-                // Future: wire up cancellation token
-                let err = WsServerMessage::Error {
-                    message: "Cancel not yet supported".to_string(),
-                };
-                if let Ok(json) = serde_json::to_string(&err) {
-                    if let Err(e) = socket.send(WsMsg::Text(json)).await {
-                        tracing::debug!("WebSocket send failed: {e}");
-                    }
-                }
+                // No query in progress — nothing to cancel.
+                let _ = send_msg(
+                    &mut sender,
+                    WsServerMessage::Error {
+                        message: "no active query to cancel".to_string(),
+                    },
+                )
+                .await;
             }
         }
     }
@@ -825,6 +857,23 @@ async fn handle_ws_socket(mut socket: WebSocket, state: AppState) {
     {
         let mut sessions = state.ws_sessions.write().await;
         sessions.remove(&session_id);
+    }
+}
+
+/// Serialize and send a [`WsServerMessage`] on the WebSocket send half.
+/// Returns `false` if serialization or the send failed (typically a closed
+/// socket), so the caller can tear the session down instead of repeating the
+/// serialize/send boilerplate at every call site.
+async fn send_msg(
+    sink: &mut (impl futures::Sink<WsMsg, Error = axum::Error> + Unpin),
+    msg: WsServerMessage,
+) -> bool {
+    match serde_json::to_string(&msg) {
+        Ok(json) => sink.send(WsMsg::Text(json)).await.is_ok(),
+        Err(e) => {
+            tracing::debug!("WebSocket serialize server message failed: {e}");
+            false
+        }
     }
 }
 
@@ -1645,6 +1694,7 @@ mod tests {
             WsServerMessage::Error {
                 message: "bad".to_string(),
             },
+            WsServerMessage::Cancelled,
         ];
         for msg in messages {
             let json = serde_json::to_string(&msg).unwrap();
