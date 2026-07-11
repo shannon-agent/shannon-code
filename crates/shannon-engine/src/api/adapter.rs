@@ -870,15 +870,61 @@ fn normalize_openai_event(
         None => return vec![],
     };
 
-    // Finish reason → end events
-    // Normalize provider-specific stop reasons to "end_turn" so the engine
-    // always saves assistant responses regardless of provider.
+    // Some providers (notably MiniMax M-series) emit `finish_reason` and
+    // `tool_calls` in the SAME chunk: the model emits its tool call and the
+    // stream-finish signal together. The handlers below are non-exclusive:
+    // process tool_calls first (so any newly-opened tool indices are tracked
+    // in open_tool_indices BEFORE finish_reason drains them), then process
+    // finish_reason (drains now-including-any-new-indices, synthesizes the
+    // matching ContentBlockStop events, emits MessageDelta). Accumulate all
+    // events into one vector and return at the end.
+    let mut events: Vec<Result<StreamEvent, ApiError>> = Vec::new();
+
+    // Tool calls — emit ContentBlockStart + ContentBlockDelta; track each
+    // opened index so the (possibly same-chunk) finish_reason can close it.
+    if let Some(ref tool_calls) = choice.delta.tool_calls {
+        for tc in tool_calls {
+            let idx = tc.index.unwrap_or_else(|| state.next_tool_index());
+
+            if let Some(ref id) = tc.id {
+                // New tool call starting
+                let name = tc
+                    .function
+                    .as_ref()
+                    .and_then(|f| f.name.clone())
+                    .unwrap_or_default();
+                events.push(Ok(StreamEvent::ContentBlockStart {
+                    index: idx,
+                    content_block: ContentBlock::ToolUse {
+                        id: id.clone(),
+                        name,
+                        input: serde_json::Value::Null,
+                    },
+                }));
+                // Track so we can emit a synthesized ContentBlockStop when
+                // the finish_reason chunk arrives (same chunk or later).
+                if !state.open_tool_indices.contains(&idx) {
+                    state.open_tool_indices.push(idx);
+                }
+            }
+
+            if let Some(ref func) = tc.function {
+                if let Some(ref args) = func.arguments {
+                    events.push(Ok(StreamEvent::ContentBlockDelta {
+                        index: idx,
+                        delta: ContentDelta::InputJsonDelta {
+                            partial_json: args.clone(),
+                        },
+                    }));
+                }
+            }
+        }
+    }
+
+    // Finish reason → synthesize ContentBlockStop for any in-progress tool
+    // calls (including those opened earlier in this same chunk above) and
+    // emit MessageDelta with the normalized stop reason.
     if let Some(ref reason) = choice.finish_reason {
-        // OpenAI collapses `ContentBlockStop` into the finish_reason chunk.
-        // Synthesize stop events for any in-progress tool calls so the
-        // engine's tool execution path runs them (otherwise `tool_inputs`
-        // stays empty and the loop terminates without executing tools).
-        let mut events: Vec<Result<StreamEvent, ApiError>> = Vec::new();
         for idx in state.open_tool_indices.drain(..) {
             events.push(Ok(StreamEvent::ContentBlockStop { index: idx }));
         }
@@ -901,46 +947,8 @@ fn normalize_openai_event(
         return events;
     }
 
-    // Tool calls — return ALL events, not just the first one
-    if let Some(ref tool_calls) = choice.delta.tool_calls {
-        let mut events = Vec::new();
-        for tc in tool_calls {
-            let idx = tc.index.unwrap_or_else(|| state.next_tool_index());
-
-            if let Some(ref id) = tc.id {
-                // New tool call starting
-                let name = tc
-                    .function
-                    .as_ref()
-                    .and_then(|f| f.name.clone())
-                    .unwrap_or_default();
-                events.push(StreamEvent::ContentBlockStart {
-                    index: idx,
-                    content_block: ContentBlock::ToolUse {
-                        id: id.clone(),
-                        name,
-                        input: serde_json::Value::Null,
-                    },
-                });
-                // Track so we can emit a synthesized ContentBlockStop when
-                // the finish_reason chunk arrives (see finish_reason handler).
-                if !state.open_tool_indices.contains(&idx) {
-                    state.open_tool_indices.push(idx);
-                }
-            }
-
-            if let Some(ref func) = tc.function {
-                if let Some(ref args) = func.arguments {
-                    events.push(StreamEvent::ContentBlockDelta {
-                        index: idx,
-                        delta: ContentDelta::InputJsonDelta {
-                            partial_json: args.clone(),
-                        },
-                    });
-                }
-            }
-        }
-        return events.into_iter().map(Ok).collect();
+    if !events.is_empty() {
+        return events;
     }
 
     // Text content
