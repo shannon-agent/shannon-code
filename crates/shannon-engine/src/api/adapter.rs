@@ -793,11 +793,20 @@ struct OpenAiPromptTokensDetails {
 /// avoid data races when multiple streams run concurrently.
 pub struct OpenaiStreamState {
     pub tool_index: usize,
+    /// Indices of tool calls that have received `ContentBlockStart` but not
+    /// yet `ContentBlockStop`. OpenAI's wire format collapses
+    /// `ContentBlockStop` into the `finish_reason` chunk, so the adapter
+    /// must synthesize it. Without this, the engine's tool execution loop
+    /// never sees a stop event and skips running the tools.
+    pub open_tool_indices: Vec<usize>,
 }
 
 impl OpenaiStreamState {
     pub fn new() -> Self {
-        Self { tool_index: 0 }
+        Self {
+            tool_index: 0,
+            open_tool_indices: Vec::new(),
+        }
     }
 
     pub fn next_tool_index(&mut self) -> usize {
@@ -808,6 +817,7 @@ impl OpenaiStreamState {
 
     pub fn reset(&mut self) {
         self.tool_index = 0;
+        self.open_tool_indices.clear();
     }
 }
 
@@ -864,12 +874,19 @@ fn normalize_openai_event(
     // Normalize provider-specific stop reasons to "end_turn" so the engine
     // always saves assistant responses regardless of provider.
     if let Some(ref reason) = choice.finish_reason {
-        state.reset();
+        // OpenAI collapses `ContentBlockStop` into the finish_reason chunk.
+        // Synthesize stop events for any in-progress tool calls so the
+        // engine's tool execution path runs them (otherwise `tool_inputs`
+        // stays empty and the loop terminates without executing tools).
+        let mut events: Vec<Result<StreamEvent, ApiError>> = Vec::new();
+        for idx in state.open_tool_indices.drain(..) {
+            events.push(Ok(StreamEvent::ContentBlockStop { index: idx }));
+        }
         let normalized = match reason.as_str() {
             "stop" | "STOP" => "end_turn".to_string(),
             other => other.to_string(),
         };
-        return vec![Ok(StreamEvent::MessageDelta {
+        events.push(Ok(StreamEvent::MessageDelta {
             delta: MessageDeltaDelta {
                 stop_reason: Some(normalized),
                 stop_sequence: None,
@@ -879,7 +896,9 @@ fn normalize_openai_event(
                 output_tokens: 0,
                 ..Default::default()
             },
-        })];
+        }));
+        state.reset();
+        return events;
     }
 
     // Tool calls — return ALL events, not just the first one
@@ -903,6 +922,11 @@ fn normalize_openai_event(
                         input: serde_json::Value::Null,
                     },
                 });
+                // Track so we can emit a synthesized ContentBlockStop when
+                // the finish_reason chunk arrives (see finish_reason handler).
+                if !state.open_tool_indices.contains(&idx) {
+                    state.open_tool_indices.push(idx);
+                }
             }
 
             if let Some(ref func) = tc.function {
@@ -2608,8 +2632,14 @@ mod tests {
             &args_events[0],
             Ok(StreamEvent::ContentBlockDelta { .. })
         ));
+        // finish_reason now also synthesizes a ContentBlockStop before the
+        // MessageDelta so the engine's tool execution path runs.
         assert!(matches!(
             &end_events[0],
+            Ok(StreamEvent::ContentBlockStop { .. })
+        ));
+        assert!(matches!(
+            &end_events[1],
             Ok(StreamEvent::MessageDelta { .. })
         ));
     }
