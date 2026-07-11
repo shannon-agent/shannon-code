@@ -175,6 +175,15 @@ fn shannon_record(
     let provider = record_provider();
     let model = record_model();
     let qualified_session = format!("{}_{}_{}", provider, model, session_name);
+    // Clear any prior fixture for this exact (provider, model, session) tuple so
+    // re-running the test produces a clean fixture. The recording engine's
+    // JSONL output is append-mode by design (supports interrupted/resumed
+    // recordings), but each test invocation uses a fresh temp workspace — so
+    // exchanges from prior runs reference paths the new workspace doesn't
+    // have, which silently pollutes replay fixtures and breaks downstream
+    // workspace assertions.
+    let fixture_path = record_dir.join(format!("{qualified_session}.jsonl"));
+    let _ = fs::remove_file(&fixture_path);
     let mut cmd = shannon();
     cmd.env("SHANNON_API_KEY", api_key)
         .env("SHANNON_RECORD_DIR", record_dir)
