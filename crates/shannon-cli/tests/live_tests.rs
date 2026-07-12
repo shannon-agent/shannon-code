@@ -239,6 +239,31 @@ fn recorded_workspace_path(body: &str) -> Option<String> {
     Some(format!("{MARKER}{suffix}"))
 }
 
+/// Rewrite the workspace-path suffix in `body` so that the recorded CWD's
+/// random suffix becomes the replay CWD's random suffix. The function
+/// finds the longest common prefix between `recorded_cwd` and
+/// `replay_cwd` and replaces everything that differs. Both request and
+/// response bodies go through this; SSE fragment streams get the suffix
+/// rewritten in each fragment independently so the streaming parser
+/// reassembles the correct replay path.
+///
+/// Returns the rewritten body unchanged if no `/tmp/.tmp` marker is
+/// found in the body (i.e. `recorded_workspace_path` returns None).
+fn rewrite_path_suffix(body: &str, recorded_cwd: &str, replay_cwd: &str) -> String {
+    let common_len = recorded_cwd
+        .chars()
+        .zip(replay_cwd.chars())
+        .take_while(|(a, b)| a == b)
+        .count();
+    let recorded_suffix = &recorded_cwd[common_len..];
+    let replay_suffix = &replay_cwd[common_len..];
+    if !recorded_suffix.is_empty() {
+        body.replace(recorded_suffix, replay_suffix)
+    } else {
+        body.to_string()
+    }
+}
+
 /// Mount a single recorded exchange as a mockito mock.
 ///
 /// Matches the recorded request body with its tempdir path rewritten to the
@@ -263,17 +288,8 @@ fn mount_exchange(
         // the suffix). Replacing the suffix catches each fragment independently,
         // and the agent's streaming parser reassembles the correct replay path.
         // (ADR 0003)
-        let common_len = recorded_cwd
-            .chars()
-            .zip(replay.chars())
-            .take_while(|(a, b)| a == b)
-            .count();
-        let recorded_suffix = &recorded_cwd[common_len..];
-        let replay_suffix = &replay[common_len..];
-        if !recorded_suffix.is_empty() {
-            expected_body = expected_body.replace(recorded_suffix, replay_suffix);
-            response_body = response_body.replace(recorded_suffix, replay_suffix);
-        }
+        expected_body = rewrite_path_suffix(&ex.request.body, &recorded_cwd, &replay);
+        response_body = rewrite_path_suffix(&ex.response.body, &recorded_cwd, &replay);
     }
     let mut mock = server
         .mock("POST", ex.request.path.as_str())
@@ -2145,5 +2161,80 @@ fn test_all_nested_writes_use_helper() {
                 "line {line_num}: fs::write with nested path found — use write_file() instead:\n  {line}"
             );
         }
+    }
+}
+
+// ── Unit tests for rewrite_path_suffix ───────────────────────────────────
+//
+// These tests pin down the suffix-only rewrite logic that mount_exchange
+// applies to recorded bodies before matching them against mockito. Splitting
+// the rewrite out of mount_exchange lets us test it without spinning up a
+// mockito server, and makes the SSE-fragmentation case (test 3) explicit.
+
+#[cfg(test)]
+mod rewrite_tests {
+    use super::rewrite_path_suffix;
+
+    #[test]
+    fn rewrite_common_prefix_normal_ci_case() {
+        // Recorded CWD and replay CWD share the `/tmp/.tmp` prefix; only the
+        // random tail differs. All occurrences of the recorded suffix should
+        // become the replay suffix.
+        let recorded_cwd = "/tmp/.tmpJ5YFHN";
+        let replay_cwd = "/tmp/.tmpnWTqOz";
+        let body = r#"{"cwd": "/tmp/.tmpJ5YFHN", "msg": "Working at /tmp/.tmpJ5YFHN/sub"}"#;
+        let expected = r#"{"cwd": "/tmp/.tmpnWTqOz", "msg": "Working at /tmp/.tmpnWTqOz/sub"}"#;
+        assert_eq!(
+            rewrite_path_suffix(body, recorded_cwd, replay_cwd),
+            expected
+        );
+    }
+
+    #[test]
+    fn rewrite_different_prefix_length_local_without_dot_tmp() {
+        // Local development without `tempfile` may produce a different prefix
+        // length (e.g. `/tmp/.dbgWS` instead of `/tmp/.tmpXXXXXX`). The longest
+        // common prefix is `/tmp/.` (6 chars); recorded_suffix = `tmp0ZFV0J`,
+        // replay_suffix = `dbgWS`. The recorded-suffix substring appears inside
+        // the path and gets swapped for the replay-suffix.
+        let recorded_cwd = "/tmp/.tmp0ZFV0J";
+        let replay_cwd = "/tmp/.dbgWS";
+        let body = r#"{"cwd": "/tmp/.tmp0ZFV0J"}"#;
+        let expected = r#"{"cwd": "/tmp/.dbgWS"}"#;
+        assert_eq!(
+            rewrite_path_suffix(body, recorded_cwd, replay_cwd),
+            expected
+        );
+    }
+
+    #[test]
+    fn rewrite_sse_fragmentation_reassembles_path() {
+        // When a tool-call argument streams across multiple SSE delta
+        // fragments, the suffix can be split across fragment boundaries (e.g.
+        // fragment 1 ends `/tmp/.tmp`, fragment 2 starts with the suffix).
+        // Running rewrite_path_suffix on each fragment independently must
+        // produce a concatenation that contains the correct replay path —
+        // the agent's streaming parser reassembles it from the reassembled
+        // fragments.
+        let recorded_cwd = "/tmp/.tmpJ5YFHN";
+        let replay_cwd = "/tmp/.tmpnWTqOz";
+        let body1 = r#"data: {"args": {"path": "/tmp/.tmp"#;
+        let body2 = r#"J5YFHN/file"}}"#;
+        let rewritten_1 = rewrite_path_suffix(body1, recorded_cwd, replay_cwd);
+        let rewritten_2 = rewrite_path_suffix(body2, recorded_cwd, replay_cwd);
+        let concatenated = format!("{rewritten_1}{rewritten_2}");
+        assert!(
+            concatenated.contains("/tmp/.tmpnWTqOz/file"),
+            "concatenated fragments should reconstruct the replay path, got: {concatenated}"
+        );
+    }
+
+    #[test]
+    fn rewrite_noop_when_suffix_is_empty() {
+        // Identical CWDs ⇒ common_len == len(recorded_cwd) ⇒ recorded_suffix
+        // is empty ⇒ body is returned unchanged.
+        let cwd = "/tmp/.tmpJ5YFHN";
+        let body = r#"{"cwd": "/tmp/.tmpJ5YFHN"}"#;
+        assert_eq!(rewrite_path_suffix(body, cwd, cwd), body);
     }
 }
