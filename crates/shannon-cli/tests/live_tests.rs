@@ -274,22 +274,6 @@ fn mount_exchange(
             expected_body = expected_body.replace(recorded_suffix, replay_suffix);
             response_body = response_body.replace(recorded_suffix, replay_suffix);
         }
-        // DIAGNOSTIC: dump rewrite context + expected body fingerprint so CI
-        // logs (stderr) show what mount_exchange produced. Use deterministic
-        // length+byte-sum (DefaultHasher randomizes per process, useless for
-        // comparing runs).
-        let exp_len = expected_body.len();
-        let exp_bsum: u64 = expected_body.bytes().map(|b| b as u64).sum();
-        eprintln!(
-            "[replay-diag] path={} rec_cwd={} rep_cwd={} rec_suf={:?} rep_suf={:?} exp_len={} exp_bytesum={}",
-            ex.request.path,
-            recorded_cwd,
-            replay,
-            recorded_suffix,
-            replay_suffix,
-            exp_len,
-            exp_bsum,
-        );
     }
     let mut mock = server
         .mock("POST", ex.request.path.as_str())
