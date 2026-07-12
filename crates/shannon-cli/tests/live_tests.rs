@@ -1854,7 +1854,13 @@ fn replay_workspace_creation_works() {
 const REPLAY_PROVIDER: &str = "minimax";
 const REPLAY_MODEL: &str = "MiniMax-M3";
 
+// Local-only VCR harness test. Runs via `just replay-agent`. #[ignore]d
+// for CI by design — exact-match VCR replay proved too brittle for the
+// GitHub Actions runner env (see ADR 0003 Phase 1 落地回顾). Developers
+// run locally to validate the harness; CI gets the structural replay
+// tests (replay_*) instead, which don't drive the agent.
 #[test]
+#[ignore = "local-only VCR harness; run via `just replay-agent`"]
 #[serial]
 fn replay_agent_create_file() {
     let path = replay_fixture_path(REPLAY_PROVIDER, REPLAY_MODEL, "create_file");
@@ -1891,7 +1897,11 @@ fn replay_agent_create_file() {
     );
 }
 
+// Local-only VCR harness test. Runs via `just replay-agent`. #[ignore]d
+// for CI by design — exact-match VCR replay proved too brittle for the
+// GitHub Actions runner env (see ADR 0003 Phase 1 落地回顾).
 #[test]
+#[ignore = "local-only VCR harness; run via `just replay-agent`"]
 #[serial]
 fn replay_agent_bash_command() {
     let path = replay_fixture_path(REPLAY_PROVIDER, REPLAY_MODEL, "bash_command");
@@ -1923,7 +1933,11 @@ fn replay_agent_bash_command() {
     );
 }
 
+// Local-only VCR harness test. Runs via `just replay-agent`. #[ignore]d
+// for CI by design — exact-match VCR replay proved too brittle for the
+// GitHub Actions runner env (see ADR 0003 Phase 1 落地回顾).
 #[test]
+#[ignore = "local-only VCR harness; run via `just replay-agent`"]
 #[serial]
 fn replay_agent_read_and_edit() {
     let path = replay_fixture_path(REPLAY_PROVIDER, REPLAY_MODEL, "read_and_edit");
@@ -1961,7 +1975,11 @@ fn replay_agent_read_and_edit() {
     );
 }
 
+// Local-only VCR harness test. Runs via `just replay-agent`. #[ignore]d
+// for CI by design — exact-match VCR replay proved too brittle for the
+// GitHub Actions runner env (see ADR 0003 Phase 1 落地回顾).
 #[test]
+#[ignore = "local-only VCR harness; run via `just replay-agent`"]
 #[serial]
 fn replay_agent_overwrite_existing_file() {
     let path = replay_fixture_path(REPLAY_PROVIDER, REPLAY_MODEL, "overwrite_existing_file");
