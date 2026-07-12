@@ -67,6 +67,63 @@ fixture 失配（系统提示 / 工具定义改动）时测试**跳过并打印 
 - **Neutral**:
   - `vcr.rs` 的 `try_replay()` 与 `ReplayHarness` 两套系统并存，本 ADR 不合并（YAGNI）。
 
+## Phase 1 落地回顾
+
+> Status：Phase 1（PR #75，叠在 PR #73 之上）实施完成，但**未达成 CI 目标**。本文档据此重新定位。
+
+### A. Phase 1 已交付（本地层面）
+
+- **本地 4/4 通过**：4 个确定性任务 —— `create_file`、`bash_command`、`read_and_edit`、`overwrite_existing_file` —— 在本地 `just replay-agent` 下均通过，单次耗时 <1s，无需 API key。
+- **harness 完整**：`RecordedExchange::mount_as_mock` + `ReplayHarness::mount_all`（兑现了 `record_replay.rs:9-29` 中 `fixture.mount(&mut server)` 的设计承诺）；`shannon_cli::tests::live_tests::mount_exchange` / `mount_fixture` 测试 helper；`justfile` 中 `replay-agent` recipe 与原有 `replay`（结构校验）解耦。
+- **4 个 fixture 已提交**：`tests/fixtures/real_tasks/` 下 4 个 `.jsonl`，绕过 `.gitignore` 强制 add（fixture 数据不含密钥，扫描通过）。
+- **后缀级路径重写 + SSE 分片兼容**：录制与回放都用 `/tmp/.tmpXXXXXX` 随机后缀，仅替换随机**后缀**而非整路径 —— 因为 OpenAI 兼容流式响应把 tool-call 参数拆成多个 SSE delta 分片，workspace 路径可能被切断在分片边界，整路径 replace 会漏匹配。
+- **工具定义排序修复**（`crates/shannon-core/src/tools.rs`）：`to_tool_definitions()` 按 name 排序，消除 `HashMap.values()` 顺序不确定性导致的 body 抖动。是 VCR 匹配的根因前置条件，同时提升 Anthropic prompt-cache 命中率。
+- **`delete_file` 排除维持原判**：详见下文 E 节。
+
+### B. CI 层面结果
+
+- **GitHub Actions Test job FAILURE**：PR #75 在 runner 上 4 个 `replay_agent_*` 测试**全部失败**，首个请求即返回 `http_501`（mockito 在无匹配 mock 时的默认响应）。
+- **mockito 无法诊断**：mockito 1.7 在未匹配时返回 501，**不返回接收到的请求 body**。曾考虑自建 debug HTTP server 透出 body，对比期望/实际差异以定位具体失配字段，但 ROI 评估偏低（详见 D 节）。
+- **本地 vs CI 分歧的本质**：同一份代码、同样的 fixture，本地全过、CI 全挂。已验证 **`mount_exchange` 计算出的期望 body 指纹（长度 + byte-sum）在本地与 CI 之间一致**（模去已知的后缀字节差），证明重写数学层面是确定性的；agent 在 CI 上发出的实际 body 必然与之存在某种分歧，但 mockito 看不到。
+
+### C. 已系统排除的失配来源
+
+逐项确认问题不在以下方面，避免后续维护者重复劳动：
+
+1. **Prompt 不匹配**：fixture 录制时记录的 user prompt 与 `replay_*` 测试传入参数已逐字比对，一致。
+2. **工具数组顺序**：fixture 已提交版本中 tools 顺序确定（`sorted=True`），agent 通过 `tools.rs` 排序后顺序一致。
+3. **后缀碰撞风险**：录制时记录的后缀在 body 中仅出现在 workspace 路径（`/tmp/.tmpXXXXXX`），未与模型名 / 工具名 / prompt 字面量碰撞。
+4. **重写数学错误**：纯函数确定性输入，当录制与回放的后缀同长度时长度稳定；Python 离线 reproducer 验证本地行为正确。
+5. **权限模式差异**：曾怀疑 `--yes` / `BypassPermissions` 与 FullAuto 不一致，移除 `--yes` 仍失败。
+6. **`MessageRequest` 隐式字段**：环境无关字段（model / max_tokens / system / messages / tools / stream / temperature / top_p / top_k / stop_sequences / budget_tokens）已逐项审阅，不含时间戳 / request ID / nonce。
+7. **系统提示词环境差异**：系统提示词中唯一环境相关部分为 `Working directory: <CWD>`，已被 workspace 重写逻辑覆盖。
+8. **fixture 内容漂移**：本地与 remote 的同一 fixture git blob 哈希一致；tools 顺序一致。
+9. **缓存 nonce / cache_control 注入**：从输入确定性派生，不引入额外随机性。
+10. **路径规范/符号链接**：Linux TempDir 非符号链接，无路径规范化差异需要考虑。
+
+### D. 架构层面结论（核心教训）
+
+**精确匹配 VCR 回放对 CI 太脆弱，不适合作为 CI 保护层。**
+
+理由：mockito 要求 body 字节级一致才能匹配，而 CI runner 引入了某种无法隔离子问题空间的差异（rustc 版本、依赖更新、环境变量、prompt 微调、甚至 SSE 缓冲时序都可能成为不稳定的源头）。即便后续 debug session 找到了**这次**的具体失配字段，下次 rustc 升级 / 依赖更新 / prompt 调整 / 环境变化都可能再次打破 —— 精确匹配本质上是把 CI 稳定性绑定到了所有上游依赖的"恰好不动"假设上，违反 YAGNI 与系统脆性的工程常识。
+
+**Phase 1 重新定位为本地开发者 harness**：`just replay-agent` 是 <1s 无 key 的本地开发反馈工具，覆盖集成层 bug 的快速回归。CI 价值推迟到 **Phase 2** —— 需要根本不同的匹配策略（宽松 body 匹配 / 序列号计数器 / 结构化匹配 / 响应模板），届时单独立 ADR。
+
+### E. `delete_file` 双重排除（维持原判）
+
+排除原因与 VCR 机制**正交**：
+
+1. **沙箱 cwd 不可见**：录制时 fixture 中 Bash 工具调用带有显式 `cwd: <绝对 tempdir 路径>`，该绝对路径在 bwrap 沙箱内不可见 —— 沙箱把 workspace 绑到 `/workspace`（见提交 `7e8dda0`），导致 Bash 工具报错，请求流转偏离录制流。
+2. **本质非确定性**：该 fixture 是 17 轮探索式 Bash/Glob 会话，Glob/Bash 结果依赖文件系统列举顺序，**精确字节匹配从原理上不可复现**。
+
+修复路径：用更紧的 prompt 重录（单文件删除、不带显式 `cwd`），但当前 ROI 不足，已 deferred。
+
+### F. 后续走向
+
+- **本地 harness 保留**：`just replay-agent` 仍是开发者工具，4 个 `replay_agent_*` 测试本地仍可通过 `--run-ignored ignored-only` 运行。
+- **CI 仍有部分 VCR 保护**：CI 跑 `replay_*` 结构校验测试（fixture 可解析、非空、无密钥泄露），这部分不依赖 agent 执行，不受本次 CI 失败影响。
+- **Phase 2 工作原则**（写给未来接手者）：**不要再尝试让精确匹配通过 CI**。换根本策略 —— 顺序匹配回退、宽松匹配、模板响应、或者直接转向 contract testing，每条路都需要独立评估，必须有具体 CI 需求驱动，否则不进 ADR。
+
 ## Alternatives Considered
 
 - **不做（维持现状）** —— 拒绝。8 个 bug 证明集成层回归有真实价值，且 80% 基建已投入。
