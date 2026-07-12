@@ -805,6 +805,23 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_cache_metrics_deterministic() {
+        // extract_cache_metrics must be pure: calling it multiple times on
+        // the same body must always return the same result. Backfill relies
+        // on this (idempotent re-runs are no-ops), and the
+        // cache_field_consistency integration test relies on it for stable
+        // comparison.
+        let body =
+            "data: {\"id\":\"x\",\"usage\":{\"cache_read_input_tokens\":42}}\n\ndata: [DONE]\n\n";
+        let r1 = RecordedExchange::extract_cache_metrics(body);
+        let r2 = RecordedExchange::extract_cache_metrics(body);
+        let r3 = RecordedExchange::extract_cache_metrics(body);
+        assert_eq!(r1, r2, "extract_cache_metrics must be deterministic");
+        assert_eq!(r2, r3);
+        assert_eq!(r1, (0, 42));
+    }
+
+    #[test]
     fn test_cache_stats() {
         let exchanges = vec![
             RecordedExchange {
