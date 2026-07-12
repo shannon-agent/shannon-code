@@ -322,11 +322,12 @@ fn shannon_replay(
     if let Some(key_env) = provider_key_env(provider) {
         cmd.env(key_env, "replay-fake-key");
     }
-    // Bypass permissions: the recorded session already approved every tool
-    // call (including destructive ones like `rm`). Replay must reproduce that
-    // exactly, so we skip the permission gate rather than letting headless
-    // FullAuto deny critical ops and diverge from the recorded request stream.
-    cmd.arg("--yes");
+    // NOTE: do NOT pass --yes. The recorded fixtures were captured under
+    // FullAuto (recording uses `shannon --prompt` without --yes). Passing
+    // --yes flips the agent to BypassPermissions, which changes the outgoing
+    // request body (e.g. system-prompt permission instructions) and every
+    // mock fails with http_501. The destructive-ops that need --yes (delete_file)
+    // are excluded from the replay set for orthogonal reasons.
     cmd
 }
 
