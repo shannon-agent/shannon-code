@@ -46,7 +46,9 @@ Shannon 的 record/replay 测试基建完成了约 80%，但最后一环缺失�
 
 ### 覆盖范围
 
-只接**确定性任务**（~5-8 个）：`create_file`、`bash_command`(echo)、`read_and_edit`、`overwrite_existing_file`、`delete_file`。**跳过** `git_operations`、`glob_pattern`、`large_workspace`、`code_search`（非确定输出或多轮分支）。
+只接**确定性任务**（4 个）：`create_file`、`bash_command`(echo)、`read_and_edit`、`overwrite_existing_file`。**跳过** `git_operations`、`glob_pattern`、`large_workspace`、`code_search`（非确定输出或多轮分支）。
+
+`delete_file` 原计划纳入，实现时发现两个失配原因，故剔除（详见 Open Questions）。
 
 ### 失配策略
 
@@ -94,5 +96,12 @@ Shannon 补上是差异化点；模式本身不新。
 
 ## Open Questions
 
-- mockito 多 mock 对同 path 的匹配顺序（LIFO vs 注册序）需验证，确认多轮请求能各得其所。若不行，回退到 `Mutex<AtomicUsize>` 顺序计数器（Phase 2，本轮不做）。
+- mockito 多 mock 对同 path 的匹配顺序（LIFO vs 注册序）需验证，确认多轮请求能各得其所。**已验证**：mockito 按注册序匹配，多轮 `.match_body` 精确匹配各得其所，4 个 replay_agent 测试通过。
 - 是否需要在重录时自动跳过非确定性任务（避免 CI 因它们 stale 而永久 skip）—— 留待 Phase 1 落地后评估。
+- **`delete_file` 剔除原因**（实现期发现）：(1) 模型在 Bash 工具调用里显式带 `cwd: /tmp/.tmpXXXX`，该绝对路径在 bwrap 沙箱内不可见（沙箱把 workspace 绑到 `/workspace`），工具报错导致请求流转偏离录制流；(2) 该 fixture 是 17 轮探索式 Bash/Glob 会话，Glob/Bash 结果依赖文件系统顺序，本质上不可精确复现。修复路径：用更紧的 prompt 重录（单文件删除、不带 cwd），属未来工作。
+
+### 实现期关键技术决策（Phase 1 落地补充）
+
+1. **工具定义排序**（根因修复）：`to_tool_definitions()` 遍历 `HashMap.values()`，顺序非确定，导致请求 body 里 tools 数组顺序每次不同，精确匹配必然失配。已在 `crates/shannon-core/src/tools.rs` 按 name 排序——既是 VCR 前提，也提升 Anthropic prompt-cache 命中率（cache breakpoint 位置敏感）。
+2. **workspace 路径按后缀重写**：录制与回放的 TempDir 都用 `/tmp/.tmp` + 随机后缀。只替换随机**后缀**而非整路径——因为 OpenAI 兼容流式响应把 tool-call 参数拆成多个 SSE delta 分片，workspace 路径会被切断在分片边界（如分片 1 结尾 `/tmp/.tmp`、分片 2 开头是后缀），整路径 replace 抓不到，后缀 replace 逐分片生效。
+3. **`--yes` 绕过权限**：回放是复现已批准的录制会话，应用 `BypassPermissions` 而非让 headless FullAuto 拒绝危险操作导致偏离。
